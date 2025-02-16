@@ -44,22 +44,20 @@ def assignment_passed(assignment: list[dict]):
     return len(list(filter(lambda submission: submission["result"]=="PASS",assignment)))>0
 
 
-def previous_assignment_passed(hacker:dict, current_assignment_id:str, data) :
+def previous_assignment_passed(assignment_submission: AssignmentSubmission, data:dict) :
     if(not assignment_submission.hacker_id in data):
-        return True if str(current_assignment_id)=="1" else False
+        return (True if str(assignment_submission.assignment_id)=="1" else False)
     else:
-        if(not str(current_assignment_id-1) in hacker):
-            return false
+        hacker=data[assignment_submission.hacker_id]
+        if assignment_submission.assignment_id==1:
+            return True
+        elif not str(assignment_submission.assignment_id-1) in hacker:
+            return False
         else:
-            return assignment_passed(hacker[str(current_assignment_id-1)])
+            return assignment_passed(hacker[str(assignment_submission.assignment_id-1)])
 
 @app.post("/submit")
 def submit_assignment(assignment_submission: AssignmentSubmission):
-
-        #it will check the hacker_id, if does not exists returns true only if current request is assignment_id=1
-        #it will check previous assignment, if does not exist returns false
-        #if it does exist, will execute above code on the previous assignment array and return whatever returns
-        
     data = load_data()
     new_entry = assignment_submission.dict()
     new_entry["submission_id"] = 1   
