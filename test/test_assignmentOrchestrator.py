@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, mock_open
-from assignmentOrchestrator import load_data, assignment_passed, previous_assignment_passed, AssignmentSubmission
+from assignmentOrchestrator import load_data, assignment_passed, previous_assignment_passed, AssignmentSubmission, save_data, submit_assignment
 
 @patch('os.path.exists')
 def test_load_data_on_non_existing_file(mock_input):
@@ -80,4 +80,28 @@ def test_previous_assignment_passed_when_hacker_id_exists_and_previous_assignmen
         "assignment_submission":AssignmentSubmission(hacker_id="existingId_1",assignment_id=2,assignment_file="myTask.tar.gz")
     }
     assert previous_assignment_passed(**tested_input) == True
-    
+
+@pytest.fixture
+def mocker_test_submit_assignment_on_empty_data(mocker):
+    save_data({})
+
+@patch("assignmentOrchestrator.check_assignment_submission")
+def test_submit_assignment_on_empty_data_when_first_assignment_submission_passes(patched_function, mocker_test_submit_assignment_on_empty_data):
+    patched_function.return_value="PASS"
+    submission_assignment_output=submit_assignment(AssignmentSubmission(hacker_id="nonExistingUser",assignment_id="1",assignment_file="bla.tar.gz"))
+    assert submission_assignment_output == {'hacker_id': 'nonExistingUser', 'assignment_id': 1, 'assignment_file': 'bla.tar.gz', 'submission_id': 1, 'result': 'PASS'}
+    assignment_submissions_json=load_data()
+    assert assignment_submissions_json == {"nonExistingUser":{"1":[submission_assignment_output]}}
+
+
+@patch("assignmentOrchestrator.check_assignment_submission")
+def test_submit_assignment_on_empty_data_when_second_assignment_submission_passes(patched_function,mocker_test_submit_assignment_on_empty_data):
+    patched_function.return_value="FAIL"
+    submission_assignment_output_1=submit_assignment(AssignmentSubmission(hacker_id="nonExistingUser",assignment_id="1",assignment_file="bla.tar.gz"))
+    assert submission_assignment_output_1 == {'hacker_id': 'nonExistingUser', 'assignment_id': 1, 'assignment_file': 'bla.tar.gz', 'submission_id': 1, 'result': "FAIL"}
+    patched_function.return_value="PASS"
+    submission_assignment_output_2=submit_assignment(AssignmentSubmission(hacker_id="nonExistingUser",assignment_id="1",assignment_file="bla.tar.gz"))
+    assert submission_assignment_output_2 == {'hacker_id': 'nonExistingUser', 'assignment_id': 1, 'assignment_file': 'bla.tar.gz', 'submission_id': 2, 'result': "PASS"}
+    assignment_submissions_json=load_data()
+    assert assignment_submissions_json == {"nonExistingUser":{"1":[submission_assignment_output_1,submission_assignment_output_2]}}
+
