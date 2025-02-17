@@ -18,8 +18,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-DATA_FILE = "./data/assignment_submissions.json"
+dirname = os.path.dirname(__file__)
+relative_data_directory="../data/"
+DATA_FILE = os.path.join(dirname,relative_data_directory,"assignment_submissions.json")
 
 def load_data():
     if os.path.exists(DATA_FILE):

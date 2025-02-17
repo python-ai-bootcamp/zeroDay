@@ -128,7 +128,7 @@
     }
   
     function sendDataToBackend(data) {
-      fetch('https://$${{DOMAIN_NAME}}$$/submit', {
+      fetch('$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/submit', {
       //fetch('http://127.0.0.1:8000/submit', {
         method: 'POST',
         headers: {

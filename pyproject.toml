@@ -1,0 +1,7 @@
+[tool.pytest.ini_options]
+pythonpath = [
+  "src"
+]
+[tool.coverage.run]
+source = ["./src",]
+omit = ["test/*"]
