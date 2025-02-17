@@ -62,15 +62,20 @@ def submit_assignment(assignment_submission: AssignmentSubmission):
     new_entry = assignment_submission.model_dump()
     new_entry["submission_id"] = 1   
     new_entry["result"] = check_assignment_submission(new_entry["assignment_id"],new_entry["assignment_file"])
-
-    if(not assignment_submission.hacker_id in data):
-        data[assignment_submission.hacker_id]={new_entry["assignment_id"]:[new_entry]}      
-    else:
-        if(str(new_entry["assignment_id"]) in data[assignment_submission.hacker_id]):
-            new_entry["submission_id"]=len(data[assignment_submission.hacker_id][str(new_entry["assignment_id"])])+1
-            data[assignment_submission.hacker_id][str(new_entry["assignment_id"])].append(new_entry)
+    
+    if previous_assignment_passed(assignment_submission, data):
+        if(not assignment_submission.hacker_id in data):
+            data[assignment_submission.hacker_id]={new_entry["assignment_id"]:[new_entry]}      
         else:
-            data[assignment_submission.hacker_id][str(new_entry["assignment_id"])]=[new_entry]
-    save_data(data)
+            if(str(new_entry["assignment_id"]) in data[assignment_submission.hacker_id]):
+                new_entry["submission_id"]=len(data[assignment_submission.hacker_id][str(new_entry["assignment_id"])])+1
+                data[assignment_submission.hacker_id][str(new_entry["assignment_id"])].append(new_entry)
+            else:
+                data[assignment_submission.hacker_id][str(new_entry["assignment_id"])]=[new_entry]
+        save_data(data)
+    else:
+        new_entry["result"]="ERROR"
+        new_entry["ERROR_message"]=f"cannot test assignment (assignment_id={str(new_entry['assignment_id'])}) until previous assignment (assignment_id={str(new_entry['assignment_id']-1)}) passes successfully"
+        return new_entry
     return new_entry
     
