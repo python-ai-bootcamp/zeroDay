@@ -19,7 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DATA_FILE = "assignment_submissions.json"
+DATA_FILE = "./data/assignment_submissions.json"
 
 def load_data():
     if os.path.exists(DATA_FILE):

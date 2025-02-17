@@ -1,5 +1,5 @@
 __pycache__/
 test/__pycache__
 uvicorn.log
-data.json
-assignment_submissions.json
+data/*
+!data/.gitkeep 
