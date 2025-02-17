@@ -5,3 +5,4 @@ pythonpath = [
 [tool.coverage.run]
 source = ["./src",]
 omit = ["test/*"]
+data_file = './.pytest_cache/.coverage'
