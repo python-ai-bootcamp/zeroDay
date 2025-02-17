@@ -1,5 +1,6 @@
 __pycache__/
 test/__pycache__
 uvicorn.log
+.coverage
 data/*
 !data/.gitkeep 
