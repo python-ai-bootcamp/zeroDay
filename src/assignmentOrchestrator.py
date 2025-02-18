@@ -61,10 +61,9 @@ def previous_assignment_passed(assignment_submission: AssignmentSubmission, data
 def submit_assignment(assignment_submission: AssignmentSubmission):
     data = load_data()
     new_entry = assignment_submission.model_dump()
-    new_entry["submission_id"] = 1   
-    new_entry["result"] = check_assignment_submission(new_entry["assignment_id"],new_entry["assignment_file"])
-    
     if previous_assignment_passed(assignment_submission, data):
+        new_entry["submission_id"] = 1   
+        new_entry["result"] = check_assignment_submission(new_entry["assignment_id"],new_entry["assignment_file"])
         if(not assignment_submission.hacker_id in data):
             data[assignment_submission.hacker_id]={new_entry["assignment_id"]:[new_entry]}      
         else:
