@@ -1,5 +1,5 @@
 
-# install:
+# install app in lab mode:
 install all prod dependencies
 ```bash
 pip install -r requirements.txt
@@ -9,8 +9,7 @@ install additional test dependencies
 pip install -r requirements_test.txt
 ```
 
-
-# to execute:
+# execute app in lab mode:
 UI only
 ```bash
 start uvicorn --app-dir=src main:app --host 0.0.0.0 --port 8000
@@ -24,8 +23,7 @@ execute both UI and assignmentOrchestrator ocally oln windows machine
 ./startLocally.sh
 ```
 
-
-# to execute tests:
+# execute tests:
 without coverage
 ```bash
 pytest
