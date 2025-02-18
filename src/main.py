@@ -19,8 +19,8 @@ domain_name = os.environ.get('DOMAIN_NAME', "127.0.0.1:8000")
 print(domain_name)
 protocol = "https" if os.environ.get('DOMAIN_NAME') else "http"
 print(protocol)
-index_html = open("index.html", "r").read().replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol)
-public_key = load_ssh_public_key(open("id_rsa.pub", "r").read().encode("utf-8"))
+index_html = open(os.path.join("resources","templates","index.html"), "r").read().replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol)
+public_key = load_ssh_public_key(open(os.path.join("resources","keys","id_rsa.pub"), "r").read().encode("utf-8"))
 
 
 app.add_middleware(
@@ -31,8 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-relative_data_directory="./data/"
-DATA_FILE = os.path.join(relative_data_directory,"user_data.json")
+DATA_FILE = os.path.join("./data/","user_data.json")
 
 def load_data():
     if os.path.exists(DATA_FILE):
