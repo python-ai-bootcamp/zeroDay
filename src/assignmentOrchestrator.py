@@ -20,7 +20,7 @@ app.add_middleware(
 )
 
 relative_data_directory="./data/"
-DATA_FILE = os.path.join(relative_data_directory,"assignment_submissions.json")
+DATA_FILE = os.path.join(relative_data_directory,"assignment_data.json")
 
 def load_data():
     if os.path.exists(DATA_FILE):

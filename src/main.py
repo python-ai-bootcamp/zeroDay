@@ -31,16 +31,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DATA_FILE = os.path.join("./data/","user_data.json")
+USER_DATA_FILE = os.path.join("./data/","user_data.json")
+ASSIGNMENT_DATA_FILE = os.path.join("./data/","assignment_data.json")
 
-def load_data():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r") as f:
-            return json.load(f)
-    return []
+def load_data(file_type: str = "user"):
+    if file_type == "user":
+        if os.path.exists(USER_DATA_FILE):
+            with open(USER_DATA_FILE, "r") as f:
+                return json.load(f)
+        return []
+    elif file_type == "assignment":
+        if os.path.exists(ASSIGNMENT_DATA_FILE):
+            with open(ASSIGNMENT_DATA_FILE, "r") as f:
+                return json.load(f)
+        return {}
+    else:
+        raise Exception(f"no data file of type '{file_type}'")
 
 def save_data(data):
-    with open(DATA_FILE, "w") as f:
+    with open(USER_DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
 def encrypt_by_public_key(message: str):
@@ -82,7 +91,7 @@ def submit_user(user: User):
     return {"message": "User saved", "user": new_entry}
 
 @app.get("/data")
-def fetch_data():
-    current_data = json.dumps(load_data())
+def fetch_data(file_type: str = "user"):
+    current_data = json.dumps(load_data(file_type=file_type))
     return PlainTextResponse(encrypt_by_public_key(current_data))
     
