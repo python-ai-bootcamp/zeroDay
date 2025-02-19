@@ -4,6 +4,8 @@ from fastapi.responses import FileResponse
 from fastapi.responses import HTMLResponse
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, EmailStr
+from typing import List
+
 
 import json
 import os
@@ -20,11 +22,21 @@ app.add_middleware(
 )
 
 relative_data_directory="./data/"
+relative_assignments_directory="./resources/config/assignments/"
 DATA_FILE = os.path.join(relative_data_directory,"assignment_data.json")
+ASSIGNMENT_MAPPER_FILE = os.path.join(relative_assignments_directory,"assignment_mapper.json")
+ASSIGNMENT_VALIDATOR_DIR = os.path.join(relative_assignments_directory,"validators")
 
 def load_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+def load_assignment_mapper():
+    print(ASSIGNMENT_MAPPER_FILE)
+    if os.path.exists(ASSIGNMENT_MAPPER_FILE):
+        with open(ASSIGNMENT_MAPPER_FILE, "r") as f:
             return json.load(f)
     return {}
 
@@ -36,9 +48,19 @@ def save_data(data):
 class AssignmentSubmission(BaseModel):
     hacker_id: str
     assignment_id: int
-    assignment_file: str
+    assignment_files: List[str]
  
-def check_assignment_submission(assignment_id:str,assignment_file:str):    
+def check_assignment_submission(assignment_id:str,assignment_files:str):  
+    assignment_mapper=load_assignment_mapper()
+    print(assignment_mapper)
+    validator_file_names=list(map(lambda validator_file_name: os.path.join(ASSIGNMENT_VALIDATOR_DIR,validator_file_name),assignment_mapper[assignment_id]["validators"]))
+    for validator_script in validator_file_names:
+        #need to execute each validator script with assignment file name for task as its input
+        #capture the STDOUT and STDERR of validator script
+        #split first line as status
+        #split rest of lines as message (if exists)
+        #create a result and result message object and return it
+        print(validator_script)
     return "PASS" if random.random()>0.5 else "FAIL"
 
 def assignment_passed(assignment: list[dict]):
@@ -63,7 +85,7 @@ def submit_assignment(assignment_submission: AssignmentSubmission):
     new_entry = assignment_submission.model_dump()
     if previous_assignment_passed(assignment_submission, data):
         new_entry["submission_id"] = 1   
-        new_entry["result"] = check_assignment_submission(new_entry["assignment_id"],new_entry["assignment_file"])
+        new_entry["result"] = check_assignment_submission(new_entry["assignment_id"], new_entry["assignment_files"])
         if(not assignment_submission.hacker_id in data):
             data[assignment_submission.hacker_id]={new_entry["assignment_id"]:[new_entry]}      
         else:
@@ -78,4 +100,5 @@ def submit_assignment(assignment_submission: AssignmentSubmission):
         new_entry["ERROR_message"]=f"cannot test assignment (assignment_id={str(new_entry['assignment_id'])}) until previous assignment (assignment_id={str(new_entry['assignment_id']-1)}) passes successfully"
         return new_entry
     return new_entry
-    
+
+check_assignment_submission("1",["sdf"])    
