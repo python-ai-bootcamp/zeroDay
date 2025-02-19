@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, mock_open
-from assignmentOrchestrator import load_data, assignment_passed, previous_assignment_passed, AssignmentSubmission, save_data, submit_assignment
+from assignmentOrchestrator import assignment_passed
 
 def test_assignment_passed___when_no_previous_submissions_exist():
     assert assignment_passed([]) == False

@@ -34,7 +34,6 @@ def load_data():
     return {}
 
 def load_assignment_mapper():
-    print(ASSIGNMENT_MAPPER_FILE)
     if os.path.exists(ASSIGNMENT_MAPPER_FILE):
         with open(ASSIGNMENT_MAPPER_FILE, "r") as f:
             return json.load(f)
@@ -49,18 +48,28 @@ class AssignmentSubmission(BaseModel):
     hacker_id: str
     assignment_id: int
     assignment_files: List[str]
- 
+
+def execute_validator_on_task_file(validator_script:str, assignment_file:str):
+    return {result:"PASS"} if random.random()>0.5 else {result:"FAIL", "FAIL_message":"you SUCK!"}
+
 def check_assignment_submission(assignment_id:str,assignment_files:str):  
     assignment_mapper=load_assignment_mapper()
     print(assignment_mapper)
     validator_file_names=list(map(lambda validator_file_name: os.path.join(ASSIGNMENT_VALIDATOR_DIR,validator_file_name),assignment_mapper[assignment_id]["validators"]))
+    task_idx=1
     for validator_script in validator_file_names:
-        #need to execute each validator script with assignment file name for task as its input
-        #capture the STDOUT and STDERR of validator script
-        #split first line as status
-        #split rest of lines as message (if exists)
-        #create a result and result message object and return it
-        print(validator_script)
+        if assignment_files[task_idx] == f"task_{str(task_idx)}.py":
+            execute_validator_on_task_file()
+            #need to execute each validator script with assignment file name for task as its input
+            #capture the STDOUT and STDERR of validator script
+            #split first line as status
+            #split rest of lines as message (if exists)
+            #create a result and result message object and return it
+            print(validator_script)
+        else:
+            return ERROR
+    #return PASS if and only if all tasks returned result=True
+    #if some task failed return FAIL and add its failure reason for the FAIL_message with a title of the task name
     return "PASS" if random.random()>0.5 else "FAIL"
 
 def assignment_passed(assignment: list[dict]):
@@ -100,5 +109,3 @@ def submit_assignment(assignment_submission: AssignmentSubmission):
         new_entry["ERROR_message"]=f"cannot test assignment (assignment_id={str(new_entry['assignment_id'])}) until previous assignment (assignment_id={str(new_entry['assignment_id']-1)}) passes successfully"
         return new_entry
     return new_entry
-
-check_assignment_submission("1",["sdf"])    

@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, mock_open
-from assignmentOrchestrator import load_data, assignment_passed, previous_assignment_passed, AssignmentSubmission, save_data, submit_assignment
+from assignmentOrchestrator import load_data, AssignmentSubmission, save_data, submit_assignment
 
 @pytest.fixture
 def mocker_test_submit_assignment___on_empty_data(mocker):
