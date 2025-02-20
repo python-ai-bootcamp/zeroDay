@@ -32,3 +32,19 @@ with coverage
 ```bash
 ./covtest.sh
 ```
+
+# production scripts
+to redeploy code
+first push to main branch on github
+then enter the /opt/zeroDay/ directory on zerodaybootcamp.xyz and execute following script
+```bash
+./redeploy.sh
+```
+in case something was changed with dependencies and/or the actual service installation enter /opt/zeroDay/
+then run the following commands:
+```bash
+./redeploy.sh
+cd $PWD
+./installService.sh
+```
+
