@@ -4,6 +4,7 @@ from fastapi.responses import FileResponse
 from fastapi.responses import HTMLResponse
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, EmailStr
+from mailClient import Email, send_ses_mail
 
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -94,4 +95,8 @@ def submit_user(user: User):
 def fetch_data(file_type: str = "user"):
     current_data = json.dumps(load_data(file_type=file_type))
     return PlainTextResponse(encrypt_by_public_key(current_data))
-    
+   
+
+@app.post("/sendMailTestRemoveOnceWorking")
+def send_mail(user: Email):
+    send_ses_mail(Email)
