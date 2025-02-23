@@ -95,8 +95,3 @@ def submit_user(user: User):
 def fetch_data(file_type: str = "user"):
     current_data = json.dumps(load_data(file_type=file_type))
     return PlainTextResponse(encrypt_by_public_key(current_data))
-   
-
-@app.post("/sendMailTestRemoveOnceWorking")
-def send_mail(user: Email):
-    send_ses_mail(Email)

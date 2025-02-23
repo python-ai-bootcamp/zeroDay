@@ -1,7 +1,7 @@
 import boto3
 from botocore.exceptions import ClientError
 from pydantic import BaseModel, NameEmail, constr
-SENDER = "Mr. Python McPythony <sender@zerodaybootcamp.xyz>" # should always remain this address
+SENDER = "Mr. Python McPythony <sender@zerodaybootcamp.xyz>" # should ALWAYS remain this address, if we switch it might get blocked
 SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENT = "python.ai.bootcamp@outlook.com" # currently until we get out of the amazon SES snadbox we must only send this one!!!!!
 SUBJECT_LENGTH=250
 AWS_REGION = "eu-north-1"
@@ -16,11 +16,10 @@ class Email(BaseModel):
 def send_ses_mail(email_to_send: Email):
     client = boto3.client('ses',region_name=AWS_REGION)
     try:
-        #Provide the contents of the email.
         response = client.send_email(
             Destination={
                 'ToAddresses': [
-                    #Email.to.value, will be switched to this once we go out of the amazon SES snadbox
+                    #Email.to.value # should uncomment this line and remove next one only once we go out of the amazon SES snadbox
                     SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENT
                 ],
             },
@@ -28,16 +27,16 @@ def send_ses_mail(email_to_send: Email):
                 'Body': {
                     'Html': {
                         'Charset': CHARSET,
-                        'Data': Email.body_txt,
+                        'Data': email_to_send.body_html,
                     },
                     'Text': {
                         'Charset': CHARSET,
-                        'Data': Email.body_html,
+                        'Data': email_to_send.body_txt,
                     },
                 },
                 'Subject': {
                     'Charset': CHARSET,
-                    'Data': SUBJECT,
+                    'Data': email_to_send.subject,
                 },
             },
             Source=SENDER
