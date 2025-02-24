@@ -7,9 +7,7 @@ from pydantic import BaseModel, EmailStr
 from typing import List
 
 
-import json
-import os
-import random
+import json, os, random, sys, subprocess
 
 app = FastAPI()
 
@@ -50,6 +48,11 @@ class AssignmentSubmission(BaseModel):
     assignment_files: List[str]
 
 def execute_validator_on_task_file(validator_script:str, assignment_file:str):
+    #cmd="ll -tr" #temporary command until the assignment_file saves a proper file to run tests on and a proper validator is set up
+    #proc = subprocess.Popen(cmd,
+    #    stdout = subprocess.PIPE,
+    #    stderr = subprocess.PIPE,
+    #)
     return {result:"PASS"} if random.random()>0.5 else {result:"FAIL", "FAIL_message":"you SUCK!"}
 
 def check_assignment_submission(assignment_id:str,assignment_files:str):  
@@ -61,6 +64,7 @@ def check_assignment_submission(assignment_id:str,assignment_files:str):
         if assignment_files[task_idx] == f"task_{str(task_idx)}.py":
             execute_validator_on_task_file()
             #need to execute each validator script with assignment file name for task as its input
+            #https://python.code-maven.com/python-capture-stdout-stderr-exit - this is a nice way to do it with subprocess
             #capture the STDOUT and STDERR of validator script
             #split first line as status
             #split rest of lines as message (if exists)
@@ -89,7 +93,7 @@ def previous_assignment_passed(assignment_submission: AssignmentSubmission, data
             return assignment_passed(hacker[str(assignment_submission.assignment_id-1)])
 
 @app.post("/submit")
-def submit_assignment(assignment_submission: AssignmentSubmission):
+def submit_assignment(assignment_submission: AssignmentSubmission): #NEED TO ADD FILE SAVE AT THIS POINT (under parallel structure like the data json under the data library) AND THEN ONLY PASS THE FILE NAME
     data = load_data()
     new_entry = assignment_submission.model_dump()
     if previous_assignment_passed(assignment_submission, data):
