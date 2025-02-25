@@ -4,10 +4,10 @@ from fastapi.responses import FileResponse
 from fastapi.responses import HTMLResponse
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, EmailStr
-from typing import List
+from typing import List, Optional
 
 
-import json, os, random, sys, subprocess
+import json, os, random, sys, subprocess, base64
 
 app = FastAPI()
 
@@ -46,6 +46,8 @@ class AssignmentSubmission(BaseModel):
     hacker_id: str
     assignment_id: int
     assignment_files: List[str]
+    submission_id: Optional[int] = None
+    result: Optional[dict] = None
 
 def execute_validator_on_task_file(validator_script:str, assignment_file:str):
     #cmd="ll -tr" #temporary command until the assignment_file saves a proper file to run tests on and a proper validator is set up
@@ -71,13 +73,14 @@ def check_assignment_submission(assignment_id:str,assignment_files:str):
             #create a result and result message object and return it
             print(validator_script)
         else:
-            return ERROR
+            return {"status":"ERROR","ERROR_message":"missing task in assignment"}
     #return PASS if and only if all tasks returned result=True
     #if some task failed return FAIL and add its failure reason for the FAIL_message with a title of the task name
-    return "PASS" if random.random()>0.5 else "FAIL"
+    #return "PASS" if random.random()>0.5 else "FAIL"
+    return {"status":"PASS"} if random.random()>0.5 else {"status":"FAIL","FAIL_message":"face it, your code is shit!"}
 
 def assignment_passed(assignment: list[dict]):
-    return len(list(filter(lambda submission: submission["result"]=="PASS",assignment)))>0
+    return len(list(filter(lambda submission: submission["result"]["status"]=="PASS",assignment)))>0
 
 
 def previous_assignment_passed(assignment_submission: AssignmentSubmission, data:dict) :
@@ -92,24 +95,38 @@ def previous_assignment_passed(assignment_submission: AssignmentSubmission, data
         else:
             return assignment_passed(hacker[str(assignment_submission.assignment_id-1)])
 
+def save_assignment_file(assignment_submission: AssignmentSubmission):
+    assignment_directory=os.path.join(relative_data_directory,"submitted_files",assignment_submission.hacker_id,str(assignment_submission.assignment_id),str(assignment_submission.submission_id))
+    os.makedirs(assignment_directory,exist_ok=True)
+    task_id=1
+    for assignment_file in assignment_submission.assignment_files:
+        assignment_b64_decoded=base64.b64decode(assignment_file)
+        assignment_simple_str= assignment_b64_decoded.decode("ascii")
+        with open(os.path.join(assignment_directory,f'task_{task_id}.py'), "w") as f:
+            f.write(assignment_simple_str)
+        task_id=task_id+1;
+
 @app.post("/submit")
 def submit_assignment(assignment_submission: AssignmentSubmission): #NEED TO ADD FILE SAVE AT THIS POINT (under parallel structure like the data json under the data library) AND THEN ONLY PASS THE FILE NAME
     data = load_data()
-    new_entry = assignment_submission.model_dump()
     if previous_assignment_passed(assignment_submission, data):
-        new_entry["submission_id"] = 1   
-        new_entry["result"] = check_assignment_submission(new_entry["assignment_id"], new_entry["assignment_files"])
+        assignment_submission.submission_id = 1
         if(not assignment_submission.hacker_id in data):
-            data[assignment_submission.hacker_id]={new_entry["assignment_id"]:[new_entry]}      
+            save_assignment_file(assignment_submission)
+            assignment_submission.result = check_assignment_submission(assignment_submission.assignment_id, assignment_submission.assignment_files)
+            data[assignment_submission.hacker_id]={assignment_submission.assignment_id:[assignment_submission.model_dump()]}      
         else:
-            if(str(new_entry["assignment_id"]) in data[assignment_submission.hacker_id]):
-                new_entry["submission_id"]=len(data[assignment_submission.hacker_id][str(new_entry["assignment_id"])])+1
-                data[assignment_submission.hacker_id][str(new_entry["assignment_id"])].append(new_entry)
+            if(str(assignment_submission.assignment_id) in data[assignment_submission.hacker_id]):
+                assignment_submission.submission_id = len(data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)])+1
+                save_assignment_file(assignment_submission)
+                assignment_submission.result = check_assignment_submission(assignment_submission.assignment_id, assignment_submission.assignment_files)
+                data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)].append(assignment_submission.model_dump())
             else:
-                data[assignment_submission.hacker_id][str(new_entry["assignment_id"])]=[new_entry]
+                save_assignment_file(assignment_submission)
+                assignment_submission.result = check_assignment_submission(assignment_submission.assignment_id, assignment_submission.assignment_files)
+                data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)]=[assignment_submission.model_dump()]
         save_data(data)
     else:
-        new_entry["result"]="ERROR"
-        new_entry["ERROR_message"]=f"cannot test assignment (assignment_id={str(new_entry['assignment_id'])}) until previous assignment (assignment_id={str(new_entry['assignment_id']-1)}) passes successfully"
-        return new_entry
-    return new_entry
+        assignment_submission.result={"status":"ERROR","ERROR_message":f"cannot test assignment (assignment_id={str(assignment_submission.assignment_id)}) until previous assignment (assignment_id={str(assignment_submission.assignment_id-1)}) passes successfully"}
+        return assignment_submission.model_dump()
+    return assignment_submission.model_dump()

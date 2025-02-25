@@ -34,19 +34,19 @@ def test_previous_assignment_passed___when_hacker_id_exists_and_first_assignment
     assert previous_assignment_passed(**tested_input) == True
 def test_previous_assignment_passed___when_hacker_id_exists_and_previous_assignment_failed():
     tested_input={
-        "data":{"existingId_1":{"1":[{"result":"FAIL"},{"result":"FAIL"},{"result":"FAIL"}]},"existingId_2":{}},
+        "data":{"existingId_1":{"1":[{"result":{"status":"FAIL"}},{"result":{"status":"FAIL"}},{"result":{"status":"FAIL"}}]},"existingId_2":{}},
         "assignment_submission":AssignmentSubmission(hacker_id="existingId_1",assignment_id=2,assignment_files=["myTask.tar.gz"])
     }
     assert previous_assignment_passed(**tested_input) == False
 def test_previous_assignment_passed___when_hacker_id_exists_and_previous_assignment_passed():
     tested_input={
-        "data":{"existingId_1":{"1":[{"result":"FAIL"},{"result":"FAIL"},{"result":"PASS"}]},"existingId_2":{}},
+        "data":{"existingId_1":{"1":[{"result":{"status":"FAIL"}},{"result":{"status":"FAIL"}},{"result":{"status":"PASS"}}]},"existingId_2":{}},
         "assignment_submission":AssignmentSubmission(hacker_id="existingId_1",assignment_id=2,assignment_files=["myTask.tar.gz"])
     }
     assert previous_assignment_passed(**tested_input) == True
 def test_previous_assignment_passed___when_hacker_id_exists_and_previous_assignment_does_not_exist():
     tested_input={
-        "data":{"existingId_1":{"1":[{"result":"FAIL"},{"result":"FAIL"},{"result":"PASS"}]},"existingId_2":{}},
+        "data":{"existingId_1":{"1":[{"result":{"status":"FAIL"}},{"result":{"status":"FAIL"}},{"result":{"status":"PASS"}}]},"existingId_2":{}},
         "assignment_submission":AssignmentSubmission(hacker_id="existingId_1",assignment_id=3,assignment_files=["myTask.tar.gz"])
     }
     assert previous_assignment_passed(**tested_input) == False
