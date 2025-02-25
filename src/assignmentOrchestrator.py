@@ -7,7 +7,7 @@ from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 
 
-import json, os, random, sys, subprocess, base64
+import json, os, random, sys, subprocess, base64,functools
 
 app = FastAPI()
 
@@ -19,7 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-relative_data_directory="./data/"
+relative_data_directory="./data"
 relative_assignments_directory="./resources/config/assignments/"
 DATA_FILE = os.path.join(relative_data_directory,"assignment_data.json")
 ASSIGNMENT_MAPPER_FILE = os.path.join(relative_assignments_directory,"assignment_mapper.json")
@@ -48,36 +48,39 @@ class AssignmentSubmission(BaseModel):
     assignment_files: List[str]
     submission_id: Optional[int] = None
     result: Optional[dict] = None
+    assignment_file_names:  Optional[List[str]] = None
 
 def execute_validator_on_task_file(validator_script:str, assignment_file:str):
+    #need to execute validator script with assignment file name for task as its input
+    #https://python.code-maven.com/python-capture-stdout-stderr-exit - this is a nice way to do it with subprocess
+    #capture the STDOUT and STDERR of validator script
+    #split first line as status
+    #split rest of lines as message (if exists)
+    #create a result and result message object and return it
     #cmd="ll -tr" #temporary command until the assignment_file saves a proper file to run tests on and a proper validator is set up
     #proc = subprocess.Popen(cmd,
     #    stdout = subprocess.PIPE,
     #    stderr = subprocess.PIPE,
     #)
-    return {result:"PASS"} if random.random()>0.5 else {result:"FAIL", "FAIL_message":"you SUCK!"}
+    return {"status":"PASS"} if random.random()>0.5 else {"status":"FAIL","FAIL_message":"face it, your code is shit!"}
 
-def check_assignment_submission(assignment_id:str,assignment_files:str):  
+def check_assignment_submission(assignment_submission:AssignmentSubmission):  
     assignment_mapper=load_assignment_mapper()
     print(assignment_mapper)
-    validator_file_names=list(map(lambda validator_file_name: os.path.join(ASSIGNMENT_VALIDATOR_DIR,validator_file_name),assignment_mapper[assignment_id]["validators"]))
+    validator_file_names=list(map(lambda validator_file_name: os.path.join(ASSIGNMENT_VALIDATOR_DIR,validator_file_name),assignment_mapper[assignment_submission.assignment_id]["validators"]))
     task_idx=1
+    collected_results=[]
     for validator_script in validator_file_names:
-        if assignment_files[task_idx] == f"task_{str(task_idx)}.py":
-            execute_validator_on_task_file()
-            #need to execute each validator script with assignment file name for task as its input
-            #https://python.code-maven.com/python-capture-stdout-stderr-exit - this is a nice way to do it with subprocess
-            #capture the STDOUT and STDERR of validator script
-            #split first line as status
-            #split rest of lines as message (if exists)
-            #create a result and result message object and return it
-            print(validator_script)
+        assignment_file=f"task_{str(task_idx)}.py"
+        if assignment_submission.assignment_file_names[task_idx] == assignment_file:
+            collected_results.append({"task_idx":task_idx,**execute_validator_on_task_file(validator_script=validator_script,assignment_file=assignment_file)})
         else:
-            return {"status":"ERROR","ERROR_message":"missing task in assignment"}
-    #return PASS if and only if all tasks returned result=True
-    #if some task failed return FAIL and add its failure reason for the FAIL_message with a title of the task name
-    #return "PASS" if random.random()>0.5 else "FAIL"
-    return {"status":"PASS"} if random.random()>0.5 else {"status":"FAIL","FAIL_message":"face it, your code is shit!"}
+            collected_results.append({"task_idx":task_idx,"status":"ERROR","ERROR_message":f"missing task ({assignment_file}) in assignment"})
+    statuses=list(map(lambda result: result["status"],collected_results))
+    def calculate_status_based_on_temp_and_new(temp_status,new_status):
+        return "ERROR" if (new_status=="ERROR" or temp_status=="ERROR") else "FAIL" if (new_status=="FAIL" and (not temp_status == "ERROR")) else "PASS" if (new_status=="PASS" and temp_status=="PASS") else "FAIL"
+    aggragated_status = functools.reduce(lambda temp_status,new_status: calculate_status_based_on_temp_and_new(temp_status,new_status), statuses, 'PASS')
+    return {"status":aggragated_status,"collected_results":collected_results}
 
 def assignment_passed(assignment: list[dict]):
     return len(list(filter(lambda submission: submission["result"]["status"]=="PASS",assignment)))>0
@@ -95,35 +98,39 @@ def previous_assignment_passed(assignment_submission: AssignmentSubmission, data
         else:
             return assignment_passed(hacker[str(assignment_submission.assignment_id-1)])
 
-def save_assignment_file(assignment_submission: AssignmentSubmission):
+def save_assignment_files(assignment_submission: AssignmentSubmission):
     assignment_directory=os.path.join(relative_data_directory,"submitted_files",assignment_submission.hacker_id,str(assignment_submission.assignment_id),str(assignment_submission.submission_id))
     os.makedirs(assignment_directory,exist_ok=True)
     task_id=1
+    assignment_file_names=[]
     for assignment_file in assignment_submission.assignment_files:
         assignment_b64_decoded=base64.b64decode(assignment_file)
         assignment_simple_str= assignment_b64_decoded.decode("ascii")
-        with open(os.path.join(assignment_directory,f'task_{task_id}.py'), "w") as f:
+        assignment_file_name=f'task_{task_id}.py'
+        assignment_file_name_full_path=os.path.join(assignment_directory,f'task_{task_id}.py')
+        assignment_file_names.append(assignment_file_name)
+        with open(assignment_file_name_full_path, "w") as f:
             f.write(assignment_simple_str)
         task_id=task_id+1;
-
+    return assignment_file_names
 @app.post("/submit")
-def submit_assignment(assignment_submission: AssignmentSubmission): #NEED TO ADD FILE SAVE AT THIS POINT (under parallel structure like the data json under the data library) AND THEN ONLY PASS THE FILE NAME
+def submit_assignment(assignment_submission: AssignmentSubmission):
     data = load_data()
     if previous_assignment_passed(assignment_submission, data):
-        assignment_submission.submission_id = 1
+        assignment_submission.submission_id = 1 #in case no previous submission, then submission_id=1, will change to calculated value only if exisitng submition_id found
         if(not assignment_submission.hacker_id in data):
-            save_assignment_file(assignment_submission)
-            assignment_submission.result = check_assignment_submission(assignment_submission.assignment_id, assignment_submission.assignment_files)
+            assignment_submission.assignment_file_names=save_assignment_files(assignment_submission)
+            assignment_submission.result = check_assignment_submission(assignment_submission)
             data[assignment_submission.hacker_id]={assignment_submission.assignment_id:[assignment_submission.model_dump()]}      
         else:
             if(str(assignment_submission.assignment_id) in data[assignment_submission.hacker_id]):
                 assignment_submission.submission_id = len(data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)])+1
-                save_assignment_file(assignment_submission)
-                assignment_submission.result = check_assignment_submission(assignment_submission.assignment_id, assignment_submission.assignment_files)
+                assignment_submission.assignment_file_names=save_assignment_files(assignment_submission)
+                assignment_submission.result = check_assignment_submission(assignment_submission)
                 data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)].append(assignment_submission.model_dump())
             else:
-                save_assignment_file(assignment_submission)
-                assignment_submission.result = check_assignment_submission(assignment_submission.assignment_id, assignment_submission.assignment_files)
+                assignment_submission.assignment_file_names=save_assignment_files(assignment_submission)
+                assignment_submission.result = check_assignment_submission(assignment_submission)
                 data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)]=[assignment_submission.model_dump()]
         save_data(data)
     else:
