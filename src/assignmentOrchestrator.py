@@ -24,8 +24,26 @@ relative_assignments_directory="./resources/config/assignments/"
 DATA_FILE = os.path.join(relative_data_directory,"assignment_data.json")
 ASSIGNMENT_MAPPER_FILE = os.path.join(relative_assignments_directory,"assignment_mapper.json")
 ASSIGNMENT_VALIDATOR_DIR = os.path.join(relative_assignments_directory,"validators")
+SUBMITTED_FILES_DIR=os.path.join(relative_data_directory,"submitted_files")
 
 def load_data():
+    #need to create some fancy locking mechanism to avoid race conditions https://theorangeduck.com/page/synchronized-python
+    #not sure if should be done here, maybe should be in submit because its the only one that access load_data() and save_data() in a problematic way
+    #def synchronized(func):
+	#
+    #func.__lock__ = threading.Lock()
+	#	
+    #def synced_func(*args, **kws):
+    #    with func.__lock__:
+    #        return func(*args, **kws)
+    #
+    #return synced_func
+
+    #better explenation
+    #https://www.geeksforgeeks.org/file-locking-in-python/
+
+    #still not sure about weather to use multiprocessing.lock or theading.lock
+
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r") as f:
             return json.load(f)
@@ -99,7 +117,7 @@ def previous_assignment_passed(assignment_submission: AssignmentSubmission, data
             return assignment_passed(hacker[str(assignment_submission.assignment_id-1)])
 
 def save_assignment_files(assignment_submission: AssignmentSubmission):
-    assignment_directory=os.path.join(relative_data_directory,"submitted_files",assignment_submission.hacker_id,str(assignment_submission.assignment_id),str(assignment_submission.submission_id))
+    assignment_directory=os.path.join(SUBMITTED_FILES_DIR,assignment_submission.hacker_id,str(assignment_submission.assignment_id),str(assignment_submission.submission_id))
     os.makedirs(assignment_directory,exist_ok=True)
     task_id=1
     assignment_file_names=[]
@@ -113,6 +131,7 @@ def save_assignment_files(assignment_submission: AssignmentSubmission):
             f.write(assignment_simple_str)
         task_id=task_id+1;
     return assignment_file_names
+
 @app.post("/submit")
 def submit_assignment(assignment_submission: AssignmentSubmission):
     data = load_data()
