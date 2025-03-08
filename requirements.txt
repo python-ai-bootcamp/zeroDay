@@ -1,0 +1,7 @@
+fastapi
+pydantic
+uvicorn
+starlette
+cryptography
+boto3
+pydantic[email]

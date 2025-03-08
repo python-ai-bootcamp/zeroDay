@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Zero Day Boot Camp Terminal</title>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: black;
+      color: #00FF00;
+      font-family: 'VT323', monospace;
+      font-size: 18px;
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+    .terminal-line {
+      margin: 5px 0;
+      white-space: pre-wrap;
+    }
+    .terminal-prompt {
+      color: red;
+    }
+    input {
+      background-color: black;
+      color: #00FF00;
+      border: none;
+      border-bottom: 1px solid #00FF00;
+      font-family: 'VT323', monospace;
+      font-size: 18px;
+      width: auto;
+      margin-top: 5px;
+      outline: none;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <div id="terminal">
+    <div class="terminal-line">Zero Day Boot Camp Terminal v1.0</div>
+    <div class="terminal-line">--------------------------------------</div>
+    <div class="terminal-line">please enter valid email address:</div>
+    <div class="terminal-line" style="display: flex; align-items: center;">
+      <span class="terminal-prompt">root@0D@:~$ </span>
+      <span id="prompt"></span>
+      <input id="userInput" type="text" autofocus style="border: none; background: transparent; color: inherit; font-family: inherit; outline: none; width: auto;" />
+    </div>
+  </div>
+
+  <script>
+    let state = 'email';
+    const correctPassword = 'letmein';
+    const userData = { email: '', password: '', name: '' };
+  
+    const terminal = document.getElementById('terminal');
+    let userInput = document.getElementById('userInput');
+    const promptSpan = document.getElementById('prompt');
+  
+    function appendLine(text) {
+      const newLine = document.createElement('div');
+      newLine.className = 'terminal-line';
+      newLine.textContent = text;
+      terminal.insertBefore(newLine, terminal.lastElementChild);
+    }
+  
+    function clearTerminal() {
+      terminal.innerHTML = '';
+    }
+  
+    function updatePrompt(text = '') {
+      promptSpan.textContent = text;
+      userInput.focus();
+    }
+  
+    function replaceInputField(type = 'text') {
+      const newInput = document.createElement('input');
+      newInput.id = 'userInput';
+      newInput.type = type;
+      newInput.style = userInput.style.cssText;
+      userInput.replaceWith(newInput);
+      userInput = newInput;
+      userInput.focus();
+      addInputListener();
+    }
+  
+    function addInputListener() {
+      userInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          const inputValue = userInput.value.trim();
+          appendLine(inputValue);
+          userInput.value = '';
+  
+          if (state === 'email') {
+            userData.email = inputValue;
+            appendLine('Decipher the following code: bGV0bWVpbg==');
+            state = 'password';
+            replaceInputField('password'); // Change input type to password
+          } else if (state === 'password') {
+            if (inputValue === correctPassword) {
+              appendLine('Access Granted');
+              setTimeout(showNamePrompt, 1000);
+            } else {
+              appendLine('Access Denied');
+              state = 'email';
+              replaceInputField('text'); // Reset to text input for email
+            }
+          } else if (state === 'name') {
+            userData.name = inputValue;
+            state='blockedInput'
+            sendDataToBackend(userData);
+          }else if (state === 'blockedInput') {
+            appendLine('');
+          }
+        }
+      });
+    }
+  
+    function showNamePrompt() {
+      state = 'name';
+      appendLine('');
+      appendLine('Welcome to Zero Day Boot Camp');
+      appendLine('You have been selected to participate in a training course');
+      appendLine("If you should succeed in all provided challenges,");
+      appendLine("you will be invited to participate in Zero Day Research Group.");
+      appendLine('Enter your full name:');
+      replaceInputField('text');
+      updatePrompt();
+    }
+  
+    function sendDataToBackend(data) {
+      fetch('$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/submit', {
+      //fetch('http://127.0.0.1:8000/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+        .then(response => response.json())
+        .then(data => {
+          appendLine('Thank you. We will be in contact.');
+          setTimeout(() => {
+            document.body.innerHTML =
+              '<div style="color:red; font-family: monospace; text-align:center; margin-top: 20%;">CRITICAL ERROR: System Crash</div>';
+          }, 2000);
+        })
+        .catch(error => {
+          appendLine('Error submitting data.');
+          console.error('Error:', error);
+        });
+    }
+  
+    addInputListener();
+    updatePrompt();
+  </script>
+</body>
+</html>

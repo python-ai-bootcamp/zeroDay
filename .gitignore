@@ -1,0 +1,6 @@
+__pycache__/
+test/__pycache__
+uvicorn.log
+htmlcov/*
+data/*
+!data/.gitkeep 
