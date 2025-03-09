@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
+from multiprocessing import Lock
 
 
 import json, os, random, sys, subprocess, base64,functools, importlib.util
@@ -26,7 +27,7 @@ ASSIGNMENT_MAPPER_FILE = os.path.join(relative_assignments_directory,"assignment
 ASSIGNMENT_VALIDATOR_DIR = os.path.join(relative_assignments_directory,"validators")
 SUBMITTED_FILES_DIR=os.path.join(relative_data_directory,"submitted_files")
 DEFAULT_VALIDATOR_TIMEOUT=60
-
+lockRepository={}
 def load_data():
     #need to create some fancy locking mechanism to avoid race conditions https://theorangeduck.com/page/synchronized-python
     #not sure if should be done here, maybe should be in submit because its the only one that access load_data() and save_data() in a problematic way
@@ -145,6 +146,9 @@ def save_assignment_files(assignment_submission: AssignmentSubmission):
 
 @app.post("/submit")
 def submit_assignment(assignment_submission: AssignmentSubmission):
+    if not (assignment_submission.hacker_id in lockRepository):
+        lockRepository[assignment_submission.hacker_id]=Lock()
+    lockRepository[assignment_submission.hacker_id].acquire()
     data = load_data()
     if previous_assignment_passed(assignment_submission, data):
         assignment_submission.submission_id = 1 #in case no previous submission, then submission_id=1, will change to calculated value only if exisitng submition_id found
@@ -165,5 +169,7 @@ def submit_assignment(assignment_submission: AssignmentSubmission):
         save_data(data)
     else:
         assignment_submission.result={"status":"ERROR","ERROR_message":f"cannot test assignment (assignment_id={str(assignment_submission.assignment_id)}) until previous assignment (assignment_id={str(assignment_submission.assignment_id-1)}) passes successfully"}
+        lockRepository[assignment_submission.hacker_id].release()
         return assignment_submission.model_dump()
+    lockRepository[assignment_submission.hacker_id].release()
     return assignment_submission.model_dump()
