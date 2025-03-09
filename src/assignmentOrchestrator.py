@@ -23,33 +23,31 @@ app.add_middleware(
 relative_data_directory="./data"
 relative_assignments_directory="./resources/config/assignments/"
 DATA_FILE = os.path.join(relative_data_directory,"assignment_data.json")
+DATA_FILE_DIRECTORY = os.path.join(relative_data_directory,"assignment_data")
 ASSIGNMENT_MAPPER_FILE = os.path.join(relative_assignments_directory,"assignment_mapper.json")
 ASSIGNMENT_VALIDATOR_DIR = os.path.join(relative_assignments_directory,"validators")
 SUBMITTED_FILES_DIR=os.path.join(relative_data_directory,"submitted_files")
 DEFAULT_VALIDATOR_TIMEOUT=60
 lockRepository={}
-def load_data():
-    #need to create some fancy locking mechanism to avoid race conditions https://theorangeduck.com/page/synchronized-python
-    #not sure if should be done here, maybe should be in submit because its the only one that access load_data() and save_data() in a problematic way
-    #def synchronized(func):
-	#
-    #func.__lock__ = threading.Lock()
-	#	
-    #def synced_func(*args, **kws):
-    #    with func.__lock__:
-    #        return func(*args, **kws)
-    #
-    #return synced_func
-
-    #better explenation
-    #https://www.geeksforgeeks.org/file-locking-in-python/
-
-    #still not sure about weather to use multiprocessing.lock or theading.lock
-
+def load_data(hacker_id=None):
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r") as f:
             return json.load(f)
     return {}
+#alternative thread safe implementation, not yet fully implemented
+    if os.path.exists(DATA_FILE_DIRECTORY):
+        if hacker_id:
+            hacker_id_json_filename=os.path.join(DATA_FILE_DIRECTORY,f"{hacker_id}.json")
+            if os.path.exists(hacker_id_json_filename):
+                with open(hacker_id_json_filename, "r") as f:
+                    return json.load(f)
+            else:
+                return {}
+        else:
+            print("need to load all existing <hacker_id>.json files, and merge them into an empty dict and return it")
+    else:
+        os.makedirs(DATA_FILE_DIRECTORY,exist_ok=True)    
+        return {}
 
 def load_assignment_mapper():
     if os.path.exists(ASSIGNMENT_MAPPER_FILE):
@@ -57,10 +55,14 @@ def load_assignment_mapper():
             return json.load(f)
     return {}
 
-def save_data(data):
+def save_data(data: dict):
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
-
+    return
+    #alternative thread safe implementation
+    hacker_id=list(data.keys())[0]
+    with open(os.path.join(DATA_FILE_DIRECTORY,f"{hacker_id}.json"), "w") as f:
+        json.dump(data, f, indent=4)
 
 class AssignmentSubmission(BaseModel):
     hacker_id: str
