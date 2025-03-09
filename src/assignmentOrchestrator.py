@@ -34,7 +34,8 @@ def load_data(hacker_id=None):
         with open(DATA_FILE, "r") as f:
             return json.load(f)
     return {}
-#alternative thread safe implementation, not yet fully implemented
+    
+    #alternative thread safe implementation, not yet fully implemented
     if os.path.exists(DATA_FILE_DIRECTORY):
         if hacker_id:
             hacker_id_json_filename=os.path.join(DATA_FILE_DIRECTORY,f"{hacker_id}.json")
@@ -44,7 +45,13 @@ def load_data(hacker_id=None):
             else:
                 return {}
         else:
-            print("need to load all existing <hacker_id>.json files, and merge them into an empty dict and return it")
+            filelist=os.listdir(DATA_FILE_DIRECTORY)
+            merged_dataset={}
+            for filename in filelist:
+                with open(filename, "r") as f:
+                    file_data=json.load(f)
+                    merged_dataset={**merged_dataset,**file_data}
+            return merged_dataset
     else:
         os.makedirs(DATA_FILE_DIRECTORY,exist_ok=True)    
         return {}
