@@ -255,7 +255,7 @@ def test__validator_checks_if_task_file_exists_in_path(mocker__on_empty_data):
     execute_validator_on_task_file_output=execute_validator_on_task_file(validator_script=validator_script_file_location, task_file_name="task_1.py", assignment_submission=assignment_submission)
     assert execute_validator_on_task_file_output == {'status': 'PASS'}
 
-def test__validator_executes_a_task_file_and_returns_stdout_and_stderr_and_passes(mocker__on_empty_data):
+def test__validator_executes_a_task_returning_stdout_and_stderr_and_passes(mocker__on_empty_data):
     test_assignment_mapper_json_file_data={'1': {'description': 'description_1.md', 'validators': ['validate_assignment_1_task_1.py']}}
     validator_script_file_location=os.path.join(gconf["relative_validators_directory"],'validate_assignment_1_task_1.py')
     with open(validator_script_file_location, "w") as validator_f:
@@ -270,7 +270,7 @@ def test__validator_executes_a_task_file_and_returns_stdout_and_stderr_and_passe
     execute_validator_on_task_file_output=execute_validator_on_task_file(validator_script=validator_script_file_location, task_file_name="task_1.py", assignment_submission=assignment_submission)
     assert execute_validator_on_task_file_output == {'status': 'PASS','PASS_message_stderr': "i'm STDERR #1i'm STDERR #2",'PASS_message_stdout': "i'm STDOUT #1i'm STDOUT #2"}
 
-def test__validator_executes_a_task_that_prints_before_breaching_timeout_with_sleep(mocker__on_empty_data):
+def test__validator_executes_a_task_printing_before_breach_timeout_with_sleep(mocker__on_empty_data):
     test_assignment_mapper_json_file_data={'1': {'description': 'description_1.md', 'validators': ['validate_assignment_1_task_1.py']}}
     validator_script_file_location=os.path.join(gconf["relative_validators_directory"],'validate_assignment_1_task_1.py')
     with open(validator_script_file_location, "w") as validator_f:
@@ -285,7 +285,7 @@ def test__validator_executes_a_task_that_prints_before_breaching_timeout_with_sl
     execute_validator_on_task_file_output=execute_validator_on_task_file(validator_script=validator_script_file_location, task_file_name="task_1.py", assignment_submission=assignment_submission)
     assert execute_validator_on_task_file_output == {'status': 'FAIL','FAIL_message': f'task did not finish executing in required time (kill_timeout={gconf["default_validator_timeout"]}s)','FAIL_message_stderr': "i'm STDERR #1i'm STDERR #2",'FAIL_message_stdout': "i'm STDOUT #1i'm STDOUT #2"}
 
-def test__validator_executes_a_task_that_prints_after_breaching_timeout_with_busywait(mocker__on_empty_data):
+def test__validator_executes_a_task_printing_after_breach_timeout_with_busywait(mocker__on_empty_data):
     test_assignment_mapper_json_file_data={'1': {'description': 'description_1.md', 'validators': ['validate_assignment_1_task_1.py']}}
     validator_script_file_location=os.path.join(gconf["relative_validators_directory"],'validate_assignment_1_task_1.py')
     with open(validator_script_file_location, "w") as validator_f:

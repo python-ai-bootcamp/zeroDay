@@ -45,9 +45,10 @@ def load_data(assignment_submission: AssignmentSubmission =None):
     #return {}
     #
     #alternative thread safe implementation, not yet fully implemented
-    hacker_id=assignment_submission.hacker_id
+    
     if os.path.exists(DATA_FILE_DIRECTORY):
-        if hacker_id:
+        if assignment_submission and assignment_submission.hacker_id:
+            hacker_id=assignment_submission.hacker_id
             hacker_id_json_filename=os.path.join(DATA_FILE_DIRECTORY,f"{hacker_id}.json")
             if os.path.exists(hacker_id_json_filename):
                 with open(hacker_id_json_filename, "r") as f:
@@ -58,7 +59,7 @@ def load_data(assignment_submission: AssignmentSubmission =None):
             filelist=os.listdir(DATA_FILE_DIRECTORY)
             merged_dataset={}
             for filename in filelist:
-                with open(filename, "r") as f:
+                with open(os.path.join(DATA_FILE_DIRECTORY,filename), "r") as f:
                     file_data=json.load(f)
                     merged_dataset={**merged_dataset,**file_data}
             return merged_dataset

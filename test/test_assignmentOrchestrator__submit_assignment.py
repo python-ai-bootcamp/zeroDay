@@ -9,6 +9,7 @@ def mocker__on_empty_data(mocker,request):
     gconf["base_test_directory"]                        =f"./data/testData/assignmentOrchestrator/submit_assignment/{request.node.name}"
     gconf["relative_data_directory"]                    =os.path.join(gconf["base_test_directory"],"data")
     gconf["assignment_data_file"]                       =os.path.join(gconf["relative_data_directory"],"assignment_data.json")
+    gconf["assignment_data_file_directory"]             =os.path.join(gconf["relative_data_directory"],"assignment_data")
     gconf["relative_submitted_files_directory"]         =os.path.join(gconf["relative_data_directory"],"submitted_files")
 
     gconf["relative_assignments_directory"]             =os.path.join(gconf["base_test_directory"],"resources","config","assignments")
@@ -27,6 +28,8 @@ def mocker__on_empty_data(mocker,request):
     mocker.patch("assignmentOrchestrator.SUBMITTED_FILES_DIR",      gconf["relative_submitted_files_directory"])
     mocker.patch("assignmentOrchestrator.ASSIGNMENT_VALIDATOR_DIR", gconf["relative_validators_directory"])
     mocker.patch("assignmentOrchestrator.ASSIGNMENT_MAPPER_FILE",   gconf["test_assignment_mapper_json_file_location"])
+    mocker.patch("assignmentOrchestrator.DATA_FILE_DIRECTORY",      gconf["assignment_data_file_directory"])
+
 
 @patch("assignmentOrchestrator.check_assignment_submission")
 def test__when_first_assignment_passes_on_first_submission(patched_function, mocker__on_empty_data):
