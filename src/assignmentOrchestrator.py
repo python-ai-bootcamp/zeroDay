@@ -29,13 +29,23 @@ ASSIGNMENT_VALIDATOR_DIR = os.path.join(relative_assignments_directory,"validato
 SUBMITTED_FILES_DIR=os.path.join(relative_data_directory,"submitted_files")
 DEFAULT_VALIDATOR_TIMEOUT=60
 lockRepository={}
-def load_data(hacker_id=None):
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r") as f:
-            return json.load(f)
-    return {}
-    
+
+class AssignmentSubmission(BaseModel):
+    hacker_id: str
+    assignment_id: int
+    assignment_files: List[str]
+    submission_id: Optional[int] = None
+    result: Optional[dict] = None
+    assignment_file_names:  Optional[List[str]] = None
+
+def load_data(assignment_submission: AssignmentSubmission =None):
+    #if os.path.exists(DATA_FILE):
+    #    with open(DATA_FILE, "r") as f:
+    #        return json.load(f)
+    #return {}
+    #
     #alternative thread safe implementation, not yet fully implemented
+    hacker_id=assignment_submission.hacker_id
     if os.path.exists(DATA_FILE_DIRECTORY):
         if hacker_id:
             hacker_id_json_filename=os.path.join(DATA_FILE_DIRECTORY,f"{hacker_id}.json")
@@ -63,21 +73,13 @@ def load_assignment_mapper():
     return {}
 
 def save_data(data: dict):
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=4)
-    return
+    #with open(DATA_FILE, "w") as f:
+    #    json.dump(data, f, indent=4)
+    #return
     #alternative thread safe implementation
     hacker_id=list(data.keys())[0]
     with open(os.path.join(DATA_FILE_DIRECTORY,f"{hacker_id}.json"), "w") as f:
         json.dump(data, f, indent=4)
-
-class AssignmentSubmission(BaseModel):
-    hacker_id: str
-    assignment_id: int
-    assignment_files: List[str]
-    submission_id: Optional[int] = None
-    result: Optional[dict] = None
-    assignment_file_names:  Optional[List[str]] = None
 
 dynamically_loaded_modules_repository={}
 def import_module_dynamically_from_path(task_file_name):
@@ -158,7 +160,7 @@ def submit_assignment(assignment_submission: AssignmentSubmission):
     if not (assignment_submission.hacker_id in lockRepository):
         lockRepository[assignment_submission.hacker_id]=Lock()
     lockRepository[assignment_submission.hacker_id].acquire()
-    data = load_data()
+    data = load_data(assignment_submission)
     if previous_assignment_passed(assignment_submission, data):
         assignment_submission.submission_id = 1 #in case no previous submission, then submission_id=1, will change to calculated value only if exisitng submition_id found
         if(not assignment_submission.hacker_id in data):
