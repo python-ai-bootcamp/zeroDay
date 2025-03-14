@@ -28,6 +28,7 @@ ASSIGNMENT_MAPPER_FILE = os.path.join(relative_assignments_directory,"assignment
 ASSIGNMENT_VALIDATOR_DIR = os.path.join(relative_assignments_directory,"validators")
 SUBMITTED_FILES_DIR=os.path.join(relative_data_directory,"submitted_files")
 DEFAULT_VALIDATOR_TIMEOUT=60
+DEFAULT_MAX_SUBMISSIONS=3
 lockRepository={}
 
 class AssignmentSubmission(BaseModel):
@@ -171,9 +172,14 @@ def submit_assignment(assignment_submission: AssignmentSubmission):
         else:
             if(str(assignment_submission.assignment_id) in data[assignment_submission.hacker_id]):
                 assignment_submission.submission_id = len(data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)])+1
-                assignment_submission.assignment_file_names=save_assignment_files(assignment_submission)
-                assignment_submission.result = check_assignment_submission(assignment_submission)
-                data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)].append(assignment_submission.model_dump())
+                if(assignment_submission.submission_id<=DEFAULT_MAX_SUBMISSIONS):
+                    assignment_submission.assignment_file_names=save_assignment_files(assignment_submission)
+                    assignment_submission.result = check_assignment_submission(assignment_submission)
+                    data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)].append(assignment_submission.model_dump())
+                else:
+                    assignment_submission.result={"status":"ERROR","ERROR_message":f"cannot test assignment (assignment_id={str(assignment_submission.assignment_id)}) because submission attempts ({str(assignment_submission.submission_id)}) passed the allowed DEFAULT_MAX_SUBMISSIONS (DEFAULT_MAX_SUBMISSIONS={DEFAULT_MAX_SUBMISSIONS})"}
+                    lockRepository[assignment_submission.hacker_id].release()
+                    return assignment_submission.model_dump()
             else:
                 assignment_submission.assignment_file_names=save_assignment_files(assignment_submission)
                 assignment_submission.result = check_assignment_submission(assignment_submission)

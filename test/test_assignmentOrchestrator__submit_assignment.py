@@ -89,3 +89,17 @@ def test__when_second_assignment_passes_on_first_submission_after_first_assignme
     assert submission_assignment_2_output == {'hacker_id': 'nonExistingUser', 'assignment_id': 2, 'assignment_files': [base64.b64encode("fakeScriptData".encode('ascii')).decode("utf-8")], 'submission_id': 1, 'result': {"status":"PASS"},'assignment_file_names': ['task_1.py']}
     assignment_submissions_json=load_data()
     assert assignment_submissions_json == {"nonExistingUser":{"1":[submission_assignment_1_output],"2":[submission_assignment_2_output]}}
+
+@patch("assignmentOrchestrator.check_assignment_submission")
+def test__when_third_assignment_submission_attempt_fails_and_forth_breaches_submission_limit(patched_function, mocker__on_empty_data):
+    patched_function.return_value={"status":"FAIL"}
+    submission_1_assignment_1_output=submit_assignment(AssignmentSubmission(hacker_id="nonExistingUser",assignment_id=1,assignment_files=[base64.b64encode("fakeScriptData".encode('ascii'))]))
+    assert submission_1_assignment_1_output == {'hacker_id': 'nonExistingUser', 'assignment_id': 1, 'assignment_files': [base64.b64encode("fakeScriptData".encode('ascii')).decode("utf-8")], 'submission_id': 1, 'result': {"status":"FAIL"},'assignment_file_names': ['task_1.py']}
+    submission_2_assignment_1_output=submit_assignment(AssignmentSubmission(hacker_id="nonExistingUser",assignment_id=1,assignment_files=[base64.b64encode("fakeScriptData".encode('ascii'))]))
+    assert submission_2_assignment_1_output == {'hacker_id': 'nonExistingUser', 'assignment_id': 1, 'assignment_files': [base64.b64encode("fakeScriptData".encode('ascii')).decode("utf-8")], 'submission_id': 2, 'result': {"status":"FAIL"},'assignment_file_names': ['task_1.py']}
+    submission_3_assignment_1_output=submit_assignment(AssignmentSubmission(hacker_id="nonExistingUser",assignment_id=1,assignment_files=[base64.b64encode("fakeScriptData".encode('ascii'))]))
+    assert submission_3_assignment_1_output == {'hacker_id': 'nonExistingUser', 'assignment_id': 1, 'assignment_files': [base64.b64encode("fakeScriptData".encode('ascii')).decode("utf-8")], 'submission_id': 3, 'result': {"status":"FAIL"},'assignment_file_names': ['task_1.py']}
+    submission_4_assignment_1_output=submit_assignment(AssignmentSubmission(hacker_id="nonExistingUser",assignment_id=1,assignment_files=[base64.b64encode("fakeScriptData".encode('ascii'))]))
+    assert submission_4_assignment_1_output == {'hacker_id': 'nonExistingUser', 'assignment_id': 1, 'assignment_files': [base64.b64encode("fakeScriptData".encode('ascii')).decode("utf-8")], 'submission_id': 4, 'result': {"status":"ERROR","ERROR_message":"cannot test assignment (assignment_id=1) because submission attempts (4) passed the allowed DEFAULT_MAX_SUBMISSIONS (DEFAULT_MAX_SUBMISSIONS=3)"},'assignment_file_names': None}
+    assignment_submissions_json=load_data()
+    assert assignment_submissions_json == {"nonExistingUser":{"1":[submission_1_assignment_1_output,submission_2_assignment_1_output,submission_3_assignment_1_output]}}
