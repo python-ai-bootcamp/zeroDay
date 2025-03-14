@@ -22,10 +22,10 @@ app.add_middleware(
 
 relative_data_directory="./data"
 relative_assignments_directory="./resources/config/assignments/"
-DATA_FILE = os.path.join(relative_data_directory,"assignment_data.json")
 DATA_FILE_DIRECTORY = os.path.join(relative_data_directory,"assignment_data")
 ASSIGNMENT_MAPPER_FILE = os.path.join(relative_assignments_directory,"assignment_mapper.json")
 ASSIGNMENT_VALIDATOR_DIR = os.path.join(relative_assignments_directory,"validators")
+ASSIGNMENT_DESCRIPTIONS_DIR = os.path.join(relative_assignments_directory,"assignment_descriptions")
 SUBMITTED_FILES_DIR=os.path.join(relative_data_directory,"submitted_files")
 DEFAULT_VALIDATOR_TIMEOUT=60
 DEFAULT_MAX_SUBMISSIONS=3
@@ -40,13 +40,6 @@ class AssignmentSubmission(BaseModel):
     assignment_file_names:  Optional[List[str]] = None
 
 def load_data(assignment_submission: AssignmentSubmission =None):
-    #if os.path.exists(DATA_FILE):
-    #    with open(DATA_FILE, "r") as f:
-    #        return json.load(f)
-    #return {}
-    #
-    #alternative thread safe implementation, not yet fully implemented
-    
     if os.path.exists(DATA_FILE_DIRECTORY):
         if assignment_submission and assignment_submission.hacker_id:
             hacker_id=assignment_submission.hacker_id
@@ -75,10 +68,6 @@ def load_assignment_mapper():
     return {}
 
 def save_data(data: dict):
-    #with open(DATA_FILE, "w") as f:
-    #    json.dump(data, f, indent=4)
-    #return
-    #alternative thread safe implementation
     hacker_id=list(data.keys())[0]
     with open(os.path.join(DATA_FILE_DIRECTORY,f"{hacker_id}.json"), "w") as f:
         json.dump(data, f, indent=4)
@@ -102,11 +91,8 @@ def execute_validator_on_task_file(validator_script:str, task_file_name:str, ass
     return checked_task_status_validator.execute_task(task_file_name_full_path,DEFAULT_VALIDATOR_TIMEOUT)
     #https://python.code-maven.com/python-capture-stdout-stderr-exit - this is a nice way to implement a validator with subprocess timeout based killing
 
-
 def check_assignment_submission(assignment_submission:AssignmentSubmission):  
     assignment_mapper=load_assignment_mapper()
-    #print("assignment_submission::",assignment_submission)
-    #print(f"assignment_mapper.{str(assignment_submission.assignment_id)}.validators::",assignment_mapper[str(assignment_submission.assignment_id)]["validators"])
     validator_file_names=list(map(lambda validator_file_name: os.path.join(ASSIGNMENT_VALIDATOR_DIR,validator_file_name),assignment_mapper[str(assignment_submission.assignment_id)]["validators"]))
     validator_idx=0
     collected_results=[]
@@ -191,3 +177,31 @@ def submit_assignment(assignment_submission: AssignmentSubmission):
         return assignment_submission.model_dump()
     lockRepository[assignment_submission.hacker_id].release()
     return assignment_submission.model_dump()
+
+def next_assignment_submission(hacker_id:str):
+    data=load_data()
+    if hacker_id in data:
+        if len(data[hacker_id])>0:
+            assignment_id=str(len(data[hacker_id]))
+            submission_id=len(data[hacker_id][assignment_id])
+            if assignment_passed(data[hacker_id][assignment_id]):
+                return {"assignment_id":int(assignment_id)+1,"submission_id": 1}
+            else:
+                return {"assignment_id":int(assignment_id),"submission_id":submission_id+1 if submission_id>0 else 1}
+        else:
+            return {"assignment_id":1,"submission_id":1}
+    else:
+        return {"status": "ERROR", "ERROR_message":f"hacker_id:'{hacker_id}' does not exist"}
+
+def assignment_description(assignment_id:int):
+    assignment_mapper=load_assignment_mapper()
+    if str(assignment_id) in assignment_mapper:
+        if "description" in assignment_mapper[str(assignment_id)]:
+            assignment_description_file_name=assignment_mapper[str(assignment_id)]['description']
+            with open(os.path.join(ASSIGNMENT_DESCRIPTIONS_DIR,assignment_description_file_name), "r") as f:
+                assignment_description=f.read()
+            return assignment_description
+        else:
+            return {"status":"ERROR", "ERROR_message":f"assignment with assignment_id='{str(assignment_id)}' is not mapped to description file"}
+    else:
+        return {"status":"ERROR", "ERROR_message":f"no entry for assignment with assignment_id='{str(assignment_id)}' inside assignment_mapper file"}

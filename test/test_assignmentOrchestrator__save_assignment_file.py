@@ -9,7 +9,6 @@ gconf={}
 def mocker__on_empty_data(mocker,request):   
     gconf["base_test_directory"]                        =f"./data/testData/assignmentOrchestrator/save_assignment_files/{request.node.name}"
     gconf["relative_data_directory"]                    =os.path.join(gconf["base_test_directory"],"data")
-    gconf["assignment_data_file"]                       =os.path.join(gconf["relative_data_directory"],"assignment_data.json")
     gconf["relative_submitted_files_directory"]         =os.path.join(gconf["relative_data_directory"],"submitted_files")
 
     gconf["relative_assignments_directory"]             =os.path.join(gconf["base_test_directory"],"resources","config","assignments")
@@ -24,7 +23,6 @@ def mocker__on_empty_data(mocker,request):
     os.makedirs(gconf["relative_validators_directory"],exist_ok=True)
     os.makedirs(gconf["relative_assignment_descriptions_directory"],exist_ok=True)
 
-    mocker.patch("assignmentOrchestrator.DATA_FILE",                gconf["assignment_data_file"])
     mocker.patch("assignmentOrchestrator.SUBMITTED_FILES_DIR",      gconf["relative_submitted_files_directory"])
     mocker.patch("assignmentOrchestrator.ASSIGNMENT_VALIDATOR_DIR", gconf["relative_validators_directory"])
     mocker.patch("assignmentOrchestrator.ASSIGNMENT_MAPPER_FILE",   gconf["test_assignment_mapper_json_file_location"])
