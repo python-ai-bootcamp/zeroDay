@@ -143,8 +143,33 @@ def save_assignment_files(assignment_submission: AssignmentSubmission):
         task_id=task_id+1;
     return assignment_file_names
 
+def max_submission_for_assignment(assignment_id:int=None):
+    if(assignment_id):
+        assignment_mapper=load_assignment_mapper()
+        if str(assignment_id) in assignment_mapper:
+            assignment_mapper_entry_for_assignment=assignment_mapper[str(assignment_id)]
+            if("max_submissions" in assignment_mapper_entry_for_assignment):
+                return assignment_mapper_entry_for_assignment["max_submissions"]
+            else:
+                return DEFAULT_MAX_SUBMISSIONS
+        else:
+            return DEFAULT_MAX_SUBMISSIONS
+    else:
+        return DEFAULT_MAX_SUBMISSIONS
+
 @app.post("/submit")
 def submit_assignment(assignment_submission: AssignmentSubmission):
+    assignment_mapper=load_assignment_mapper()
+    if not str(assignment_submission.assignment_id) in assignment_mapper:
+        return {"status":"ERROR","ERROR_message":f"missing assignment_id={assignment_submission.assignment_id} in assignment_mapper file"}
+    else:
+        if not "validators" in assignment_mapper[str(assignment_submission.assignment_id)]:
+            return {"status":"ERROR","ERROR_message":f"missing validators entry for assignment_id={assignment_submission.assignment_id} in assignment_mapper file"}
+        else:
+            number_of_validators=len(assignment_mapper[str(assignment_submission.assignment_id)]["validators"])
+            if number_of_validators==0:
+                return {"status":"ERROR","ERROR_message":f"no validators mapped for assignment_id={assignment_submission.assignment_id} in assignment_mapper file"}
+    max_submissions=max_submission_for_assignment(assignment_submission.assignment_id)         
     if not (assignment_submission.hacker_id in lockRepository):
         lockRepository[assignment_submission.hacker_id]=Lock()
     lockRepository[assignment_submission.hacker_id].acquire()
@@ -157,13 +182,13 @@ def submit_assignment(assignment_submission: AssignmentSubmission):
             data[assignment_submission.hacker_id]={assignment_submission.assignment_id:[assignment_submission.model_dump()]}      
         else:
             if(str(assignment_submission.assignment_id) in data[assignment_submission.hacker_id]):
-                assignment_submission.submission_id = len(data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)])+1
-                if(assignment_submission.submission_id<=DEFAULT_MAX_SUBMISSIONS):
+                assignment_submission.submission_id = len(data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)])+1                
+                if(assignment_submission.submission_id<=max_submissions):
                     assignment_submission.assignment_file_names=save_assignment_files(assignment_submission)
                     assignment_submission.result = check_assignment_submission(assignment_submission)
                     data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)].append(assignment_submission.model_dump())
                 else:
-                    assignment_submission.result={"status":"ERROR","ERROR_message":f"cannot test assignment (assignment_id={str(assignment_submission.assignment_id)}) because submission attempts ({str(assignment_submission.submission_id)}) passed the allowed DEFAULT_MAX_SUBMISSIONS (DEFAULT_MAX_SUBMISSIONS={DEFAULT_MAX_SUBMISSIONS})"}
+                    assignment_submission.result={"status":"ERROR","ERROR_message":f"cannot test assignment (assignment_id={str(assignment_submission.assignment_id)}) because submission attempts ({str(assignment_submission.submission_id)}) passed the allowed max_submissions (max_submissions={max_submissions})"}
                     lockRepository[assignment_submission.hacker_id].release()
                     return assignment_submission.model_dump()
             else:
