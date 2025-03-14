@@ -200,8 +200,21 @@ def assignment_description(assignment_id:int):
             assignment_description_file_name=assignment_mapper[str(assignment_id)]['description']
             with open(os.path.join(ASSIGNMENT_DESCRIPTIONS_DIR,assignment_description_file_name), "r") as f:
                 assignment_description=f.read()
-            return assignment_description
+            return {"assignment_description":assignment_description}
         else:
             return {"status":"ERROR", "ERROR_message":f"assignment with assignment_id='{str(assignment_id)}' is not mapped to description file"}
+    else:
+        return {"status":"ERROR", "ERROR_message":f"no entry for assignment with assignment_id='{str(assignment_id)}' inside assignment_mapper file"}
+
+def assignment_task_count(assignment_id:int):
+    assignment_mapper=load_assignment_mapper()
+    if str(assignment_id) in assignment_mapper:
+        if "validators" in assignment_mapper[str(assignment_id)]:
+            validators_counter=len(assignment_mapper[str(assignment_id)]["validators"])
+            if validators_counter>0:
+                return {"task_count":validators_counter}
+            return {"status":"ERROR", "ERROR_message":f"assignment with assignment_id='{str(assignment_id)}' does not contain even a single validator"}
+        else:
+            return {"status":"ERROR", "ERROR_message":f"assignment with assignment_id='{str(assignment_id)}' is missing validators entry"}
     else:
         return {"status":"ERROR", "ERROR_message":f"no entry for assignment with assignment_id='{str(assignment_id)}' inside assignment_mapper file"}

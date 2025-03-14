@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch, mock_open, Mock
 from pathlib import Path
-from assignmentOrchestrator import AssignmentSubmission, assignment_description
+from assignmentOrchestrator import AssignmentSubmission, assignment_task_count
 import base64,os,shutil,json
 
 gconf={}
@@ -29,23 +29,26 @@ def mocker__on_empty_data(mocker,request):
     mocker.patch("assignmentOrchestrator.ASSIGNMENT_MAPPER_FILE",       gconf["test_assignment_mapper_json_file_location"])
     mocker.patch("assignmentOrchestrator.ASSIGNMENT_DESCRIPTIONS_DIR",  gconf["relative_assignment_descriptions_directory"])
     
-def test_load_existing_description_in_mapper_and_in_dir(mocker__on_empty_data):
+def test_load_existing_validators_count_in_assignment_mapper(mocker__on_empty_data):
     test_assignment_mapper_json_file_data={'1': {'description': 'description_1.md', 'validators': ['validate_assignment_1_task_1.py']}}
     with open(gconf["test_assignment_mapper_json_file_location"], 'w') as f:
         json.dump(test_assignment_mapper_json_file_data, f)
-    test_assignment_description_data="I AM ASSIGNMENT_DESCRIPTION"
-    with open(os.path.join(gconf["relative_assignment_descriptions_directory"],"description_1.md"), 'w') as f:
-        f.write(test_assignment_description_data)
-    assert assignment_description(1) == {"assignment_description":test_assignment_description_data}
+    assert assignment_task_count(1) == {"task_count":1}
 
-def test_load_non_existing_assignment_in_mapper(mocker__on_empty_data):
-    test_assignment_mapper_json_file_data={'1': {'description': 'description_1.md', 'validators': ['validate_assignment_1_task_1.py']}}
+def test_load_non_existing_validators_entry_in_assignment_mapper(mocker__on_empty_data):
+    test_assignment_mapper_json_file_data={'1': {'description': 'description_1.md'}}
     with open(gconf["test_assignment_mapper_json_file_location"], 'w') as f:
         json.dump(test_assignment_mapper_json_file_data, f)
-    assert assignment_description(2) == {"status":"ERROR", "ERROR_message":f"no entry for assignment with assignment_id='2' inside assignment_mapper file"}
+    assert assignment_task_count(1) == {"status":"ERROR",'ERROR_message': "assignment with assignment_id='1' is missing validators entry"}
 
-def test_load_non_existing_description_mapping_in_assignment_inside_mapper(mocker__on_empty_data):
-    test_assignment_mapper_json_file_data={'1': {'validators': ['validate_assignment_1_task_1.py']}}
+def test_load_existing_validators_entry_in_assignment_mapper_with_zero_validators(mocker__on_empty_data):
+    test_assignment_mapper_json_file_data={'1': {'validators': []}}
     with open(gconf["test_assignment_mapper_json_file_location"], 'w') as f:
         json.dump(test_assignment_mapper_json_file_data, f)
-    assert assignment_description(1) == {"status":"ERROR", "ERROR_message":f"assignment with assignment_id='1' is not mapped to description file"}
+    assert assignment_task_count(1) == {"status":"ERROR", "ERROR_message": "assignment with assignment_id='1' does not contain even a single validator"}
+
+def test_load_missing_assignment_entry_in_assignment_mapper(mocker__on_empty_data):
+    test_assignment_mapper_json_file_data={'1': {'validators': ['blsdfsdfsfd.md']}}
+    with open(gconf["test_assignment_mapper_json_file_location"], 'w') as f:
+        json.dump(test_assignment_mapper_json_file_data, f)
+    assert assignment_task_count(2) == {"status":"ERROR", "ERROR_message": "no entry for assignment with assignment_id='2' inside assignment_mapper file"}
