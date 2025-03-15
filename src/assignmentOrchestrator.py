@@ -1,9 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from fastapi.responses import HTMLResponse
-from fastapi.responses import PlainTextResponse
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import List, Optional
 from multiprocessing import Lock
 
@@ -143,20 +140,16 @@ def save_assignment_files(assignment_submission: AssignmentSubmission):
         task_id=task_id+1;
     return assignment_file_names
 
-def max_submission_for_assignment(assignment_id:int=None):
-    if(assignment_id):
-        assignment_mapper=load_assignment_mapper()
-        if str(assignment_id) in assignment_mapper:
-            assignment_mapper_entry_for_assignment=assignment_mapper[str(assignment_id)]
-            if("max_submissions" in assignment_mapper_entry_for_assignment):
-                return assignment_mapper_entry_for_assignment["max_submissions"]
-            else:
-                return DEFAULT_MAX_SUBMISSIONS
+def max_submission_for_assignment(assignment_id:int):
+    assignment_mapper=load_assignment_mapper()
+    if str(assignment_id) in assignment_mapper:
+        assignment_mapper_entry_for_assignment=assignment_mapper[str(assignment_id)]
+        if("max_submissions" in assignment_mapper_entry_for_assignment):
+            return assignment_mapper_entry_for_assignment["max_submissions"]
         else:
             return DEFAULT_MAX_SUBMISSIONS
     else:
         return DEFAULT_MAX_SUBMISSIONS
-
 @app.post("/submit")
 def submit_assignment(assignment_submission: AssignmentSubmission):
     assignment_mapper=load_assignment_mapper()

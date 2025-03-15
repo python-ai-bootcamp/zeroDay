@@ -49,8 +49,26 @@
 
   <script>
     let state = 'email';
-    const correctPassword = 'letmein';
-    const userData = { email: '', password: '', name: '' };
+    let riddleAnswerParis;
+    if ($${{IS_DEV_MODE}}$$ == true){
+      riddleAnswerParis=[{riddle:'Decipher the following code: bGV0bWVpbg==',answer:'letmein'}];
+    }else{
+      riddleAnswerParis=[
+        {riddle:'Decipher the following code: bGV0bWVpbg==',answer:'letmein'},
+        {riddle:'which is bigger pi or e?',answer:'pi'},
+        {riddle:'How many bits are there in a single Gigabyte?',answer:'8589934592'},
+        {riddle:'0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, ...',answer:'144'},
+        {riddle:'solve following polish notation formula "x - 5 6 7"',answer:'-7'},
+        {riddle:'which interval does following expression represents "0 */3 * * *". 20 minutes, 8 hours, 3 hours, 1 day, 3 days ?',answer:'3 hours'},
+        {riddle:'What also floats in water?',answer:'a duck'},
+        {riddle:'RSA, is an algorithm used for symmetric key cryptography? (yes/no)',answer:'no'},
+        {riddle:'what is the name of a random string of data used to modify a password hash called?',answer:'salt'},
+      ];
+    }
+    selectedRiddleAnswerPair=riddleAnswerParis[Math.floor(Math.random()*riddleAnswerParis.length)];
+    let riddle = selectedRiddleAnswerPair.riddle;
+    let answer = selectedRiddleAnswerPair.answer;
+    const userData = { email: '', hacker_id: '', name: '', phone: '' };
   
     const terminal = document.getElementById('terminal');
     let userInput = document.getElementById('userInput');
@@ -92,23 +110,31 @@
   
           if (state === 'email') {
             userData.email = inputValue;
-            appendLine('Decipher the following code: bGV0bWVpbg==');
-            state = 'password';
+            appendLine(riddle);
+            state = 'riddle';
             replaceInputField('password'); // Change input type to password
-          } else if (state === 'password') {
-            if (inputValue === correctPassword) {
+          } else if (state === 'riddle') {
+            if (inputValue === answer) {
               appendLine('Access Granted');
               setTimeout(showNamePrompt, 1000);
             } else {
               appendLine('Access Denied');
               state = 'email';
+              selectedRiddleAnswerPair=riddleAnswerParis[Math.floor(Math.random()*riddleAnswerParis.length)];
+              riddle = selectedRiddleAnswerPair.riddle;
+              answer = selectedRiddleAnswerPair.answer;
               replaceInputField('text'); // Reset to text input for email
             }
           } else if (state === 'name') {
             userData.name = inputValue;
+            state='phone'
+            appendLine('Please Enter Your Phone Number');
+            replaceInputField('text');
+          } else if (state === 'phone') {
+            userData.phone = inputValue;
             state='blockedInput'
             sendDataToBackend(userData);
-          }else if (state === 'blockedInput') {
+          } else if (state === 'blockedInput') {
             appendLine('');
           }
         }
@@ -129,7 +155,6 @@
   
     function sendDataToBackend(data) {
       fetch('$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/submit', {
-      //fetch('http://127.0.0.1:8000/submit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
