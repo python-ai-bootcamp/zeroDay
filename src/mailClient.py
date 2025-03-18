@@ -14,6 +14,7 @@ class Email(BaseModel):
     body_html: str
 
 def send_ses_mail(email_to_send: Email):
+    print(email_to_send)
     client = boto3.client('ses',region_name=AWS_REGION)
     try:
         response = client.send_email(
