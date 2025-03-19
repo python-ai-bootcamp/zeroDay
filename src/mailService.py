@@ -1,5 +1,5 @@
 import asyncio,threading,datetime
-from systemEntities import User,NotificationTemplate
+from systemEntities import User,NotificationType
 from mailClient import send_ses_mail, Email
 from sys import stdout
 

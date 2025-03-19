@@ -1,6 +1,6 @@
 import os, json, random, string
 import mailService
-from systemEntities import User,NotificationTemplate
+from systemEntities import User,NotificationType
 
 USER_DATA_FILE = os.path.join("./data/","user_data.json")
 
@@ -30,5 +30,5 @@ def submit_user(user: User):
         new_entry = user.dict()
         data.append(new_entry)
         save_data(data)
-        mailService.notification_producer(user=user,notification_type=NotificationTemplate.CANDIDATE_KID_INTRO)
+        mailService.notification_producer(user=user,notification_type=NotificationType.CANDIDATE_KID_INTRO)
         return {"status":"SAVED", "message": "User saved", "user": new_entry}
