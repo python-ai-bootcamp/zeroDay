@@ -32,3 +32,8 @@ def submit_user(user: User):
         save_data(data)
         mailService.notification_producer(user=user,notification_type=NotificationType.CANDIDATE_KID_INTRO)
         return {"status":"SAVED", "message": "User saved", "user": new_entry}
+
+def get_user(hacker_id:str) -> User:
+    data = load_data()
+    user=list(filter(lambda existing_user: hacker_id==existing_user["hacker_id"],data))[0]
+    return user

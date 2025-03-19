@@ -1,0 +1,11 @@
+<html>
+    <head>
+        <title>
+            zeroDayBootcamp registration page
+        </title>
+    </head>
+    <body>
+        <h1>$${{NAME}}$$, you have been selected to enlist our secret zeroDayBootcamp training group!</h1>
+        please enlist in following link <a href="$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/register?hacker_id=$${{HACKER_ID}}$$">Registration Link</a>
+    </body>
+</html>

@@ -1,10 +1,13 @@
-import asyncio,threading,datetime
+import asyncio,threading,datetime,os
 from systemEntities import User,NotificationType
 from mailClient import send_ses_mail, Email
 from sys import stdout
+from configurationService import domain_name, protocol
+
 
 notification_queue=[]
 NOTIFICATION_CONSUMER_INTERVAL=60
+MAIL_TEMPLATES_DIR=os.path.join("resources","mailTemplates")
 
 def notification_producer(user:User,notification_type:NotificationType):
     notification_queue.append({"user":user,"notification_type":notification_type})
@@ -13,6 +16,15 @@ async def every(__seconds: float, func, *args, **kwargs):
     while True:
         await asyncio.sleep(__seconds)
         func(*args, **kwargs)
+
+def load_template_by_notification(notification_type:NotificationType):    
+    with open(os.path.join(MAIL_TEMPLATES_DIR,notification_type.name+".subject"), "r") as f:
+        subject=f.read()
+    with open(os.path.join(MAIL_TEMPLATES_DIR,notification_type.name+".body_html"), "r") as f:
+        body_html=f.read()
+    with open(os.path.join(MAIL_TEMPLATES_DIR,notification_type.name+".body_txt"), "r") as f:
+        body_txt=f.read()
+    return {"subject":subject,"body_html":body_html,"body_txt":body_txt}
 
 def notification_consumer():
     global notification_queue
@@ -26,7 +38,11 @@ def notification_consumer():
             case NotificationType.CANDIDATE_KID_INTRO:
                 print(f"processing notification of type '{item_to_consume["notification_type"]}'")
                 user=item_to_consume["user"]
-                email_to_send=Email(to=user.email, subject="Welcome to zeroDayBootcamp, You're Path to Python AI Development", body_txt="what a body", body_html="<html><head></head><body>what a body</body></html>")
+                notification_template=load_template_by_notification(item_to_consume["notification_type"])
+                subject=notification_template["subject"]
+                body_txt=notification_template["body_txt"].replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol).replace("$${{HACKER_ID}}$$",user.hacker_id).replace("$${{NAME}}$$",user.name)
+                body_html=notification_template["body_html"].replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol).replace("$${{HACKER_ID}}$$",user.hacker_id).replace("$${{NAME}}$$",user.name)
+                email_to_send=Email(to=user.email, subject=subject, body_txt=body_txt, body_html=body_html)
                 send_ses_mail(email_to_send)
             case NotificationType.CANDIDATE_PARENT_INTRO:
                 print(f"ERROR: to be implemented '{item_to_consume["notification_type"]}'")
