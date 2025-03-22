@@ -14,6 +14,10 @@ pip install -r requirements.txt
 yum install nginx -y 
 yum install augeas-libs -y
 
+#configure python to work with python3.12
+ls -sf /usr/bin/python3.12  /usr/bin/python3
+ls -sf /usr/bin/pydoc3.12  /usr/bin/pydoc3
+
 #configure nginx to work with backend using http
 cp /etc/nginx/nginx.conf /opt/
 startOfNginxConfFile=`cat /etc/nginx/nginx.conf|grep "include /etc/nginx/conf.d/.*conf;" -B5000 -A1`
