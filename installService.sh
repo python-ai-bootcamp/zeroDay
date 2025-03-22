@@ -43,7 +43,7 @@ sudo python3 -m venv /opt/certbot/
 sudo /opt/certbot/bin/pip install --upgrade pip
 sudo /opt/certbot/bin/pip install certbot certbot-nginx
 sudo ln -s /opt/certbot/bin/certbot /usr/bin/certbot
-sudo certbot -n --nginx --domains="*.zerodaybootcamp.xyz" #still neet to set nginx server_name directive
+sudo certbot -n --nginx --domains="zerodaybootcamp.xyz" #still neet to set nginx server_name directive
 
 renewCertificateLineExist=`crontab -luroot|grep renewCertificate.sh|wc -l`
 if [ "${renewCertificateLineExist}" == "0" ];
