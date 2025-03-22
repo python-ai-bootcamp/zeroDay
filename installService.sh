@@ -28,7 +28,7 @@ cat <<EOF >> /etc/nginx/nginx.conf
     server {
         listen       80;
         listen       [::]:80;
-        server_name  www.zerodaybootcamp.xyz;
+        server_name  *.zerodaybootcamp.xyz;
         location / {
                 proxy_pass http://0.0.0.0:8000/;
         }
