@@ -17,6 +17,8 @@ yum install augeas-libs -y
 #configure python to work with python3.12
 ln -sf /usr/bin/python3.12  /usr/bin/python3
 ln -sf /usr/bin/pydoc3.12  /usr/bin/pydoc3
+python3 -m ensurepip --upgrade
+pip install --upgrade pip
 
 #configure nginx to work with backend using http
 cp /etc/nginx/nginx.conf /opt/
