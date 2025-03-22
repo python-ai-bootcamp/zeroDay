@@ -14,7 +14,7 @@ pip install -r requirements.txt
 yum install nginx -y 
 yum install augeas-libs -y
 
-#configure python to work with python3.12
+#configure python3 and pip to work with python3.12
 ln -sf /usr/bin/python3.12  /usr/bin/python3
 ln -sf /usr/bin/pydoc3.12  /usr/bin/pydoc3
 python3 -m ensurepip --upgrade
@@ -28,7 +28,7 @@ cat <<EOF >> /etc/nginx/nginx.conf
     server {
         listen       80;
         listen       [::]:80;
-        server_name  zerodaybootcamp.xyz;
+        server_name  www.zerodaybootcamp.xyz;
         location / {
                 proxy_pass http://0.0.0.0:8000/;
         }
@@ -43,7 +43,7 @@ sudo python3 -m venv /opt/certbot/
 sudo /opt/certbot/bin/pip install --upgrade pip
 sudo /opt/certbot/bin/pip install certbot certbot-nginx
 sudo ln -s /opt/certbot/bin/certbot /usr/bin/certbot
-sudo certbot -n --nginx --domains="zerodaybootcamp.xyz" #still neet to set nginx server_name directive
+sudo certbot -n --nginx --domains="*.zerodaybootcamp.xyz" #still neet to set nginx server_name directive
 
 renewCertificateLineExist=`crontab -luroot|grep renewCertificate.sh|wc -l`
 if [ "${renewCertificateLineExist}" == "0" ];
@@ -64,7 +64,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=/opt/zeroDay/
-ExecStart= /bin/sh -c 'DOMAIN_NAME="zerodaybootcamp.xyz" /usr/local/bin/uvicorn --app-dir=src main:app --host 0.0.0.0 --port 8000 2>&1 >> /opt/logs/zeroDay_\$\$(date +%%Y_%%m_%%d__%%H_%%M_%%S).log'
+ExecStart= /bin/sh -c 'DOMAIN_NAME="www.zerodaybootcamp.xyz" /usr/local/bin/uvicorn --app-dir=src main:app --host 0.0.0.0 --port 8000 2>&1 >> /opt/logs/zeroDay_\$\$(date +%%Y_%%m_%%d__%%H_%%M_%%S).log'
 Restart=on-failure
 
 [Install]
