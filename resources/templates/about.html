@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <meta http-equiv="refresh" content="1">
+    <!--meta http-equiv="refresh" content="1"-->
     <title>Online Store</title>
     <style>
         body {
@@ -53,7 +53,7 @@
             background-position: center;
             color: #ffffff;
             text-align: left;
-            margin-left: 35%;
+            margin-left: 20%;
             padding: 120px 0;
         }
 
@@ -100,13 +100,8 @@
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             overflow: hidden;
-            width: 250px;
-            text-align: center;
-            transition: transform 0.3s;
-        }
-
-        .product:hover {
-            transform: translateY(-10px);
+            width: 80%;
+            text-align: left;
         }
 
         .product img {
@@ -138,6 +133,11 @@
         footer {
             background-color: #1c1c1c;
             color: white;
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
             text-align: center;
             padding: 15px;
         }
@@ -154,28 +154,44 @@
     <!-- Navigation Bar -->
     <nav class="navbar">
         <a href="/">Home</a>
-        <a href="/shop">Shop</a>
-        <a href="/about">About Us</a>
+        <a href="/enlist">Enlist</a>
+        <a href="/about" style="color:#ff6600; text-decoration:  underline #ff6600 30%;">About Us</a>
         <a href="/contact">Contact</a>
     </nav>
 
     <!-- Hero Section -->
 
     <section class="hero">
-        <p>In the boot camp you will learn the following:</p>
-        <ul>
-          <li>Basics of computer Programing</li>
-          <li>Python Programing Language</li>
-          <li>Various transferable software industries skills (IDE usage, Bash scripting etc...)</li>
-          <li>Deep Knowledge about AI Programing and manipulation for various tasks</li>
-        </ul>
-        <p>All will be tought in a fun interactive way:</p>
-        <ul>
-          <li>Weekly Online Technical Viewing Material</li>
-          <li>Weekly Guided Zoom Sessions</li>
-          <li>Weekly Task testing knowledge of last weeks material</li>
-          <li>Each student can continue to next session only once he completed the previous task successfully</li>
-        </ul>        
+        <div class="product">
+            <div class="product-info">
+                zeroDayBootcamp is an israelli initiative to engage and encourage children across the country to learn and engage in software development
+                <h4>In the boot camp you will learn the following:</h4>
+                <ul style="color:#888181">
+                <li>Basics of computer Programing</li>
+                <li>Python Programing Language</li>
+                <li>Various transferable software industries skills (IDE usage, Bash scripting etc...)</li>
+                <li>Deep Knowledge about AI Programing and manipulation for various tasks</li>
+                </ul>
+                <h4>All will be tought in a fun interactive way:</h4>
+                <ul style="color:#888181">
+                <li>Weekly Online Technical Viewing Material</li>
+                <li>Weekly Guided Zoom Sessions</li>
+                <li>Weekly Task testing knowledge of last weeks material</li>
+                <li>Each student can continue to next session only once he completed the previous task successfully</li>
+                </ul>       
+                <h4>The survivers of the entire bootcamp will be invited to join a recreational R&D group:</h4>
+                <ul style="color:#888181">
+                    <li>Developing open source code in a guided scenario</li>
+                    <li>Reasearch and development of novel AI algorithms</li>
+                    <li>Writing scientific papers</li>
+                </ul>
+                <h4>Enlistment Process:</h4>
+                <ul style="color:#888181">
+                <li>One can enlist only after passing the <a href="/challenge" style="color:#778881;">zeroDayBootCamp</a> challenge</li>
+                <li>Once passing the challenge, a dedicated link will be sent via mail enabling payment for registration</li>
+                </ul>    
+            </div>
+        </div> 
     </section>
 
     <!-- Footer Section -->

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <meta http-equiv="refresh" content="1">
+    <!--meta http-equiv="refresh" content="1"-->
     <title>Online Store</title>
     <style>
         body {
@@ -53,7 +53,8 @@
             background-position: center;
             color: #ffffff;
             text-align: center;
-            padding: 120px 0;
+            margin-left: 30%;
+            padding: 20px 0;
         }
 
         .hero h2 {
@@ -92,13 +93,9 @@
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             overflow: hidden;
-            width: 250px;
+            width: 60%;
             text-align: center;
             transition: transform 0.3s;
-        }
-
-        .product:hover {
-            transform: translateY(-10px);
         }
 
         .product img {
@@ -130,6 +127,11 @@
         footer {
             background-color: #1c1c1c;
             color: white;
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
             text-align: center;
             padding: 15px;
         }
@@ -145,31 +147,22 @@
 
     <!-- Navigation Bar -->
     <nav class="navbar">
-        <a href="/">Home</a>
-        <a href="/shop">Shop</a>
+        <a href="/" style="color:#ff6600; text-decoration:  underline #ff6600 30%;">Home</a>
+        <a href="/enlist">Enlist</a>
         <a href="/about">About Us</a>
         <a href="/contact">Contact</a>
     </nav>
 
-    <!-- Hero Section -->
     <section class="hero">
-        <h2>Hello Dear Recruite</h2>
-        <p>After completing the challenge bellow you will be invited to join the ZeroDay BootCamp</p>
-
-        <a href="/challenge" class="cta-button">take the challenge</a>
-    </section>
-
-    <!-- Featured Products Section -->
-    <section class="products">
         <div class="product">
             <div class="product-info">
-                <h3>Enlist</h3>
-                <p>will become accessible only after completing challenge above</p>
-                <p class="price">50&#8362;</p>
-                <a href="#" class="cta-button">Add to Cart</a>
+                <h2>Hello Dear Recruite</h2>
+                <p style="padding-bottom:50px">After completing the challenge bellow you will be invited to join the ZeroDay BootCamp</p>
+                <a href="/challenge" class="cta-button" >Take the Challenge</a>
             </div>
         </div>
     </section>
+    
 
     <!-- Footer Section -->
     <footer>

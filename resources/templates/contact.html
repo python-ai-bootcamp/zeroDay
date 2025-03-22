@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <meta http-equiv="refresh" content="1">
+    <!--meta http-equiv="refresh" content="1"-->
     <title>Online Store</title>
     <style>
         body {
@@ -100,13 +100,9 @@
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             overflow: hidden;
-            width: 250px;
-            text-align: center;
+            width: 50%;
+            text-align: left;
             transition: transform 0.3s;
-        }
-
-        .product:hover {
-            transform: translateY(-10px);
         }
 
         .product img {
@@ -138,6 +134,11 @@
         footer {
             background-color: #1c1c1c;
             color: white;
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
             text-align: center;
             padding: 15px;
         }
@@ -154,29 +155,27 @@
     <!-- Navigation Bar -->
     <nav class="navbar">
         <a href="/">Home</a>
-        <a href="/shop">Shop</a>
+        <a href="/enlist">Enlist</a>
         <a href="/about">About Us</a>
-        <a href="/contact">Contact</a>
+        <a href="/contact" style="color:#ff6600; text-decoration:  underline #ff6600 30%;">Contact</a>
     </nav>
 
     <!-- Hero Section -->
-    <section class="hero">
-        <p>Contact Information:</p>
-        <ul>
-          <li>Mail: python.ai.bootcamp@outlook.com</li>
-          <li>Phone: 054-323-1017</li>
-        </ul>
-        <p>Management:</p>
-        <ul>
-          <li>Tal Shachar</li>
-          <li>Micha Vardy</li>
-        </ul>        
-        <p>The survivers of the entire bootcamp will be invited to join a recreational R&D group:</p>
-        <ul>
-            <li>Developing open source code in a guided scenario</li>
-            <li>Reasearch and development of novel AI algorithms</li>
-            <li>Writing scientific papers</li>
-        </ul>
+    <section class="hero">        
+        <div class="product">
+            <div class="product-info">
+                <p>Contact Information:</p>
+                <ul>
+                <li>Mail: python.ai.bootcamp@outlook.com</li>
+                <li>Phone: 054-323-1017</li>
+                </ul>
+                <p>Management:</p>
+                <ul>
+                <li>Tal Shachar</li>
+                <li>Micha Vardy</li>
+                </ul> 
+            </div>
+        </div>
     </section>
 
 

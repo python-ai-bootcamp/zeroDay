@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <meta http-equiv="refresh" content="1">
+    <!--meta http-equiv="refresh" content="1"-->
     <title>Online Store</title>
     <style>
         body {
@@ -77,7 +77,17 @@
         }
 
         .cta-button:hover {
-            background-color: #ff8500;
+            background-color: ##ff8500;
+        }
+
+        .cta-button-inactive {
+            background-color: #3f2412;
+            color: rgb(94, 89, 89);
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
         }
 
         .products {
@@ -92,7 +102,7 @@
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             overflow: hidden;
-            width: 250px;
+            width: 350px;
             text-align: center;
             transition: transform 0.3s;
         }
@@ -130,6 +140,11 @@
         footer {
             background-color: #1c1c1c;
             color: white;
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
             text-align: center;
             padding: 15px;
         }
@@ -146,7 +161,7 @@
     <!-- Navigation Bar -->
     <nav class="navbar">
         <a href="/">Home</a>
-        <a href="/shop">Shop</a>
+        <a href="/enlist" style="color:#ff6600; text-decoration:  underline #ff6600 30%;">Enlist</a>
         <a href="/about">About Us</a>
         <a href="/contact">Contact</a>
     </nav>
@@ -156,10 +171,9 @@
     <section class="products">
         <div class="product">
             <div class="product-info">
-                <h3>Enlist</h3>
-                <p>will become accessible only after completing challenge above</p>
-                <p class="price">50&#8362;</p>
-                <a href="#" class="cta-button">Add to Cart</a>
+                <h3>Enlist to Bootcamp</h3>
+                $${{ENLISTMENT_MESSAGE}}$$
+                <a href="/payment" class="$${{BUTTON_CLASS}}$$">$${{ENLISTMENT_BUTTON_TEXT}}$$</a>
             </div>
         </div>
     </section>
@@ -167,8 +181,8 @@
     <section class="products">
         <div class="product">
             <div class="product-info">
-                <h3>Enlist</h3>
-                <p>all ordering can be canceled by contacting python.ai.bootcamp@outlook.com up to 14 business days post ordering</p>
+                <h4>Cancelation policy:</h4>
+                <p>All ordering can be canceled by contacting python.ai.bootcamp@outlook.com up to 14 business days post registration</p>
             </div>
         </div>
     </section>

@@ -6,7 +6,7 @@ from configurationService import domain_name, protocol
 
 
 notification_queue=[]
-NOTIFICATION_CONSUMER_INTERVAL=60
+NOTIFICATION_CONSUMER_INTERVAL=15
 MAIL_TEMPLATES_DIR=os.path.join("resources","mailTemplates")
 
 def notification_producer(user:User,notification_type:NotificationType):
