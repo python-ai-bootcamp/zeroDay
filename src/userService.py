@@ -37,3 +37,8 @@ def get_user(hacker_id:str) -> User:
     data = load_data()
     user=list(filter(lambda existing_user: hacker_id==existing_user["hacker_id"],data))[0]
     return user
+
+def user_exists(email:str) -> bool:
+    data = load_data()
+    user=list(filter(lambda existing_user: email==existing_user["email"],data))
+    return len(user)>0

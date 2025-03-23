@@ -120,21 +120,28 @@
       }else{
         return false
       }
-    }
+    };
 
     function addInputListener() {
-      userInput.addEventListener('keydown', function (e) {
+      userInput.addEventListener('keydown', async function (e) {
         if (e.key === 'Enter') {
           const inputValue = userInput.value.trim();
           appendLine(inputValue);
           userInput.value = '';
-  
           if (state === 'email') {
             userData.email = inputValue;
             if(validateEmail(userData.email)){
-              appendLine(riddle);
-              state = 'riddle';
-              replaceInputField('password'); // Change input type to password
+              mailNotExist=await fetch(`$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/user_exists?email=${userData.email}`).then(x=>x.text()).then(x=>x=="false")
+              if(mailNotExist){
+                appendLine(riddle);
+                state = 'riddle';
+                replaceInputField('password'); // Change input type to password
+              }else{
+                appendLine("ERROR: user already passed the challenge, please check mail (and spam folder) for validated link in order to be alligable for enlistment into zeroDay Bootcamp");
+                setTimeout(finallErrorMessagePrinter, 5000, 0)
+                state='blockedInput'
+                replaceInputField('text');
+              }
             }else{
               appendLine("ERROR: invalid mail address, please enter a valid mail address");
               replaceInputField('text');

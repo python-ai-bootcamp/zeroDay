@@ -1,5 +1,5 @@
 import os
-from userService import User, submit_user
+from userService import User, submit_user, user_exists
 from mailClient import Email, send_ses_mail
 from exportService import fetch_symmetric_key, download_data
 from fastapi import FastAPI, Response, Request
@@ -62,6 +62,10 @@ def serve_home(request: Request):
 def serve_home():
     contact_page_html = open(os.path.join("resources","templates","contact.html"), "r").read()
     return HTMLResponse(content=contact_page_html, status_code=200)
+
+@app.get("/user_exists")
+def get_user_exists(email:str):
+    return user_exists(email)
 
 @app.post("/submit")
 def submit_user_endpoint(user: User):
