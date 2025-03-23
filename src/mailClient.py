@@ -47,7 +47,7 @@ def send_ses_mail(email_to_send: Email):
                 Source=SENDER
             )
         else:
-            print(f"{email_to_send.to.email} is not inside {SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS}, not sending mail while in sandbox mode")
+            raise Exception(f"{email_to_send.to.email} is not inside {SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS}, not sending mail while in sandbox mode")
     except ClientError as e:
         print(e.response['Error']['Message'])
     else:
