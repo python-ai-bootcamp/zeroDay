@@ -35,8 +35,11 @@ def submit_user(user: User):
 
 def get_user(hacker_id:str) -> User:
     data = load_data()
-    user=list(filter(lambda existing_user: hacker_id==existing_user["hacker_id"],data))[0]
-    return user
+    user=list(filter(lambda existing_user: hacker_id==existing_user["hacker_id"],data))
+    if(len(user)>0):
+        return {"status":"OK","user":user[0]}
+    else:
+        return {"status":"ERROR", "ERROR_message":f"user with hacker_id='{hacker_id}' does not exist"}
 
 def user_exists(email:str) -> bool:
     data = load_data()
