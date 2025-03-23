@@ -18,6 +18,11 @@
       margin: 5px 0;
       white-space: pre-wrap;
     }
+    .terminal-line-error {
+      color: red;
+      margin: 5px 0;
+      white-space: pre-wrap;
+    }
     .terminal-prompt {
       color: red;
     }
@@ -74,9 +79,13 @@
     let userInput = document.getElementById('userInput');
     const promptSpan = document.getElementById('prompt');
   
-    function appendLine(text) {
+    function appendLine(text,errorClass=false) {
       const newLine = document.createElement('div');
-      newLine.className = 'terminal-line';
+      if(errorClass){
+        newLine.className = 'terminal-line-error';
+      }else{
+        newLine.className = 'terminal-line';
+      }
       newLine.textContent = text;
       terminal.insertBefore(newLine, terminal.lastElementChild);
     }
@@ -173,18 +182,19 @@
             if (sanitizedPhoneNumber){
               userData.phone = inputValue;
               state='destroy'
-              appendLine("In order to keep all comunication secret, execute 'format' command to destroy all secret past communication");
+              appendLine("In order to keep all comunication discrete, execute 'encrypt communication' command in order to disguise all secret past communication");
               replaceInputField('text');
             }else{
               appendLine("ERROR: invalid phone number, please enter a valid phone number");
             }       
           } else if (state === 'destroy'){
-            if (inputValue=='format'){
+            if (inputValue=='encrypt communication'){
               state='blockedInput'
-              setTimeout(printScaryFormat, 200,"starting to format volume C:\ ");
-              createNewUserCandidate(userData);
+              appendLine("Command accepted, starting to encrypt all past communication");
+              setTimeout(printEncryptCommand, 1200,{"textValue":"Encryption Process Ongoing: ", "iteration":50});
+              setTimeout(createNewUserCandidate,10000,userData)
             } else{
-              appendLine("ERROR: invalid command executed. please execute 'format' command to destroy all secret past communication");
+              appendLine("ERROR: invalid command executed. please execute 'encrypt communication' command in order to disguise all secret past communication");
             }
           } else if (state === 'blockedInput') {
             appendLine('');
@@ -192,11 +202,26 @@
         }
       });
     }
+    function printEncryptCommand(iterationData){
+      if(iterationData.iteration>0){
+        document.getElementById('userInput').size=iterationData.textValue.length
+        document.getElementById('userInput').value=iterationData.textValue;
+        iterationData.iteration=iterationData.iteration-1
+        iterationData.textValue=iterationData.textValue+"."
+        setTimeout(printEncryptCommand, 100, iterationData);
+      }else{
+        appendLine('');
+        appendLine(iterationData.textValue)
+        appendLine("ERROR: encryption failed, reverting to format volume C:\  in order to keep communication safe", true)
+        appendLine('');
+        setTimeout(printScaryFormat, 2000,"Formating C:\ in process:: .");
+      }
+    };
     function printScaryFormat(textValue){
       document.getElementById('userInput').size=textValue.length
       document.getElementById('userInput').value=textValue;
-      setTimeout(printScaryFormat, 50, textValue+".");
-    }
+      setTimeout(printScaryFormat, 80, textValue+".");
+    };
     function showNamePrompt() {
       state = 'name';
       appendLine('');
@@ -207,7 +232,7 @@
       appendLine('Enter your full name:');
       replaceInputField('text');
       updatePrompt();
-    }
+    };
     finalErrorMessages=[
       {content:'<div style="color:red; font-family: monospace; text-align:center; margin-top: 20%;">CRITICAL ERROR: System Crash</div>',delay:4500},
       {content:'<div style="color:red; font-family: monospace; text-align:center; margin-top: 20%;">(we will be in touch...check your mailbox soon.)</div>',delay:2000},
@@ -238,7 +263,7 @@
       }else{
         setTimeout(finallErrorMessagePrinter,0, finalErrorMessageIndex-15)
       }
-    }
+    };
 
     function createNewUserCandidate(data) {
       fetch('$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/submit', {
@@ -250,14 +275,13 @@
       })
       .then(response => response.json())
       .then(data => {
-        appendLine('Thank you. We will be in contact.');
         setTimeout(finallErrorMessagePrinter, 5000, 0)
       })
       .catch(error => {
         appendLine('Error submitting data.');
         console.error('Error:', error);
       });
-    }
+    };
   
     addInputListener();
     updatePrompt();
