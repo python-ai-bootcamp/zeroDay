@@ -129,6 +129,7 @@ def save_assignment_files(assignment_submission: AssignmentSubmission):
     os.makedirs(assignment_directory,exist_ok=True)
     task_id=1
     assignment_file_names=[]
+    print("assignment_submission::",assignment_submission)
     for assignment_file in assignment_submission.assignment_files:
         assignment_b64_decoded=base64.b64decode(assignment_file)
         assignment_simple_str= assignment_b64_decoded.decode("ascii")

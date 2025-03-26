@@ -1,6 +1,6 @@
 import os
 from userService import User, submit_user, user_exists, get_user, initiate_user_payement_procedure
-from assignmentOrchestrator import assignment_description,next_assignment_submission
+from assignmentOrchestrator import assignment_description,next_assignment_submission, assignment_task_count, AssignmentSubmission, submit_assignment
 from mailClient import Email, send_ses_mail
 from exportService import fetch_symmetric_key, download_data
 from fastapi import FastAPI, Response, Request
@@ -18,6 +18,7 @@ enlist_page_html = open(os.path.join("resources","templates","enlist.html"), "r"
 contact_page_html = open(os.path.join("resources","templates","contact.html"), "r").read()
 payment_page_html = open(os.path.join("resources","templates","payment.html"), "r").read()
 assignments_page_html = open(os.path.join("resources","templates","assignments.html"), "r").read()
+assignment_submission_page_html = open(os.path.join("resources","templates","assignment_submission.html"), "r").read()
 
 app.add_middleware(
     CORSMiddleware,
@@ -141,8 +142,23 @@ def serve_assignments(request: Request):
         assignments_page_html=redirect_to_enlistment_page
     return HTMLResponse(content=assignments_page_html, status_code=200)
 
-
-
+@app.get("/assignment_submission")
+def serve_assignments(request: Request):
+    user=validate_session(request=request) 
+    assignment_submission_page_html = open(os.path.join("resources","templates","assignment_submission.html"), "r").read()
+    if user and user["paid_status"]:
+        next_assignment_id=next_assignment_submission(user["hacker_id"])["assignment_id"]
+        task_count=assignment_task_count(next_assignment_id)["task_count"]
+        print(task_count)
+        task_submission_sections=[]
+        for task_id in range(1,task_count+1):
+            task_submission_sections.append(f'<p><h3>task_{task_id}</h3></p><label for="upload-photo"><input task_id={task_id} type="file" id="upload-photo" class="cta-button"></input></label>')
+            print(task_submission_sections)
+        task_submission_sections="\n".join(task_submission_sections)
+        assignment_submission_page_html=assignment_submission_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>').replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol).replace("$${{HACKER_ID}}$$",user["hacker_id"]).replace("$${{ASSIGNMENT_ID}}$$",str(next_assignment_id)).replace("$${{TASK_SUBMITION_SECTIONS}}$$",task_submission_sections)
+    else:
+        assignment_submission_page_html=redirect_to_enlistment_page
+    return HTMLResponse(content=assignment_submission_page_html, status_code=200)
 
 @app.get("/user_exists")
 def get_user_exists(email:str):
@@ -158,10 +174,9 @@ def get_assignment_description(hacker_id:str):
     current_assignment_description=assignment_description(next_assignment_id["assignment_id"])
     return PlainTextResponse(current_assignment_description["assignment_description"])
 
-@app.post("/submit")
+@app.post("/submit_user")
 def submit_user_endpoint(user: User):
     return submit_user(user) 
-    
 
 @app.get("/fetch_symmetric_key")
 def fetch_symmetric_key_endpoint():
@@ -170,3 +185,9 @@ def fetch_symmetric_key_endpoint():
 @app.get("/download/data.tar.gz")
 def download_data_endpoint():
     return download_data()
+
+@app.post("/submit_assignment")
+def post_submit_assignment(assignment_submission: AssignmentSubmission):
+    print("entered submit assignment")
+    print("assignment_submission")
+    return submit_assignment(assignment_submission)
