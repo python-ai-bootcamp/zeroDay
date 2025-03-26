@@ -6,6 +6,7 @@ class User(BaseModel):
     hacker_id: str
     name: str
     phone: str
+    paid_status: bool
 
 class NotificationType(Enum):
     CANDIDATE_KID_INTRO = 1

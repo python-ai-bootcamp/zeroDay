@@ -1,19 +1,23 @@
 import os
-from userService import User, submit_user, user_exists, get_user
+from userService import User, submit_user, user_exists, get_user, initiate_user_payement_procedure
+from assignmentOrchestrator import assignment_description,next_assignment_submission
 from mailClient import Email, send_ses_mail
 from exportService import fetch_symmetric_key, download_data
 from fastapi import FastAPI, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from configurationService import domain_name, protocol, isDevMod
 
 
 app = FastAPI()
 
 challenge_page_html = open(os.path.join("resources","templates","challenge.html"), "r").read().replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol).replace("$${{IS_DEV_MODE}}$$",isDevMod)
+redirect_to_enlistment_page=f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/enlist"/></head><body></body></html>'
 home_page_html = open(os.path.join("resources","templates","home.html"), "r").read()
 enlist_page_html = open(os.path.join("resources","templates","enlist.html"), "r").read()
 contact_page_html = open(os.path.join("resources","templates","contact.html"), "r").read()
+payment_page_html = open(os.path.join("resources","templates","payment.html"), "r").read()
+assignments_page_html = open(os.path.join("resources","templates","assignments.html"), "r").read()
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,21 +27,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def validate_session(request: Request=None, response: Response=None, hacker_id: str=None):
+def validate_session(request: Request=None, hacker_id: str=None):
     if hacker_id:
         user=get_user(hacker_id) 
         if user["status"]=="OK":
-            response.set_cookie(key="sessionKey", value=hacker_id)
-            return hacker_id
+            return user["user"]
         else:
-            response.set_cookie(key="sessionKey", value="")
             return False
     else:
         hacker_id=request.cookies.get('sessionKey')
+        print(f"got following cookey value for sessionKey hacker_id:'{hacker_id}'")
         if hacker_id:
             user=get_user(hacker_id) 
             if user["status"]=="OK":
-                return hacker_id
+                return user["user"]
             else:
                 return False
         else:
@@ -49,41 +52,97 @@ def serve_challange():
 
 @app.get("/")
 def serve_home(request: Request):
-    is_session_validated=validate_session(request=request)
-    if(is_session_validated):
-        user=get_user(hacker_id=is_session_validated)["user"]
-        home_page_html = open(os.path.join("resources","templates","home.html"), "r").read().replace("$${{RECRUITE_NAME}}$$",user["name"]).replace("$${{HOME_CONTENT}}$$",'<p style="padding-bottom:50px">Congratulation for completeing the ZeroDayBootCamp challenge successfully!</p><p style="padding-bottom:50px">You may now enlist to the continuation of your journy</p><a href="/enlist" class="cta-button" >Enlist</a>')
+    user=validate_session(request=request)
+    print(user)
+    home_page_html = open(os.path.join("resources","templates","home.html"), "r").read()
+    if(user):
+        is_paid=user["paid_status"]
+        if(is_paid):
+            home_page_html=home_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>').replace("$${{RECRUITE_NAME}}$$",user["name"]).replace("$${{HOME_CONTENT}}$$",'<p style="padding-bottom:50px">Congratulation for enlisting the ZeroDayBootcamp project!</p><p style="padding-bottom:50px">You may now enter the assignment page to start learning</p><a href="/assignments" class="cta-button" >Enter Assignment Page</a>')
+        else:
+            home_page_html=home_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$","").replace("$${{RECRUITE_NAME}}$$",user["name"]).replace("$${{HOME_CONTENT}}$$",'<p style="padding-bottom:50px">Congratulation for completeing the ZeroDayBootCamp challenge successfully!</p><p style="padding-bottom:50px">You may now enlist to the continuation of your journy</p><a href="/enlist" class="cta-button" >Enlist</a>')
     else:
-        home_page_html = open(os.path.join("resources","templates","home.html"), "r").read().replace("$${{RECRUITE_NAME}}$$",'Dear Recruite').replace("$${{HOME_CONTENT}}$$",'<p style="padding-bottom:50px">After completing the challenge bellow you will be invited to join the ZeroDay BootCamp</p><a href="/challenge" class="cta-button" >Take the Challenge</a>')
+        home_page_html=home_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$","").replace("$${{RECRUITE_NAME}}$$",'Dear Recruite').replace("$${{HOME_CONTENT}}$$",'<p style="padding-bottom:50px">After completing the challenge bellow you will be invited to join the ZeroDay BootCamp</p><a href="/challenge" class="cta-button" >Take the Challenge</a>')
     return HTMLResponse(content=home_page_html, status_code=200)
 
 @app.get("/payment")
-def serve_home():
-    return HTMLResponse(content="<html><body>unimplemented yet</body></html>", status_code=200)
+def serve_payment(request: Request):
+    user=validate_session(request=request)
+    payment_page_html = open(os.path.join("resources","templates","payment.html"), "r").read()
+    if(user):
+        payment_page_html = payment_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$","").replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol).replace("$${{HACKER_ID}}$$",user["hacker_id"])
+    else:
+        #if user has no valid session just redirect him to enlist page so he will see is harsh reality
+        payment_page_html = f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/enlist"/></head><body></body></html>'
+    return HTMLResponse(content=payment_page_html, status_code=200)
+
+@app.get("/paymentRedirect")
+def serve_payment_redirect(request: Request, hacker_id:str, ClientName:str, ClientLName:str, UserId:str, email:str, phone:str):
+    user=validate_session(request=request)
+    if(user):
+        payment_page_html =  f'<html><head><meta http-equiv="refresh" content="5; url={protocol}://{domain_name}/enlist"/></head><body><p>This Page Is Still Under Construction</p><p>User will be redirected back to enlistment page in 5 seconds</p></body></html>'
+        initiate_user_payement_procedure(hacker_id, ClientName, ClientLName, UserId, email, phone)
+    else:
+        #if user has no valid session just redirect him to enlist page so he will see is harsh reality
+        payment_page_html = redirect_to_enlistment_page
+    return HTMLResponse(content=payment_page_html, status_code=200)
 
 @app.get("/about")
-def serve_home(request: Request, hacker_id:str=None):
+def serve_about(request: Request, hacker_id:str=None):
     about_page_html = open(os.path.join("resources","templates","about.html"), "r").read()
-    html_response=HTMLResponse(content=about_page_html, status_code=200)
-    is_session_validated=validate_session(request=request, response=html_response, hacker_id=hacker_id)
-    print(f"is_session_validated:'{is_session_validated}'")
+    user=validate_session(request=request, hacker_id=hacker_id)
+    print(f"is_session_validated:'{user}'")
+    if user:
+        if user["paid_status"]:
+            about_page_html=about_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')
+            html_response=HTMLResponse(content=about_page_html, status_code=200)
+            html_response.set_cookie(key="sessionKey", value=user["hacker_id"])
+        else:
+            about_page_html=about_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$","")
+            html_response=HTMLResponse(content=about_page_html, status_code=200)
+            html_response.set_cookie(key="sessionKey", value=user["hacker_id"])
+    else:
+        about_page_html=about_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$","")
+        html_response=HTMLResponse(content=about_page_html, status_code=200)
+
     return html_response
 
+
 @app.get("/enlist")
-def serve_home(request: Request):
-    is_session_validated=validate_session(request=request)
-    if(is_session_validated):
-        enlist_page_html = open(os.path.join("resources","templates","enlist.html"), "r").read().replace("$${{BUTTON_HREF_ATTRIBUTE}}$$",'href="/payment"').replace("$${{BUTTON_CLASS}}$$","cta-button").replace("$${{ENLISTMENT_BUTTON_TEXT}}$$","Enlist Now").replace("$${{ENLISTMENT_MESSAGE}}$$",'<p>Challenge Passed Successfully</p><p>Enlistment is Now Opened</p><p class="price">50&#8362;</p>')
+def serve_enlist(request: Request):
+    user=validate_session(request=request)
+    enlist_page_html = open(os.path.join("resources","templates","enlist.html"), "r").read()
+    if(user):
+        if(user["paid_status"]):
+            enlist_page_html=enlist_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>').replace("$${{ENLISTMENT_TITLE}}$$","Enlistment Completed").replace("$${{BUTTON_HREF_ATTRIBUTE}}$$",'href="/assignments"').replace("$${{BUTTON_CLASS}}$$","cta-button").replace("$${{ENLISTMENT_BUTTON_TEXT}}$$","Enter Assignment Page").replace("$${{ENLISTMENT_MESSAGE}}$$",'<p>User Already Enlisted</p><p>You can now enter assignment page</p><p style="margin:40px;"></p>')
+        else:
+            enlist_page_html=enlist_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$","").replace("$${{ENLISTMENT_TITLE}}$$","Enlist to Bootcamp").replace("$${{BUTTON_HREF_ATTRIBUTE}}$$",'href="/payment"').replace("$${{BUTTON_CLASS}}$$","cta-button").replace("$${{ENLISTMENT_BUTTON_TEXT}}$$","Enlist Now").replace("$${{ENLISTMENT_MESSAGE}}$$",'<p>Challenge Passed Successfully</p><p>Enlistment is Now Opened</p><p class="price">50&#8362;</p>')      
     else:
-        enlist_page_html = open(os.path.join("resources","templates","enlist.html"), "r").read().replace("$${{BUTTON_HREF_ATTRIBUTE}}$$",'role="link"').replace("$${{BUTTON_CLASS}}$$","cta-button-inactive").replace("$${{ENLISTMENT_BUTTON_TEXT}}$$","Enlist (deactivated)").replace("$${{ENLISTMENT_MESSAGE}}$$",'<p>locked until completing <a href="/challenge" style="color:#778881;"><h2>the challenge</h2><p style="padding-bottom:10px"></p></a></p>')
+        enlist_page_html=enlist_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$","").replace("$${{ENLISTMENT_TITLE}}$$","Enlist to Bootcamp").replace("$${{BUTTON_HREF_ATTRIBUTE}}$$",'role="link"').replace("$${{BUTTON_CLASS}}$$","cta-button-inactive").replace("$${{ENLISTMENT_BUTTON_TEXT}}$$","Enlist (deactivated)").replace("$${{ENLISTMENT_MESSAGE}}$$",'<p>locked until completing <a href="/challenge" style="color:#778881;"><h2>the challenge</h2><p style="padding-bottom:10px"></p></a></p>')
     return HTMLResponse(content=enlist_page_html, status_code=200)
 
-
-
 @app.get("/contact")
-def serve_home():
+def serve_contact(request: Request):
+    user=validate_session(request=request)
     contact_page_html = open(os.path.join("resources","templates","contact.html"), "r").read()
+    if user and user["paid_status"]:
+        contact_page_html=contact_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')
+    else:
+        contact_page_html=contact_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'')
     return HTMLResponse(content=contact_page_html, status_code=200)
+
+@app.get("/assignments")
+def serve_assignments(request: Request):
+    user=validate_session(request=request)
+    assignments_page_html = open(os.path.join("resources","templates","assignments.html"), "r").read()
+    if user and user["paid_status"]:
+        assignments_page_html=assignments_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>').replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol).replace("$${{HACKER_ID}}$$",user["hacker_id"])
+    else:
+        assignments_page_html=redirect_to_enlistment_page
+    return HTMLResponse(content=assignments_page_html, status_code=200)
+
+
+
 
 @app.get("/user_exists")
 def get_user_exists(email:str):
@@ -92,6 +151,12 @@ def get_user_exists(email:str):
 @app.get("/user")
 def get_get_user(hacker_id:str):
     return get_user(hacker_id)
+
+@app.get("/assignment_description")
+def get_assignment_description(hacker_id:str):
+    next_assignment_id=next_assignment_submission(hacker_id)
+    current_assignment_description=assignment_description(next_assignment_id["assignment_id"])
+    return PlainTextResponse(current_assignment_description["assignment_description"])
 
 @app.post("/submit")
 def submit_user_endpoint(user: User):

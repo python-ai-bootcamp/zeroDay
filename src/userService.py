@@ -28,6 +28,7 @@ def submit_user(user: User):
             hacker_id=random_string()
         user.hacker_id=hacker_id
         new_entry = user.dict()
+        new_entry["payed_status"]=False
         data.append(new_entry)
         save_data(data)
         mailService.notification_producer(user=user,notification_type=NotificationType.CANDIDATE_KID_INTRO)
@@ -45,3 +46,19 @@ def user_exists(email:str) -> bool:
     data = load_data()
     user=list(filter(lambda existing_user: email==existing_user["email"],data))
     return len(user)>0
+
+def initiate_user_payement_procedure(hacker_id:str, ClientName:str, ClientLName:str, UserId:str, email:str, phone:str):
+    #print(f"initiate_user_payement_procedure for user {hacker_id} with following details:ClientName:{ClientName}, ClientLName:{ClientLName}, UserId:{UserId}, email:{email}, phone:{phone}")
+    #print("unimplemented procedure, setting user as payed by default")
+    set_user_as_paid(hacker_id)
+
+def set_user_as_paid(hacker_id:str):
+    data = load_data()
+    user=list(filter(lambda existing_user: hacker_id==existing_user["hacker_id"],data))
+    if(len(user)>0):
+        user[0]["payed_status"]=True
+    print (data)
+    save_data(data)
+
+def is_usr_paied(hacker_id: str):
+    return get_user["usr"]["payed_status"]
