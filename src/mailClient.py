@@ -2,7 +2,7 @@ import boto3
 from botocore.exceptions import ClientError
 from pydantic import BaseModel, NameEmail, constr
 SENDER = "Mr. Python McPythony <sender@zerodaybootcamp.xyz>" # should ALWAYS remain this address, if we switch it might get blocked
-SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS = ["python.ai.bootcamp@outlook.com", "tal.shachar@tufin.com" ,"micha.vardy@tufin.com" ] # currently until we get out of the amazon SES snadbox we must only send this one!!!!!
+SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS = ["python.ai.bootcamp@outlook.com", "tal.shachar@tufin.com" ,"micha.vardy@tufin.com", "michavardy@tufin.com", "michavardy@gmail.com" ] # currently until we get out of the amazon SES snadbox we must only send this one!!!!!
 
 
 SUBJECT_LENGTH=250
