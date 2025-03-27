@@ -171,9 +171,13 @@
     <section class="hero">
         <div class="product">
             <div class="product-info">
-                <h3>Assignment Description:</h3>
+                <h3>$${{TITLE}}$$</h3>
 
-                <zero-md src='$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/assignment_description?hacker_id=$${{HACKER_ID}}$$'>
+                <!--zero-md src='$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/assignment_description?hacker_id=$${{HACKER_ID}}$$'-->
+                <zero-md>
+                <script type="text/markdown">
+$${{ASSIGNMENT_DESCRIPTION_CONTENT}}$$
+                </script>
                     <template>
                         <!-- Define your own styles inside a `<style>` tag -->
                         <style>
@@ -187,8 +191,11 @@
                       </template>
                 </zero-md>
             </div>
-            <div class="product-info">
+            <div class="product-info" $${{SUBMIT_ASSIGNMENT_BUTTON_VISIBILITY}}$$>
                 <a href="/assignment_submission" class="cta-button" >Submit Assignment Tasks</a>
+            </div>
+            <div class="product-info" $${{SUBMITION_RESULTS_BUTTON_VISIBILITY}}$$>
+                <a href="/last_submission_result" class="cta-button" >View Last Assignment's Submission Results</a>
             </div>
         </div> 
     </section>

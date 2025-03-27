@@ -1,9 +1,9 @@
 import os
 from userService import User, submit_user, user_exists, get_user, initiate_user_payement_procedure
-from assignmentOrchestrator import assignment_description,next_assignment_submission, assignment_task_count, AssignmentSubmission, submit_assignment
+from assignmentOrchestrator import assignment_description,next_assignment_submission, assignment_task_count, AssignmentSubmission, submit_assignment, user_testing_in_progress, max_submission_for_assignment
 from mailClient import Email, send_ses_mail
 from exportService import fetch_symmetric_key, download_data
-from fastapi import FastAPI, Response, Request
+from fastapi import FastAPI, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from configurationService import domain_name, protocol, isDevMod
@@ -13,12 +13,15 @@ app = FastAPI()
 
 challenge_page_html = open(os.path.join("resources","templates","challenge.html"), "r").read().replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol).replace("$${{IS_DEV_MODE}}$$",isDevMod)
 redirect_to_enlistment_page=f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/enlist"/></head><body></body></html>'
+redirect_to_last_submission_result_page=f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/last_submission_result"/></head><body></body></html>'
 home_page_html = open(os.path.join("resources","templates","home.html"), "r").read()
 enlist_page_html = open(os.path.join("resources","templates","enlist.html"), "r").read()
 contact_page_html = open(os.path.join("resources","templates","contact.html"), "r").read()
 payment_page_html = open(os.path.join("resources","templates","payment.html"), "r").read()
 assignments_page_html = open(os.path.join("resources","templates","assignments.html"), "r").read()
 assignment_submission_page_html = open(os.path.join("resources","templates","assignment_submission.html"), "r").read()
+last_submission_results_page_html = open(os.path.join("resources","templates","last_submission_results.html"), "r").read()
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -137,7 +140,26 @@ def serve_assignments(request: Request):
     user=validate_session(request=request)
     assignments_page_html = open(os.path.join("resources","templates","assignments.html"), "r").read()
     if user and user["paid_status"]:
-        assignments_page_html=assignments_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>').replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol).replace("$${{HACKER_ID}}$$",user["hacker_id"])
+        next_assignment_id=next_assignment_submission(user["hacker_id"])
+        current_assignment_description=assignment_description(next_assignment_id["assignment_id"])
+        print(current_assignment_description)
+        if(current_assignment_description["status"] == "ERROR"):
+            assignments_page_html=assignments_page_html\
+            .replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')\
+            .replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol)\
+            .replace("$${{HACKER_ID}}$$",user["hacker_id"])\
+            .replace("$${{ASSIGNMENT_DESCRIPTION_CONTENT}}$$","please check back in a few days")\
+            .replace("$${{TITLE}}$$","No Currently Available New Assignments")\
+            .replace("$${{SUBMIT_ASSIGNMENT_BUTTON_VISIBILITY}}$$","hidden")
+        else:
+            current_assignment_description=current_assignment_description["assignment_description"]
+            assignments_page_html=assignments_page_html\
+            .replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')\
+            .replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol)\
+            .replace("$${{HACKER_ID}}$$",user["hacker_id"])\
+            .replace("$${{ASSIGNMENT_DESCRIPTION_CONTENT}}$$",current_assignment_description)\
+            .replace("$${{TITLE}}$$","Assignment Description:")\
+            .replace("$${{SUBMIT_ASSIGNMENT_BUTTON_VISIBILITY}}$$","")
     else:
         assignments_page_html=redirect_to_enlistment_page
     return HTMLResponse(content=assignments_page_html, status_code=200)
@@ -148,17 +170,47 @@ def serve_assignments(request: Request):
     assignment_submission_page_html = open(os.path.join("resources","templates","assignment_submission.html"), "r").read()
     if user and user["paid_status"]:
         next_assignment_id=next_assignment_submission(user["hacker_id"])["assignment_id"]
-        task_count=assignment_task_count(next_assignment_id)["task_count"]
-        print(task_count)
-        task_submission_sections=[]
-        for task_id in range(1,task_count+1):
-            task_submission_sections.append(f'<p><h3>task_{task_id}</h3></p><label for="upload-photo"><input task_id={task_id} type="file" id="upload-photo" class="cta-button"></input></label>')
-            print(task_submission_sections)
-        task_submission_sections="\n".join(task_submission_sections)
-        assignment_submission_page_html=assignment_submission_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>').replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol).replace("$${{HACKER_ID}}$$",user["hacker_id"]).replace("$${{ASSIGNMENT_ID}}$$",str(next_assignment_id)).replace("$${{TASK_SUBMITION_SECTIONS}}$$",task_submission_sections)
+        if user_testing_in_progress(user["hacker_id"]):
+            print(f'user {user["hacker_id"]} is locked for testing')
+            assignment_submission_page_html=redirect_to_last_submission_result_page
+        else:           
+            print(f'user {user["hacker_id"]} is not locked for testing')
+            task_count=assignment_task_count(next_assignment_id)["task_count"]
+            print(task_count)
+            task_submission_sections=[]
+            for task_id in range(1,task_count+1):
+                task_submission_sections.append(f'<p><h3>task_{task_id}</h3></p><label for="upload-photo"><input task_id={task_id} type="file" id="upload-photo" class="cta-button"></input></label>')
+                print(task_submission_sections)
+            task_submission_sections="\n".join(task_submission_sections)
+            assignment_submission_page_html=assignment_submission_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>').replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol).replace("$${{HACKER_ID}}$$",user["hacker_id"]).replace("$${{ASSIGNMENT_ID}}$$",str(next_assignment_id)).replace("$${{TASK_SUBMITION_SECTIONS}}$$",task_submission_sections)
     else:
         assignment_submission_page_html=redirect_to_enlistment_page
     return HTMLResponse(content=assignment_submission_page_html, status_code=200)
+
+@app.get("/last_submission_result")
+def serve_last_submission_result(request: Request):
+    user=validate_session(request=request) 
+    last_submission_results_page_html = open(os.path.join("resources","templates","last_submission_results.html"), "r").read()
+    if user and user["paid_status"]:
+        assignment_id=next_assignment_submission(user["hacker_id"])["assignment_id"]
+        submission_id=next_assignment_submission(user["hacker_id"])["submission_id"]
+        if user_testing_in_progress(user["hacker_id"]):
+            last_submission_results_page_html=last_submission_results_page_html\
+            .replace("$${{ASSIGNMENT_ID}}$$",str(assignment_id))\
+            .replace("$${{SUBMISSION_ID}}$$",str(submission_id))\
+            .replace("$${{MAX_ALLOWED_SUBMISSIONS}}$$",str(max_submission_for_assignment(assignment_id)))\
+            .replace("$${{REFRESH_META_TAG}}$$",'<meta http-equiv="refresh" content="1">')\
+            .replace("$${{SUBMISSION_RESULT_CONTENT}}$$","<h3>Testing is still under progress</h3>")
+        else:
+            last_submission_results_page_html=last_submission_results_page_html\
+            .replace("$${{ASSIGNMENT_ID}}$$",str(assignment_id))\
+            .replace("$${{SUBMISSION_ID}}$$",str(submission_id))\
+            .replace("$${{MAX_ALLOWED_SUBMISSIONS}}$$",str(max_submission_for_assignment(assignment_id)))\
+            .replace("$${{REFRESH_META_TAG}}$$",'')\
+            .replace("$${{SUBMISSION_RESULT_CONTENT}}$$","<h3>result exist but presentaion still unimplemented</h3>")
+    else:
+        last_submission_results_page_html=redirect_to_enlistment_page
+    return HTMLResponse(content=last_submission_results_page_html, status_code=200)
 
 @app.get("/user_exists")
 def get_user_exists(email:str):
@@ -186,8 +238,12 @@ def fetch_symmetric_key_endpoint():
 def download_data_endpoint():
     return download_data()
 
+def create_submit_assignment_background_task(assignment_submission):
+    submit_assignment(assignment_submission)
+
 @app.post("/submit_assignment")
-def post_submit_assignment(assignment_submission: AssignmentSubmission):
+def post_submit_assignment(assignment_submission: AssignmentSubmission, background_tasks: BackgroundTasks):
     print("entered submit assignment")
-    print("assignment_submission")
-    return submit_assignment(assignment_submission)
+    background_tasks.add_task(create_submit_assignment_background_task, assignment_submission)
+    print("assignment_submission added as background task")
+    return {"status":"SUBMITTED"}

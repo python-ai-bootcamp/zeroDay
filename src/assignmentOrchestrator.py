@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
-from multiprocessing import Lock
+#from multiprocessing import Lock
+from threading import Lock
 
 
 import json, os, random, sys, subprocess, base64,functools, importlib.util
@@ -220,7 +221,7 @@ def assignment_description(assignment_id:int):
             assignment_description_file_name=assignment_mapper[str(assignment_id)]['description']
             with open(os.path.join(ASSIGNMENT_DESCRIPTIONS_DIR,assignment_description_file_name), "r") as f:
                 assignment_description=f.read()
-            return {"assignment_description":assignment_description}
+            return {"status":"OK", "assignment_description":assignment_description}
         else:
             return {"status":"ERROR", "ERROR_message":f"assignment with assignment_id='{str(assignment_id)}' is not mapped to description file"}
     else:
@@ -232,7 +233,7 @@ def assignment_task_count(assignment_id:int):
         if "validators" in assignment_mapper[str(assignment_id)]:
             validators_counter=len(assignment_mapper[str(assignment_id)]["validators"])
             if validators_counter>0:
-                return {"task_count":validators_counter}
+                return {"status":"OK", "task_count":validators_counter}
             return {"status":"ERROR", "ERROR_message":f"assignment with assignment_id='{str(assignment_id)}' does not contain even a single validator"}
         else:
             return {"status":"ERROR", "ERROR_message":f"assignment with assignment_id='{str(assignment_id)}' is missing validators entry"}
@@ -240,7 +241,12 @@ def assignment_task_count(assignment_id:int):
         return {"status":"ERROR", "ERROR_message":f"no entry for assignment with assignment_id='{str(assignment_id)}' inside assignment_mapper file"}
     
 def user_testing_in_progress(hacker_id:str):
+    #print(f"entered user_testing_in_progress with hacker_id='{hacker_id}'")
+    #print("current lockRepository:",lockRepository)
     if hacker_id in lockRepository:
+        #print(f"hacker_id='{hacker_id}' exists in lockRepository")
+        #print(f'lockRepository[{hacker_id}].locked()={str(lockRepository[hacker_id].locked())}')
         return lockRepository[hacker_id].locked()
     else:
+        #print(f"hacker_id='{hacker_id}' does not exist in lockRepository")
         return False
