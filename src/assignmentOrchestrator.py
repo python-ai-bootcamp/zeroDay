@@ -238,3 +238,9 @@ def assignment_task_count(assignment_id:int):
             return {"status":"ERROR", "ERROR_message":f"assignment with assignment_id='{str(assignment_id)}' is missing validators entry"}
     else:
         return {"status":"ERROR", "ERROR_message":f"no entry for assignment with assignment_id='{str(assignment_id)}' inside assignment_mapper file"}
+    
+def user_testing_in_progress(hacker_id:str):
+    if hacker_id in lockRepository:
+        return lockRepository[hacker_id].locked()
+    else:
+        return False
