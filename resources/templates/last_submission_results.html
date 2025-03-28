@@ -6,6 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     $${{REFRESH_META_TAG}}$$
     <title>Online Store</title>
+    <link href="https://rawgit.com/abodelot/jquery.json-viewer/master/json-viewer/jquery.json-viewer.css" rel="stylesheet"/>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -150,8 +151,23 @@
         .upload-button input{
             display:none;
         }
-
+        .json-string {
+            color: #63ac5b;
+        }
+        .json-literal {
+            color: #63ac5b;
+            font-weight: bold;
+        }
     </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://rawgit.com/abodelot/jquery.json-viewer/master/json-viewer/jquery.json-viewer.js"></script>
+    
+    <script>
+        data=$${{SUBMISSION_RESULT_CONTENT}}$$
+        $(function(){
+            $('#json-renderer').jsonViewer(data);
+        });
+    </script>
 </head>
 <body>
 
@@ -175,7 +191,8 @@
         <div class="product">
             <div class="product-info">
                 <h3>Assignment #$${{ASSIGNMENT_ID}}$$, Submission #$${{SUBMISSION_ID}}$$/$${{MAX_ALLOWED_SUBMISSIONS}}$$ Results:</h3>
-                $${{SUBMISSION_RESULT_CONTENT}}$$
+                $${{WAITING_FOR_RESULT_MESSAGE}}$$
+                <pre id="json-renderer"></pre>
             </div>
         </div> 
     </section>

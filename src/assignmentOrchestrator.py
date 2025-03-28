@@ -58,6 +58,8 @@ def load_data(assignment_submission: AssignmentSubmission =None):
     else:
         os.makedirs(DATA_FILE_DIRECTORY,exist_ok=True)    
         return {}
+def load_data_by_hacker_id(hacker_id:str):
+    return load_data(AssignmentSubmission(hacker_id=hacker_id,assignment_id=0,assignment_files=[]))
 
 def load_assignment_mapper():
     if os.path.exists(ASSIGNMENT_MAPPER_FILE):
@@ -250,3 +252,13 @@ def user_testing_in_progress(hacker_id:str):
     else:
         #print(f"hacker_id='{hacker_id}' does not exist in lockRepository")
         return False
+
+def last_assignment_submission_result(hacker_id:str):
+    data=load_data_by_hacker_id(hacker_id)[hacker_id]
+    print(data)
+    assignment_keys=list(map(lambda key: int(key), data.keys()))
+    assignment_keys.sort()
+    last_assignment_keys=str(assignment_keys[-1])
+    last_assignment_submissions= data[last_assignment_keys]
+    last_submission=last_assignment_submissions[-1]
+    return last_submission

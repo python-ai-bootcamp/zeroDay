@@ -160,8 +160,24 @@
     <script> 
         assignment_files=[]
         assignment_id=$${{ASSIGNMENT_ID}}$$
+        current_selected_tasks=new Set()
+        number_of_tasks_in_assignment=$${{MUMBER_OF_TASKS_IN_ASSIGNMENT}}$$
         hacker_id="$${{HACKER_ID}}$$"
         window.onload = function(){
+            function increaseNumberOfTasks(addedTaskId){
+                console.log("entered increaseNumberOfTasks with addedTaskId::",addedTaskId)
+                current_selected_tasks.add(addedTaskId)
+                console.log("current current_selected_tasks::",current_selected_tasks)
+                
+            }
+            function checkIfCanSubmit(){
+                if(current_selected_tasks.size==number_of_tasks_in_assignment){
+                    console.log("finished selecting all files, enabling submission button")
+                    return true
+                }else{
+                    return false
+                }
+            }
             document.querySelectorAll('input[task_id]:not([task_id=""])').forEach(inputElement=>{
                 inputElement.addEventListener("change", async function({target}){
                     if (target.files && target.files.length) {
@@ -173,6 +189,7 @@
                         console.log("this is the data in base64::")
                         console.log(uploadedImageBase64)
                         assignment_files[target.getAttribute("task_id")-1]=uploadedImageBase64
+                        increaseNumberOfTasks(target.getAttribute("task_id"))
                         console.log(assignment_files)
                         } catch(err) {
                         //handle error
@@ -194,18 +211,22 @@
             document.getElementById("submit_button").addEventListener("click", function(e){
                 body={"assignment_files":assignment_files,"assignment_id":assignment_id,"hacker_id":hacker_id}
                 console.log(body)
-                fetch('$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/submit_assignment', {
-                    method: 'POST',
-                    headers: {
-                    'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(body)
-                })
-                .then(response=>response.json())
-                .then(data=>{ console.log(data); })
-                .then(x=>{
-                    window.location.replace("/last_submission_result");
-                })
+                if(checkIfCanSubmit()){
+                    fetch('$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/submit_assignment', {
+                        method: 'POST',
+                        headers: {
+                        'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(body)
+                    })
+                    .then(response=>response.json())
+                    .then(data=>{ console.log(data); })
+                    .then(x=>{
+                        window.location.replace("/last_submission_result");
+                    })
+                }else{
+                    alert("cannot submit assignment until all task files are selected")
+                }
             })
         }
     </script>
