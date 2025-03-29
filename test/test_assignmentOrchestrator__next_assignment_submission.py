@@ -5,7 +5,7 @@ from assignmentOrchestrator import next_assignment_submission
 @patch('assignmentOrchestrator.load_data')
 def test_on_empty_file(patched_load_data):
     patched_load_data.return_value={}
-    assert next_assignment_submission("non_existing_hacker_id") == {"status": "ERROR", "ERROR_message":f"hacker_id:'non_existing_hacker_id' does not exist"}
+    assert next_assignment_submission("non_existing_hacker_id") == {"assignment_id":1,"submission_id":1}
 
 @patch('assignmentOrchestrator.load_data')
 def test_on_file_with_relevant_hacker_id_and_no_previous_assignments(patched_load_data):
@@ -15,7 +15,7 @@ def test_on_file_with_relevant_hacker_id_and_no_previous_assignments(patched_loa
 @patch('assignmentOrchestrator.load_data')
 def test_on_file_with_non_relevant_hacker_id_and_no_previous_assignments(patched_load_data):
     patched_load_data.return_value={"existing_hacker_id":{}}
-    assert next_assignment_submission("non_existing_hacker_id") == {"status": "ERROR", "ERROR_message":f"hacker_id:'non_existing_hacker_id' does not exist"}
+    assert next_assignment_submission("non_existing_hacker_id") == {"assignment_id":1,"submission_id":1}
 
 @patch('assignmentOrchestrator.load_data')
 def test_on_file_with_existing_assignment_without_submissions(patched_load_data):

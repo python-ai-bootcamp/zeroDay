@@ -170,7 +170,7 @@ def mocker__on_empty_data(mocker,request):
     mocker.patch("assignmentOrchestrator.SUBMITTED_FILES_DIR",          gconf["relative_submitted_files_directory"])
     mocker.patch("assignmentOrchestrator.ASSIGNMENT_VALIDATOR_DIR",     gconf["relative_validators_directory"])
     mocker.patch("assignmentOrchestrator.ASSIGNMENT_MAPPER_FILE",       gconf["test_assignment_mapper_json_file_location"])
-    gconf["default_validator_timeout"]  = 0.1
+    gconf["default_validator_timeout"]  = 0.2
     mocker.patch("assignmentOrchestrator.DEFAULT_VALIDATOR_TIMEOUT",    gconf["default_validator_timeout"])
 
 def test__always_passing_validator__on_first_task_first_submission(mocker__on_empty_data):

@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <!--meta http-equiv="refresh" content="1"-->
     <title>Online Store</title>
+    <link href="https://rawgit.com/abodelot/jquery.json-viewer/master/json-viewer/jquery.json-viewer.css" rel="stylesheet"/>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -86,6 +86,7 @@
 
         .cta-button:hover {
             background-color: #ff8500;
+            cursor: pointer;
         }
 
         .products {
@@ -142,13 +143,14 @@
             padding: 15px;
         }
 
-    </style>
-    <!-- https://stackoverflow.com/questions/37770620/how-to-include-markdown-md-files-inside-html-files -->
-    <!-- Lightweight client-side loader that feature-detects and load polyfills only when necessary -->
-    <script src="https://cdn.jsdelivr.net/npm/@webcomponents/webcomponentsjs@2/webcomponents-loader.min.js"></script>
-    <!-- Load the element definition -->
-    <script type="module" src="https://cdn.jsdelivr.net/gh/zerodevx/zero-md@1/src/zero-md.min.js"></script>
+        .upload-button {
+            background-color: grey;
+        }
 
+        .upload-button input{
+            display:none;
+        }
+    </style>
 </head>
 <body>
 
@@ -171,31 +173,9 @@
     <section class="hero">
         <div class="product">
             <div class="product-info">
-                <h3>$${{TITLE}}$$</h3>
-                $${{BREACH_MAX_ATTEMPT_MESSAGE}}$$
-                <!--zero-md src='$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/assignment_description?hacker_id=$${{HACKER_ID}}$$'-->
-                <zero-md>
-                <script type="text/markdown">
-$${{ASSIGNMENT_DESCRIPTION_CONTENT}}$$
-                </script>
-                    <template>
-                        <!-- Define your own styles inside a `<style>` tag -->
-                        <style>
-                          h1 {
-                            color: white;
-                          }
-                        </style>
-                        <!-- Or your own stylesheets with `<link>` tags -->
-                        <link rel="stylesheet" href="markdown-styles.css" />
-                        <link rel="stylesheet" href="highlight-styles.css" />
-                      </template>
-                </zero-md>
-            </div>
-            <div class="product-info" $${{SUBMIT_ASSIGNMENT_BUTTON_VISIBILITY}}$$>
-                <a href="/assignment_submission" class="cta-button" >Submit Assignment Tasks</a>
-            </div>
-            <div class="product-info" $${{SUBMITION_RESULTS_BUTTON_VISIBILITY}}$$>
-                <a href="/last_submission_result" class="cta-button" >View Last Assignment's Submission Results</a>
+                <h3>User has no existing assignment submission results to display.</h3>
+                
+                <pre id="json-renderer"></pre>
             </div>
         </div> 
     </section>

@@ -266,11 +266,15 @@ def user_testing_in_progress(hacker_id:str):
         return False
 
 def last_assignment_submission_result(hacker_id:str):
-    data=load_data_by_hacker_id(hacker_id)[hacker_id]
+    data=load_data_by_hacker_id(hacker_id)
     print(data)
-    assignment_keys=list(map(lambda key: int(key), data.keys()))
-    assignment_keys.sort()
-    last_assignment_keys=str(assignment_keys[-1])
-    last_assignment_submissions= data[last_assignment_keys]
-    last_submission=last_assignment_submissions[-1]
-    return last_submission
+    if hacker_id in data:    
+        data=data[hacker_id]    
+        assignment_keys=list(map(lambda key: int(key), data.keys()))
+        assignment_keys.sort()
+        last_assignment_keys=str(assignment_keys[-1])
+        last_assignment_submissions= data[last_assignment_keys]
+        last_submission=last_assignment_submissions[-1]
+        return {"status":"OK", "last_assignment_submission_result":last_submission}
+    else:
+        return {"status":"ERROR", "ERROR_message":f"user with hacker_id='{hacker_id}' does not have a single assignment submission"}

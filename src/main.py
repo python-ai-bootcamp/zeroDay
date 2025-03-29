@@ -21,6 +21,7 @@ payment_page_html = open(os.path.join("resources","templates","payment.html"), "
 assignments_page_html = open(os.path.join("resources","templates","assignments.html"), "r").read()
 assignment_submission_page_html = open(os.path.join("resources","templates","assignment_submission.html"), "r").read()
 last_submission_results_page_html = open(os.path.join("resources","templates","last_submission_results.html"), "r").read()
+last_submission_results_no_results_page_html = open(os.path.join("resources","templates","last_submission_results_no_results.html"), "r").read()
 
 
 app.add_middleware(
@@ -150,16 +151,32 @@ def serve_assignments(request: Request):
             .replace("$${{HACKER_ID}}$$",user["hacker_id"])\
             .replace("$${{ASSIGNMENT_DESCRIPTION_CONTENT}}$$","please check back in a few days")\
             .replace("$${{TITLE}}$$","No Currently Available New Assignments")\
+            .replace("$${{BREACH_MAX_ATTEMPT_MESSAGE}}$$","")\
             .replace("$${{SUBMIT_ASSIGNMENT_BUTTON_VISIBILITY}}$$","hidden")
         else:
+            ########### playground for checking if user breached max submissions for task
+            submission_result=last_assignment_submission_result(user["hacker_id"])
+            submit_assignment_button_visibility=""
+            assignment_title="Assignment Description:"
+            max_allowed_submissions_breach_message=""
+            if submission_result["status"] == "OK":
+                submission_result=submission_result["last_assignment_submission_result"]
+                assignment_id=submission_result["assignment_id"]
+                max_allowed_attempts=max_submission_for_assignment(assignment_id)
+                if submission_result["submission_id"] == max_allowed_attempts:
+                    submit_assignment_button_visibility="hidden"
+                    max_allowed_submissions_breach_message=f'<h4 style="color:red;">(User failed max allowed submission attempts ({max_allowed_attempts}) and can not continue submitting)</h4>'
+
+            ########### end of playground for checking if user breached max submissions for task
             current_assignment_description=current_assignment_description["assignment_description"]
             assignments_page_html=assignments_page_html\
             .replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')\
             .replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol)\
             .replace("$${{HACKER_ID}}$$",user["hacker_id"])\
             .replace("$${{ASSIGNMENT_DESCRIPTION_CONTENT}}$$",current_assignment_description)\
-            .replace("$${{TITLE}}$$","Assignment Description:")\
-            .replace("$${{SUBMIT_ASSIGNMENT_BUTTON_VISIBILITY}}$$","")
+            .replace("$${{TITLE}}$$",assignment_title)\
+            .replace("$${{BREACH_MAX_ATTEMPT_MESSAGE}}$$",max_allowed_submissions_breach_message)\
+            .replace("$${{SUBMIT_ASSIGNMENT_BUTTON_VISIBILITY}}$$",submit_assignment_button_visibility)
     else:
         assignments_page_html=redirect_to_enlistment_page
     return HTMLResponse(content=assignments_page_html, status_code=200)
@@ -206,21 +223,28 @@ def serve_last_submission_result(request: Request):
             .replace("$${{SUBMISSION_ID}}$$",str(submission_id))\
             .replace("$${{MAX_ALLOWED_SUBMISSIONS}}$$",str(max_submission_for_assignment(assignment_id)))\
             .replace("$${{REFRESH_META_TAG}}$$",'<meta http-equiv="refresh" content="1">')\
-            .replace("$${{WAITING_FOR_RESULT_MESSAGE}}$$","<h3>Testing is still under progress</h3>")
+            .replace("$${{WAITING_FOR_RESULT_MESSAGE}}$$","<h3>Testing is still under progress</h3>")\
+            .replace("$${{SUBMISSION_RESULT_CONTENT}}$$","1")
         else:
             submission_result=last_assignment_submission_result(user["hacker_id"])
-            submission_result_for_view=submission_result
-            #del submission_result_for_view["assignment_files"]
-            submission_result_for_view["assignment_files"]=list(map(lambda x: base64.b64decode(x).decode('utf-8') ,submission_result_for_view["assignment_files"]))
-            submission_result_content=json.dumps(submission_result_for_view)
-            assignment_id=submission_result["assignment_id"]
-            last_submission_results_page_html=last_submission_results_page_html\
-            .replace("$${{ASSIGNMENT_ID}}$$",str(assignment_id))\
-            .replace("$${{SUBMISSION_ID}}$$",str(submission_result["submission_id"]))\
-            .replace("$${{MAX_ALLOWED_SUBMISSIONS}}$$",str(max_submission_for_assignment(assignment_id)))\
-            .replace("$${{REFRESH_META_TAG}}$$",'')\
-            .replace("$${{SUBMISSION_RESULT_CONTENT}}$$",submission_result_content)\
-            .replace("$${{WAITING_FOR_RESULT_MESSAGE}}$$","")
+            if submission_result["status"] == "OK":
+                submission_result=submission_result["last_assignment_submission_result"]
+                submission_result_for_view=submission_result
+                #del submission_result_for_view["assignment_files"]
+                submission_result_for_view["assignment_files"]=list(map(lambda x: base64.b64decode(x).decode('utf-8') ,submission_result_for_view["assignment_files"]))
+                submission_result_content=json.dumps(submission_result_for_view)
+                assignment_id=submission_result["assignment_id"]
+                last_submission_results_page_html=last_submission_results_page_html\
+                .replace("$${{ASSIGNMENT_ID}}$$",str(assignment_id))\
+                .replace("$${{SUBMISSION_ID}}$$",str(submission_result["submission_id"]))\
+                .replace("$${{MAX_ALLOWED_SUBMISSIONS}}$$",str(max_submission_for_assignment(assignment_id)))\
+                .replace("$${{REFRESH_META_TAG}}$$",'')\
+                .replace("$${{SUBMISSION_RESULT_CONTENT}}$$",submission_result_content)\
+                .replace("$${{WAITING_FOR_RESULT_MESSAGE}}$$","")
+            else:
+                last_submission_results_no_results_page_html = open(os.path.join("resources","templates","last_submission_results_no_results.html"), "r").read()
+                last_submission_results_page_html=last_submission_results_no_results_page_html
+                print(submission_result["ERROR_message"])
     else:
         last_submission_results_page_html=redirect_to_enlistment_page
     return HTMLResponse(content=last_submission_results_page_html, status_code=200)

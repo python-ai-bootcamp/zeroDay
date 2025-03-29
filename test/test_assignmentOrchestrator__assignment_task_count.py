@@ -33,7 +33,7 @@ def test_load_existing_validators_count_in_assignment_mapper(mocker__on_empty_da
     test_assignment_mapper_json_file_data={'1': {'description': 'description_1.md', 'validators': ['validate_assignment_1_task_1.py']}}
     with open(gconf["test_assignment_mapper_json_file_location"], 'w') as f:
         json.dump(test_assignment_mapper_json_file_data, f)
-    assert assignment_task_count(1) == {"task_count":1}
+    assert assignment_task_count(1) == {'status': 'OK', "task_count":1}
 
 def test_load_non_existing_validators_entry_in_assignment_mapper(mocker__on_empty_data):
     test_assignment_mapper_json_file_data={'1': {'description': 'description_1.md'}}

@@ -36,7 +36,7 @@ def test_load_existing_description_in_mapper_and_in_dir(mocker__on_empty_data):
     test_assignment_description_data="I AM ASSIGNMENT_DESCRIPTION"
     with open(os.path.join(gconf["relative_assignment_descriptions_directory"],"description_1.md"), 'w') as f:
         f.write(test_assignment_description_data)
-    assert assignment_description(1) == {"assignment_description":test_assignment_description_data}
+    assert assignment_description(1) == {'status': 'OK', "assignment_description":test_assignment_description_data}
 
 def test_load_non_existing_assignment_in_mapper(mocker__on_empty_data):
     test_assignment_mapper_json_file_data={'1': {'description': 'description_1.md', 'validators': ['validate_assignment_1_task_1.py']}}
