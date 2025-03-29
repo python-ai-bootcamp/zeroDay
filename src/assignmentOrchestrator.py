@@ -6,7 +6,7 @@ from typing import List, Optional
 from threading import Lock
 
 
-import json, os, random, sys, subprocess, base64,functools, importlib.util
+import json, os, random, sys, subprocess, base64,functools, importlib.util,urllib
 
 app = FastAPI()
 
@@ -135,11 +135,23 @@ def save_assignment_files(assignment_submission: AssignmentSubmission):
     print("assignment_submission::",assignment_submission)
     for assignment_file in assignment_submission.assignment_files:
         assignment_b64_decoded=base64.b64decode(assignment_file)
-        assignment_simple_str= assignment_b64_decoded.decode("ascii")
+        #assignment_simple_str= assignment_b64_decoded.decode("ascii") #fails on hebrew
+        print("before printing assignment_b64_decoded undecoded::")
+        print(assignment_b64_decoded)
+        print("after printing assignment_b64_decoded undecoded::")
+        assignment_simple_str= assignment_b64_decoded.decode("utf-8") #works for hebrew but fails on printing result from some strange reason
+        #not working from https://stackoverflow.com/questions/64849264/decoding-a-b64-encoded-string-in-python-with-non-english-characters
+        #assignment_simple_str= assignment_b64_decoded.decode('latin-1')
+        #good link to read on how to properly encode on base64 from utf-8 in javascript
+        #https://stackoverflow.com/questions/30106476/using-javascripts-atob-to-decode-base64-doesnt-properly-decode-utf-8-strings
+        print("before printing assignment_simple_str decoded::")
+        #print(assignment_simple_str)
+        print("after printing assignment_simple_str decoded::")
         assignment_file_name=f'task_{task_id}.py'
         assignment_file_name_full_path=os.path.join(assignment_directory,f'task_{task_id}.py')
         assignment_file_names.append(assignment_file_name)
-        with open(assignment_file_name_full_path, "w") as f:
+        #with open(assignment_file_name_full_path, "w") as f:
+        with open(assignment_file_name_full_path, "w", encoding="utf-8") as f:
             f.write(assignment_simple_str)
         task_id=task_id+1;
     return assignment_file_names
