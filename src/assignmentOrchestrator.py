@@ -2,8 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
+from threading import Lock, Semaphore
 #from multiprocessing import Lock
-from threading import Lock
+
 
 
 import json, os, random, sys, subprocess, base64,functools, importlib.util,urllib
@@ -27,8 +28,9 @@ ASSIGNMENT_DESCRIPTIONS_DIR = os.path.join(relative_assignments_directory,"assig
 SUBMITTED_FILES_DIR=os.path.join(relative_data_directory,"submitted_files")
 DEFAULT_VALIDATOR_TIMEOUT=60
 DEFAULT_MAX_SUBMISSIONS=3
+MAX_SUBMISION_PROCESSING=2
 lockRepository={}
-
+submision_processing_concurrency_semaphore=Semaphore(MAX_SUBMISION_PROCESSING)
 class AssignmentSubmission(BaseModel):
     hacker_id: str
     assignment_id: int
@@ -178,7 +180,8 @@ def submit_assignment(assignment_submission: AssignmentSubmission):
             number_of_validators=len(assignment_mapper[str(assignment_submission.assignment_id)]["validators"])
             if number_of_validators==0:
                 return {"status":"ERROR","ERROR_message":f"no validators mapped for assignment_id={assignment_submission.assignment_id} in assignment_mapper file"}
-    max_submissions=max_submission_for_assignment(assignment_submission.assignment_id)         
+    max_submissions=max_submission_for_assignment(assignment_submission.assignment_id)
+    submision_processing_concurrency_semaphore.acquire()
     if not (assignment_submission.hacker_id in lockRepository):
         lockRepository[assignment_submission.hacker_id]=Lock()
     lockRepository[assignment_submission.hacker_id].acquire()
@@ -199,6 +202,7 @@ def submit_assignment(assignment_submission: AssignmentSubmission):
                 else:
                     assignment_submission.result={"status":"ERROR","ERROR_message":f"cannot test assignment (assignment_id={str(assignment_submission.assignment_id)}) because submission attempts ({str(assignment_submission.submission_id)}) passed the allowed max_submissions (max_submissions={max_submissions})"}
                     lockRepository[assignment_submission.hacker_id].release()
+                    submision_processing_concurrency_semaphore.release()
                     return assignment_submission.model_dump()
             else:
                 assignment_submission.assignment_file_names=save_assignment_files(assignment_submission)
@@ -208,8 +212,10 @@ def submit_assignment(assignment_submission: AssignmentSubmission):
     else:
         assignment_submission.result={"status":"ERROR","ERROR_message":f"cannot test assignment (assignment_id={str(assignment_submission.assignment_id)}) until previous assignment (assignment_id={str(assignment_submission.assignment_id-1)}) passes successfully"}
         lockRepository[assignment_submission.hacker_id].release()
+        submision_processing_concurrency_semaphore.release()
         return assignment_submission.model_dump()
     lockRepository[assignment_submission.hacker_id].release()
+    submision_processing_concurrency_semaphore.release()
     return assignment_submission.model_dump()
 
 def next_assignment_submission(hacker_id:str):
