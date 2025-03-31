@@ -224,7 +224,7 @@ def serve_last_submission_result(request: Request):
             .replace("$${{MAX_ALLOWED_SUBMISSIONS}}$$",str(max_submission_for_assignment(assignment_id)))\
             .replace("$${{REFRESH_META_TAG}}$$",'<meta http-equiv="refresh" content="1">')\
             .replace("$${{WAITING_FOR_RESULT_MESSAGE}}$$","<h3>Testing is still under progress</h3>")\
-            .replace("$${{SUBMISSION_RESULT_CONTENT}}$$","1")
+            .replace("$${{SUBMISSION_RESULT_CONTENT}}$$","")
         else:
             submission_result=last_assignment_submission_result(user["hacker_id"])
             if submission_result["status"] == "OK":

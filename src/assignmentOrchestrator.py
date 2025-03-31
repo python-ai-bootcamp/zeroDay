@@ -3,9 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 from threading import Lock, Semaphore
+import sandboxService
 #from multiprocessing import Lock
 
-
+sandboxService.startDockerContainer()
 
 import json, os, random, sys, subprocess, base64,functools, importlib.util,urllib
 
