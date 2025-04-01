@@ -238,7 +238,7 @@ def serve_last_submission_result(request: Request):
                 del submission_result_for_view["assignment_file_names"]
                 #submission_result_for_view["assignment_files"]=list(map(lambda x: base64.b64decode(x).decode('utf-8') ,submission_result_for_view["assignment_files"]))
                 submission_result_for_view["result"]["collected_results"]=list(map(lambda task_result:{**task_result,"submitted_task_file":f"{protocol}://{domain_name}/submitted_task_file?assignment_id={assignment_id}&submission_id={submission_id}&task_id={task_result['task_idx']}"},submission_result_for_view["result"]["collected_results"]))
-                submission_result_content=json.dumps(submission_result_for_view)
+                submission_result_content=f"data={json.dumps(submission_result_for_view)}"
                 assignment_id=submission_result["assignment_id"]
                 last_submission_results_page_html=last_submission_results_page_html\
                 .replace("$${{ASSIGNMENT_ID}}$$",str(assignment_id))\
