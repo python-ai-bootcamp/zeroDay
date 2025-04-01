@@ -1,6 +1,6 @@
 import os,json, base64
 from userService import User, submit_user, user_exists, get_user, initiate_user_payement_procedure
-from assignmentOrchestrator import assignment_description,next_assignment_submission, assignment_task_count, AssignmentSubmission, submit_assignment, user_testing_in_progress, max_submission_for_assignment, last_assignment_submission_result
+from assignmentOrchestrator import assignment_description,next_assignment_submission, assignment_task_count, AssignmentSubmission, submit_assignment, user_testing_in_progress, max_submission_for_assignment, last_assignment_submission_result, get_submitted_file
 from mailClient import Email, send_ses_mail
 from exportService import fetch_symmetric_key, download_data
 from fastapi import FastAPI, BackgroundTasks, Request
@@ -22,6 +22,7 @@ assignments_page_html = open(os.path.join("resources","templates","assignments.h
 assignment_submission_page_html = open(os.path.join("resources","templates","assignment_submission.html"), "r").read()
 last_submission_results_page_html = open(os.path.join("resources","templates","last_submission_results.html"), "r").read()
 last_submission_results_no_results_page_html = open(os.path.join("resources","templates","last_submission_results_no_results.html"), "r").read()
+submitted_task_file_page_html = open(os.path.join("resources","templates","submitted_task_file.html"), "r").read()
 
 
 app.add_middleware(
@@ -229,9 +230,14 @@ def serve_last_submission_result(request: Request):
             submission_result=last_assignment_submission_result(user["hacker_id"])
             if submission_result["status"] == "OK":
                 submission_result=submission_result["last_assignment_submission_result"]
+                assignment_id=submission_result["assignment_id"]
+                submission_id=submission_result["submission_id"]
                 submission_result_for_view=submission_result
-                #del submission_result_for_view["assignment_files"]
-                submission_result_for_view["assignment_files"]=list(map(lambda x: base64.b64decode(x).decode('utf-8') ,submission_result_for_view["assignment_files"]))
+                assignment_files=submission_result_for_view["assignment_files"]
+                del submission_result_for_view["assignment_files"]
+                del submission_result_for_view["assignment_file_names"]
+                #submission_result_for_view["assignment_files"]=list(map(lambda x: base64.b64decode(x).decode('utf-8') ,submission_result_for_view["assignment_files"]))
+                submission_result_for_view["result"]["collected_results"]=list(map(lambda task_result:{**task_result,"submitted_task_file":f"{protocol}://{domain_name}/submitted_task_file?assignment_id={assignment_id}&submission_id={submission_id}&task_id={task_result['task_idx']}"},submission_result_for_view["result"]["collected_results"]))
                 submission_result_content=json.dumps(submission_result_for_view)
                 assignment_id=submission_result["assignment_id"]
                 last_submission_results_page_html=last_submission_results_page_html\
@@ -248,6 +254,22 @@ def serve_last_submission_result(request: Request):
     else:
         last_submission_results_page_html=redirect_to_enlistment_page
     return HTMLResponse(content=last_submission_results_page_html, status_code=200)
+
+@app.get("/submitted_task_file")
+def serve_last_submission_result(request: Request,assignment_id:str, submission_id:str, task_id:str):
+    user=validate_session(request=request) 
+    submitted_task_file_page_html = open(os.path.join("resources","templates","submitted_task_file.html"), "r").read()
+    if user and user["paid_status"]:
+        file_content=get_submitted_file(user["hacker_id"], assignment_id, submission_id, task_id)
+        submitted_task_file_page_html=submitted_task_file_page_html\
+        .replace("$${{HACKER_ID}}$$",user["hacker_id"])\
+        .replace("$${{ASSIGNMENT_ID}}$$",assignment_id)\
+        .replace("$${{SUBMISSION_ID}}$$",submission_id)\
+        .replace("$${{TASK_ID}}$$",task_id)\
+        .replace("$${{FILE_CONTENT}}$$",file_content)
+    else:
+        last_submission_results_page_html=redirect_to_enlistment_page
+    return HTMLResponse(content=submitted_task_file_page_html, status_code=200)
 
 @app.get("/user_exists")
 def get_user_exists(email:str):

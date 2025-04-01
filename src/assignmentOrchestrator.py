@@ -2,12 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
-from threading import Lock, Semaphore
+from threading import Lock, Semaphore, Thread
 import sandboxService
-#from multiprocessing import Lock
-
-sandboxService.startDockerContainer()
-
 import json, os, random, sys, subprocess, base64,functools, importlib.util,urllib
 
 app = FastAPI()
@@ -32,6 +28,13 @@ DEFAULT_MAX_SUBMISSIONS=3
 MAX_SUBMISION_PROCESSING=2
 lockRepository={}
 submision_processing_concurrency_semaphore=Semaphore(MAX_SUBMISION_PROCESSING)
+print("locking submision_processing_concurrency_semaphore until sandboxService finishes initializing")
+for sem_idx in range(MAX_SUBMISION_PROCESSING):
+    submision_processing_concurrency_semaphore.acquire()
+sandbox_init_thread=Thread(target=sandboxService.startDockerContainer, args=(submision_processing_concurrency_semaphore,MAX_SUBMISION_PROCESSING))
+sandbox_init_thread.start()
+#sandboxService.startDockerContainer(submision_processing_concurrency_semaphore,MAX_SUBMISION_PROCESSING)
+
 class AssignmentSubmission(BaseModel):
     hacker_id: str
     assignment_id: int
@@ -285,3 +288,10 @@ def last_assignment_submission_result(hacker_id:str):
         return {"status":"OK", "last_assignment_submission_result":last_submission}
     else:
         return {"status":"ERROR", "ERROR_message":f"user with hacker_id='{hacker_id}' does not have a single assignment submission"}
+    
+def get_submitted_file(hacker_id:str, assignment_id:str, submission_id:str, task_id:str):
+    task_file_name=f"task_{task_id}.py"
+    task_file_name_full_path=os.path.join(SUBMITTED_FILES_DIR, hacker_id, assignment_id, submission_id, task_file_name)
+    with open(task_file_name_full_path, "r") as f:
+            return f.read()
+    
