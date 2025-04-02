@@ -227,7 +227,16 @@ def submit_assignment(assignment_submission: AssignmentSubmission):
 
 def trigger_mail_after_assignment_submission(assignment_submission:AssignmentSubmission):
     user=User.model_validate(get_user(assignment_submission.hacker_id)["user"])
-    mailService.notification_producer(user=user,notification_type=NotificationType.ASSIGNMENT_SUBMISSION_RESULT_PASSING_WITH_NEXT_ASSIGNMENT_LINK)
+    if assignment_submission.result["status"] == "PASS":
+        if assignment_submission.assignment_id < last_available_assignment_id:
+            mailService.notification_producer(user=user,notification_type=NotificationType.ASSIGNMENT_SUBMISSION_RESULT_PASSING_WITH_NEXT_ASSIGNMENT_LINK)
+        else:
+            mailService.notification_producer(user=user,notification_type=NotificationType.ASSIGNMENT_SUBMISSION_RESULT_PASSING_WITHOUT_NEXT_ASSIGNMENT_LINK)
+    else:
+        if assignment_submission.submission_id < max_submission_for_assignment(assignment_submission.assignment_id):
+            mailService.notification_producer(user=user,notification_type=NotificationType.ASSIGNMENT_SUBMISSION_RESULT_FAILING_WITH_ANOTHER_ATTEMPT)
+        else:        
+            mailService.notification_producer(user=user,notification_type=NotificationType.ASSIGNMENT_SUBMISSION_RESULT_FAILING_WITHout_ANOTHER_ATTEMPT)
 
 def next_assignment_submission(hacker_id:str):
     data=load_data()
@@ -272,19 +281,13 @@ def assignment_task_count(assignment_id:int):
         return {"status":"ERROR", "ERROR_message":f"no entry for assignment with assignment_id='{str(assignment_id)}' inside assignment_mapper file"}
     
 def user_testing_in_progress(hacker_id:str):
-    #print(f"entered user_testing_in_progress with hacker_id='{hacker_id}'")
-    #print("current lockRepository:",lockRepository)
     if hacker_id in lockRepository:
-        #print(f"hacker_id='{hacker_id}' exists in lockRepository")
-        #print(f'lockRepository[{hacker_id}].locked()={str(lockRepository[hacker_id].locked())}')
         return lockRepository[hacker_id].locked()
     else:
-        #print(f"hacker_id='{hacker_id}' does not exist in lockRepository")
         return False
 
 def last_assignment_submission_result(hacker_id:str):
     data=load_data_by_hacker_id(hacker_id)
-    print(data)
     if hacker_id in data:    
         data=data[hacker_id]    
         assignment_keys=list(map(lambda key: int(key), data.keys()))
@@ -301,4 +304,8 @@ def get_submitted_file(hacker_id:str, assignment_id:str, submission_id:str, task
     task_file_name_full_path=os.path.join(SUBMITTED_FILES_DIR, hacker_id, assignment_id, submission_id, task_file_name)
     with open(task_file_name_full_path, "r") as f:
             return f.read()
-    
+
+def last_available_assignment_id()->int:
+    assignment_mapper=load_assignment_mapper()
+    assignment_ids=list(map(lambda key: int(key), assignment_mapper.keys()))
+    assignment_ids.sort()

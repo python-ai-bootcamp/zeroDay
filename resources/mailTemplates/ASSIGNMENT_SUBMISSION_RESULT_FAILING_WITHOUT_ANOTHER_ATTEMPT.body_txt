@@ -1,0 +1,6 @@
+ Hello $${{NAME}}$$
+ We noticed you attempted to submit a task and failed to pass
+ Sadly, there are no more attempts left and you are no longer part of our bootcamp process
+ If you feel this to be an unjust descision, please send us a mail at support@zerodaybootcamp.xyz
+ Explain to us why you think you deserve another chance, and we promise to consider your request
+$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/last_submission_result

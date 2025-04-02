@@ -46,9 +46,11 @@ def notification_consumer():
                 send_ses_mail(email_to_send)
             case NotificationType.ASSIGNMENT_SUBMISSION_RESULT_PASSING_WITH_NEXT_ASSIGNMENT_LINK:
                 print(f"ERROR: '{item_to_consume["notification_type"]}' notification type not yet implemented, not sending mail.")
-            case NotificationType.ASSIGNMENT_SUBMISSION_RESULT_PASSING_WITH_NO_NEXT_ASSIGNMENT_LINK:
+            case NotificationType.ASSIGNMENT_SUBMISSION_RESULT_PASSING_WITHOUT_NEXT_ASSIGNMENT_LINK:
                 print(f"ERROR: '{item_to_consume["notification_type"]}' notification type not yet implemented, not sending mail.")
-            case NotificationType.ASSIGNMENT_SUBMISSION_RESULT_FAILING_WITH_VIEW_ASSIGNMENT_RESULT_LINK:
+            case NotificationType.ASSIGNMENT_SUBMISSION_RESULT_FAILING_WITH_ANOTHER_ATTEMPT:
+                print(f"ERROR: '{item_to_consume["notification_type"]}' notification type not yet implemented, not sending mail.")
+            case NotificationType.ASSIGNMENT_SUBMISSION_RESULT_FAILING_WITHOUT_ANOTHER_ATTEMPT:
                 print(f"ERROR: '{item_to_consume["notification_type"]}' notification type not yet implemented, not sending mail.")
             case NotificationType.NEW_ASSIGNMENT_ARRIVED:
                 print(f"ERROR: '{item_to_consume["notification_type"]}' notification type not yet implemented, not sending mail.")

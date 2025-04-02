@@ -1,0 +1,6 @@
+Hello $${{NAME}}$$
+We noticed you attempted to submit a task and failed to pass
+But don't despair, you can still try agin
+No funny business this time, we expect you to pass!</p>
+$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/last_submission_result
+$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/assignments
