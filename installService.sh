@@ -13,6 +13,12 @@ yum install python3.12 -y
 pip install -r requirements.txt
 yum install nginx -y 
 yum install augeas-libs -y
+yum install container-tools -y
+
+#touch this file to avoide the "Emulate Docker CLI using podman. Create /etc/containers/nodocker to quiet msg." message displayed for podman docker alias for every docker command activated
+touch /etc/containers/nodocker
+#rebuild the task_runner image
+./rebuildDockerImage.sh
 
 #configure python3 and pip to work with python3.12
 ln -sf /usr/bin/python3.12  /usr/bin/python3
