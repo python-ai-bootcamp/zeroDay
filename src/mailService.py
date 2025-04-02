@@ -44,15 +44,16 @@ def notification_consumer():
                 body_html=notification_template["body_html"].replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol).replace("$${{HACKER_ID}}$$",user.hacker_id).replace("$${{NAME}}$$",user.name)
                 email_to_send=Email(to=user.email, subject=subject, body_txt=body_txt, body_html=body_html)
                 send_ses_mail(email_to_send)
-            case NotificationType.CANDIDATE_PARENT_INTRO:
-                print(f"ERROR: to be implemented '{item_to_consume["notification_type"]}'")
-            case NotificationType.NEW_ASSIGNMENT_DESCRIPTION:
-                print(f"ERROR: to be implemented '{item_to_consume["notification_type"]}'")
-            case NotificationType.ASSIGNMENT_SUBMISSION_RESULT:
-                print(f"ERROR: to be implemented '{item_to_consume["notification_type"]}'")
+            case NotificationType.ASSIGNMENT_SUBMISSION_RESULT_PASSING_WITH_NEXT_ASSIGNMENT_LINK:
+                print(f"ERROR: '{item_to_consume["notification_type"]}' notification type not yet implemented, not sending mail.")
+            case NotificationType.ASSIGNMENT_SUBMISSION_RESULT_PASSING_WITH_NO_NEXT_ASSIGNMENT_LINK:
+                print(f"ERROR: '{item_to_consume["notification_type"]}' notification type not yet implemented, not sending mail.")
+            case NotificationType.ASSIGNMENT_SUBMISSION_RESULT_FAILING_WITH_VIEW_ASSIGNMENT_RESULT_LINK:
+                print(f"ERROR: '{item_to_consume["notification_type"]}' notification type not yet implemented, not sending mail.")
+            case NotificationType.NEW_ASSIGNMENT_ARRIVED:
+                print(f"ERROR: '{item_to_consume["notification_type"]}' notification type not yet implemented, not sending mail.")
             case _:
                 print(f"ERROR: unimplemented NotificationType '{item_to_consume["notification_type"]}'")
-
 
 def flush_stdout_workaround():
     stdout.flush()

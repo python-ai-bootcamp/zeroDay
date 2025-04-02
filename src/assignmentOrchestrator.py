@@ -3,7 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 from threading import Lock, Semaphore, Thread
-import sandboxService
+from systemEntities import User,NotificationType
+from userService import get_user
+import sandboxService, mailService
 import json, os, random, sys, subprocess, base64,functools, importlib.util,urllib
 
 app = FastAPI()
@@ -220,7 +222,12 @@ def submit_assignment(assignment_submission: AssignmentSubmission):
         return assignment_submission.model_dump()
     lockRepository[assignment_submission.hacker_id].release()
     submision_processing_concurrency_semaphore.release()
+    trigger_mail_after_assignment_submission(assignment_submission)
     return assignment_submission.model_dump()
+
+def trigger_mail_after_assignment_submission(assignment_submission:AssignmentSubmission):
+    user=User.model_validate(get_user(assignment_submission.hacker_id)["user"])
+    mailService.notification_producer(user=user,notification_type=NotificationType.ASSIGNMENT_SUBMISSION_RESULT_PASSING_WITH_NEXT_ASSIGNMENT_LINK)
 
 def next_assignment_submission(hacker_id:str):
     data=load_data()

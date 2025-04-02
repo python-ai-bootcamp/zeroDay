@@ -223,7 +223,7 @@ def serve_last_submission_result(request: Request):
             .replace("$${{ASSIGNMENT_ID}}$$",str(assignment_id))\
             .replace("$${{SUBMISSION_ID}}$$",str(submission_id))\
             .replace("$${{MAX_ALLOWED_SUBMISSIONS}}$$",str(max_submission_for_assignment(assignment_id)))\
-            .replace("$${{REFRESH_META_TAG}}$$",'<meta http-equiv="refresh" content="1">')\
+            .replace("$${{REFRESH_META_TAG}}$$",'<meta http-equiv="refresh" content="3">')\
             .replace("$${{WAITING_FOR_RESULT_MESSAGE}}$$","<h3>Testing is still under progress</h3>")\
             .replace("$${{SUBMISSION_RESULT_CONTENT}}$$","")
         else:
