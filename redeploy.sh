@@ -4,6 +4,7 @@ if [ "$1" == "--help" ];then
     echo "--clear-data=true     data folder will be cleared. unless specified a copy of files  under ./data directory will be saved for post redeply"
     echo "--help                show this help file"
 else
+    docker container stop task_runner
     service zeroDay stop
     cd /opt
     mkdir -p archivedDeployments
