@@ -138,6 +138,32 @@
         }
 
     </style>
+    <script>
+        window.onload = function () { 
+            const nameInput = document.querySelector("#UserId");
+            const form = document.querySelector("form");
+            function is_israeli_id_number(id) {
+                id = String(id).trim();
+                if (id.length > 9 || isNaN(id)) return false;
+                id = id.length < 9 ? ("00000000" + id).slice(-9) : id;
+                    return Array.from(id, Number).reduce((counter, digit, i) => {
+                        const step = digit * ((i % 2) + 1);
+                        return counter + (step > 9 ? step - 9 : step);
+                    }) % 10 === 0;
+            }
+            function validate(e) {
+                if (is_israeli_id_number(nameInput.value)) { //correct!
+                    nameInput.setCustomValidity(""); // empty means "no error"
+                }
+                else {
+                    nameInput.setCustomValidity("ID field is not valid!"); //show error text
+                    e.preventDefault(); //prevent form submit
+                }
+            }
+            nameInput.addEventListener("input", validate);
+            form.addEventListener("submit", validate);
+        }
+    </script>
 </head>
 <body>
 
@@ -165,7 +191,7 @@
                     <label for="ClientLName">Last name:</label><br>
                     <input type="text" id="ClientLName" name="ClientLName" required ><br>
                     <label for="UserId">Id Number:</label><br>
-                    <input type="tel" id="UserId" name="UserId" pattern="[0-9]{9}"><br>
+                    <input type="tel" id="UserId" name="UserId"><br>
                     <label for="email">Email Address:</label><br>
                     <input type="email" id="email" name="email" required ><br>
                     <label for="phone">Phone Number:</label><br>

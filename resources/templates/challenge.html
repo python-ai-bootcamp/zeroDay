@@ -192,7 +192,7 @@
               state='blockedInput'
               appendLine("Command accepted, starting to encrypt all past communication");
               setTimeout(printEncryptCommand, 1200,{"textValue":"Encryption Process Ongoing: ", "iteration":50});
-              setTimeout(createNewUserCandidate,10000,userData)
+              setTimeout(createNewUserCandidate,0,userData)
             } else{
               appendLine("ERROR: invalid command executed. please execute 'encrypt communication' command in order to disguise all secret past communication");
             }
@@ -275,7 +275,7 @@
       })
       .then(response => response.json())
       .then(data => {
-        setTimeout(finallErrorMessagePrinter, 5000, 0)
+        setTimeout(finallErrorMessagePrinter, 15000, 0)
       })
       .catch(error => {
         appendLine('Error submitting data.');

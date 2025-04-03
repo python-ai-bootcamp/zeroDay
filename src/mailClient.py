@@ -1,4 +1,5 @@
 import boto3
+import traceback
 from botocore.exceptions import ClientError
 from pydantic import BaseModel, NameEmail, constr
 SENDER = "Mr. Python McPythony <sender@zerodaybootcamp.xyz>" # should ALWAYS remain this address, if we switch it might get blocked
@@ -8,6 +9,9 @@ SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS = ["python.ai.bootcamp@outlook.com", "tal.
 SUBJECT_LENGTH=250
 AWS_REGION = "eu-north-1"
 CHARSET = "UTF-8"
+
+class FilteredEmailException(Exception):
+    pass
 
 class Email(BaseModel):
     to: NameEmail
@@ -47,9 +51,21 @@ def send_ses_mail(email_to_send: Email):
                 Source=SENDER
             )
         else:
-            raise Exception(f"{email_to_send.to.email} is not inside {SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS}, not sending mail while in sandbox mode")
+            print("before exception")
+            raise FilteredEmailException(f"{email_to_send.to.email} is not inside {SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS}, not sending mail while in sandbox mode")   
+            print("after exception")
     except ClientError as e:
+        print("before printing exception")
         print(e.response['Error']['Message'])
+        print("after printing exception")
+    except FilteredEmailException as e:
+        print(e)
+        print(traceback.format_exc())
+    except Exception as e:
+        print("caughed an unexpected exception, please investigate stack")
+        print(e)
+        print(traceback.format_exc())
+
     else:
         print("Email sent, HuRRAH! Message ID:"),
         print(response['MessageId'])

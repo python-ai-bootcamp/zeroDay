@@ -62,20 +62,10 @@ def notification_consumer():
         item_to_consume=notification_queue.pop(0)
         print("item_to_consume::",item_to_consume)
         match item_to_consume["notification_type"]:
-            case NotificationType.CANDIDATE_KID_INTRO:
-                send_single_notification(item_to_consume)
-            case NotificationType.ASSIGNMENT_SUBMISSION_RESULT_PASSING_WITH_NEXT_ASSIGNMENT_LINK:
-                send_single_notification(item_to_consume)
-            case NotificationType.ASSIGNMENT_SUBMISSION_RESULT_PASSING_WITHOUT_NEXT_ASSIGNMENT_LINK:
-                send_single_notification(item_to_consume)
-            case NotificationType.ASSIGNMENT_SUBMISSION_RESULT_FAILING_WITH_ANOTHER_ATTEMPT:
-                send_single_notification(item_to_consume)
-            case NotificationType.ASSIGNMENT_SUBMISSION_RESULT_FAILING_WITHOUT_ANOTHER_ATTEMPT:
-                send_single_notification(item_to_consume)
-            case NotificationType.NEW_ASSIGNMENT_ARRIVED:
+            case NotificationType.NEW_ASSIGNMENT_ARRIVED | NotificationType.PAYMENT_ACCEPTED:
                 print(f"ERROR: '{item_to_consume["notification_type"]}' notification type not yet implemented, not sending mail.")
             case _:
-                print(f"ERROR: unimplemented NotificationType '{item_to_consume["notification_type"]}'")
+                send_single_notification(item_to_consume)
 
 def flush_stdout_workaround():
     stdout.flush()
