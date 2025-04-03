@@ -110,8 +110,12 @@ def flush_stdout_workaround():
     stdout.flush()
     
 def init_authentication_service():
-    ev_loop = asyncio.get_event_loop()
-    ev_loop.create_task(every(NOTIFICATION_CONSUMER_INTERVAL, notification_consumer))
-    ev_loop.create_task(every(0.1, flush_stdout_workaround))
+    try:
+        #ev_loop = asyncio.get_event_loop() #this one works and tested but making depracation warning in tests
+        ev_loop = asyncio.get_running_loop()
+        ev_loop.create_task(every(NOTIFICATION_CONSUMER_INTERVAL, notification_consumer))
+        ev_loop.create_task(every(0.1, flush_stdout_workaround))
+    except:
+        print("test mode, no event loop necessary")
 
 init_authentication_service()
