@@ -54,23 +54,25 @@
 
   <script>
     let state = 'email';
-    let riddleAnswerParis;
+    let riddleAnswerPairs;
     if ($${{IS_DEV_MODE}}$$ == true){
-      riddleAnswerParis=[{riddle:'Decipher the following code: bGV0bWVpbg==',answer:'letmein'}];
+      riddleAnswerPairs=[{riddle:'Decipher the following code: bGV0bWVpbg==',answer:/^ *letmein *$/}];
     }else{
-      riddleAnswerParis=[
-        {riddle:'Decipher the following code: bGV0bWVpbg==',answer:'letmein'},
-        {riddle:'which is bigger pi or e?',answer:'pi'},
-        {riddle:'How many bits are there in a single Gigabyte?',answer:'8589934592'},
-        {riddle:'0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, ...',answer:'144'},
-        {riddle:'solve following polish notation formula "x - 5 6 7"',answer:'-7'},
-        {riddle:'which interval does following expression represents "0 */3 * * *". 20 minutes, 8 hours, 3 hours, 1 day, 3 days ?',answer:'3 hours'},
-        {riddle:'What also floats in water?',answer:'a duck'},
-        {riddle:'RSA, is an algorithm used for symmetric key cryptography? (yes/no)',answer:'no'},
-        {riddle:'what is the name of a random string of data used to modify a password hash called?',answer:'salt'},
+      riddleAnswerPairs=[
+        {riddle:'Decipher the following code: bGV0bWVpbg==',answer:/^ *letmein *$/},
+        {riddle:'which is bigger pi or e?',answer:/^ *pi *$/i},
+        {riddle:'How many bits are there in a single Gigabyte?',answer:/^ *8589934592 *$|^ *8,589,934,592 *$/},
+        {riddle:'0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, ...',answer:/^ *144 *$/},
+        {riddle:'solve following polish notation formula "x - 5 6 7"',answer:/^ *- *7 *$/},
+        {riddle:'which interval does following expression represents "0 */3 * * *". 20 minutes, 8 hours, 3 hours, 1 day, 3 days ?',answer:/^ *3 *hours? *$|^ *3 *h *$/i},
+        {riddle:'What also floats in water?',answer:/^ *a +duck */i},
+        {riddle:'RSA, is an algorithm used for symmetric key cryptography? (yes/no)',answer:/^ *no *$/i},
+        {riddle:'what is the name of a random string of data used to modify a password hash called?',answer:/^ *salt *$|^ *salting *$/i},
+        {riddle:'what is the answer to the ultimate question of life, the universe, and everything',answer:/^ *42 *$/},
+        {riddle:'which popular code tool was named by its developer after himself (hint, he is the same guy who created linux kernel)',answer:/^ *git *$/i},
       ];
     }
-    selectedRiddleAnswerPair=riddleAnswerParis[Math.floor(Math.random()*riddleAnswerParis.length)];
+    selectedRiddleAnswerPair=riddleAnswerPairs[Math.floor(Math.random()*riddleAnswerPairs.length)];
     let riddle = selectedRiddleAnswerPair.riddle;
     let answer = selectedRiddleAnswerPair.answer;
     const userData = { email: '', hacker_id: '', name: '', phone: '', paid_status:false };
@@ -156,13 +158,13 @@
               replaceInputField('text');
             }
           } else if (state === 'riddle') {
-            if (inputValue === answer) {
+            if (answer.test(inputValue)) {
               appendLine('Access Granted');
               setTimeout(showNamePrompt, 1000);
             } else {
               appendLine('Access Denied');
               state = 'riddle';
-              selectedRiddleAnswerPair=riddleAnswerParis[Math.floor(Math.random()*riddleAnswerParis.length)];
+              selectedRiddleAnswerPair=riddleAnswerPairs[Math.floor(Math.random()*riddleAnswerPairs.length)];
               riddle = selectedRiddleAnswerPair.riddle;
               answer = selectedRiddleAnswerPair.answer;
               appendLine(riddle);
