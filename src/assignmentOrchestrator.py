@@ -228,7 +228,7 @@ def submit_assignment(assignment_submission: AssignmentSubmission):
 def trigger_mail_after_assignment_submission(assignment_submission:AssignmentSubmission):
     user=User.model_validate(get_user(assignment_submission.hacker_id)["user"])
     if assignment_submission.result["status"] == "PASS":
-        if assignment_submission.assignment_id < last_available_assignment_id:
+        if assignment_submission.assignment_id < last_available_assignment_id():
             mailService.notification_producer(user=user,notification_type=NotificationType.ASSIGNMENT_SUBMISSION_RESULT_PASSING_WITH_NEXT_ASSIGNMENT_LINK)
         else:
             mailService.notification_producer(user=user,notification_type=NotificationType.ASSIGNMENT_SUBMISSION_RESULT_PASSING_WITHOUT_NEXT_ASSIGNMENT_LINK)
@@ -236,7 +236,7 @@ def trigger_mail_after_assignment_submission(assignment_submission:AssignmentSub
         if assignment_submission.submission_id < max_submission_for_assignment(assignment_submission.assignment_id):
             mailService.notification_producer(user=user,notification_type=NotificationType.ASSIGNMENT_SUBMISSION_RESULT_FAILING_WITH_ANOTHER_ATTEMPT)
         else:        
-            mailService.notification_producer(user=user,notification_type=NotificationType.ASSIGNMENT_SUBMISSION_RESULT_FAILING_WITHout_ANOTHER_ATTEMPT)
+            mailService.notification_producer(user=user,notification_type=NotificationType.ASSIGNMENT_SUBMISSION_RESULT_FAILING_WITHOUT_ANOTHER_ATTEMPT)
 
 def next_assignment_submission(hacker_id:str):
     data=load_data()
@@ -309,3 +309,4 @@ def last_available_assignment_id()->int:
     assignment_mapper=load_assignment_mapper()
     assignment_ids=list(map(lambda key: int(key), assignment_mapper.keys()))
     assignment_ids.sort()
+    return assignment_ids[-1]

@@ -1,17 +1,45 @@
-import asyncio,threading,datetime,os
+import asyncio,datetime,os, json
 from typing import Tuple
-from systemEntities import User,NotificationType
+from systemEntities import User,NotificationType, Notification
 from mailClient import send_ses_mail, Email
 from sys import stdout
 from configurationService import domain_name, protocol
 
 
-notification_queue=[]
+
 NOTIFICATION_CONSUMER_INTERVAL=15
 MAIL_TEMPLATES_DIR=os.path.join("resources","mailTemplates")
+MAIL_QUEUE_DATA_FILE = os.path.join("./data/","notification_queue_data.json")
+UNDELIVERED_MAIL_DATA_FILE = os.path.join("./data/","notification_queue_undelivered_data.json")
+MAX_DELIVERY_ATTEMPTS = 3
+
+def load_notification_queue_data():
+    if os.path.exists(MAIL_QUEUE_DATA_FILE):
+        with open(MAIL_QUEUE_DATA_FILE, "r") as f:
+            return [Notification.model_validate(notification) for notification in json.load(f)]
+    return []
+
+def load_undelivered_notification_data():
+    if os.path.exists(UNDELIVERED_MAIL_DATA_FILE):
+        with open(UNDELIVERED_MAIL_DATA_FILE, "r") as f:
+            return [Notification.model_validate(notification) for notification in json.load(f)]
+    return []
+
+notification_queue:list[Notification]=load_notification_queue_data()
+
+def save_notification_queue_data():
+    print("saving following notification_queue data::",notification_queue)
+    with open(MAIL_QUEUE_DATA_FILE, "w") as f:
+        json.dump([notification.dict() for notification in notification_queue], f, indent=4)
+
+def save_undelivered_notification_data(data):
+    print("saving following undelivered_notification data::",data)
+    with open(UNDELIVERED_MAIL_DATA_FILE, "w") as f:
+        json.dump([notification.dict() for notification in data], f, indent=4)
 
 def notification_producer(user:User,notification_type:NotificationType):
-    notification_queue.append({"user":user,"notification_type":notification_type})
+    notification_queue.append(Notification(user=user,notification_type=notification_type))
+    save_notification_queue_data()
 
 async def every(__seconds: float, func, *args, **kwargs):
     while True:
@@ -45,13 +73,18 @@ def substitute_template_variables(subject_template:str,body_html_template:str,bo
         .replace("$${{NAME}}$$",user.name)
     return subject, body_html, body_txt
 
-def send_single_notification(item_to_consume):
-    print(f"processing notification of type '{item_to_consume["notification_type"]}'")
-    user=item_to_consume["user"]
-    subject_template, body_html_template, body_txt_template=load_template_by_notification(item_to_consume["notification_type"])
+def send_single_notification(item_to_consume:Notification):
+    global notification_queue
+    print(f"processing notification of type '{item_to_consume.notification_type}'")
+    user=item_to_consume.user
+    subject_template, body_html_template, body_txt_template=load_template_by_notification(item_to_consume.notification_type)
     subject, body_html, body_txt = substitute_template_variables(subject_template, body_html_template, body_txt_template, user)
     email_to_send=Email(to=user.email, subject=subject, body_txt=body_txt, body_html=body_html)
-    send_ses_mail(email_to_send)
+    send_succeeded=send_ses_mail(email_to_send)
+    if not send_succeeded:
+       item_to_consume.send_attempt_counter=item_to_consume.send_attempt_counter+1
+       notification_queue.append(item_to_consume)
+    save_notification_queue_data()
 
 def notification_consumer():
     global notification_queue
@@ -60,12 +93,18 @@ def notification_consumer():
     print("current notification_queue::",notification_queue)
     if len(notification_queue)>0:
         item_to_consume=notification_queue.pop(0)
-        print("item_to_consume::",item_to_consume)
-        match item_to_consume["notification_type"]:
-            case NotificationType.NEW_ASSIGNMENT_ARRIVED | NotificationType.PAYMENT_ACCEPTED:
-                print(f"ERROR: '{item_to_consume["notification_type"]}' notification type not yet implemented, not sending mail.")
-            case _:
-                send_single_notification(item_to_consume)
+        if item_to_consume.send_attempt_counter<MAX_DELIVERY_ATTEMPTS:
+            print("item_to_consume::",item_to_consume)
+            match item_to_consume.notification_type:
+                case NotificationType.NEW_ASSIGNMENT_ARRIVED | NotificationType.PAYMENT_ACCEPTED:
+                    print(f"ERROR: '{item_to_consume.notification_type}' notification type not yet implemented, not sending mail.")
+                case _:
+                    send_single_notification(item_to_consume)
+        else:
+            save_notification_queue_data()
+            data=load_undelivered_notification_data()
+            data.append(item_to_consume)
+            save_undelivered_notification_data(data)
 
 def flush_stdout_workaround():
     stdout.flush()

@@ -4,7 +4,7 @@ from systemEntities import User,NotificationType
 
 USER_DATA_FILE = os.path.join("./data/","user_data.json")
 
-def load_data(file_type: str = "user"):
+def load_data():
     if os.path.exists(USER_DATA_FILE):
         with open(USER_DATA_FILE, "r") as f:
             return json.load(f)
@@ -48,8 +48,8 @@ def user_exists(email:str) -> bool:
     return len(user)>0
 
 def initiate_user_payement_procedure(hacker_id:str, ClientName:str, ClientLName:str, UserId:str, email:str, phone:str):
-    #print(f"initiate_user_payement_procedure for user {hacker_id} with following details:ClientName:{ClientName}, ClientLName:{ClientLName}, UserId:{UserId}, email:{email}, phone:{phone}")
-    #print("unimplemented procedure, setting user as paied by default")
+    print(f"initiate_user_payement_procedure for user {hacker_id} with following details:ClientName:{ClientName}, ClientLName:{ClientLName}, UserId:{UserId}, email:{email}, phone:{phone}")
+    print("unimplemented procedure, setting user as paied by default")
     set_user_as_paid(hacker_id)
 
 def set_user_as_paid(hacker_id:str):

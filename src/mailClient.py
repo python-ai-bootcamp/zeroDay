@@ -20,7 +20,7 @@ class Email(BaseModel):
     body_html: str
 
 def send_ses_mail(email_to_send: Email):
-    print(email_to_send)
+    #print(email_to_send)
     client = boto3.client('ses',region_name=AWS_REGION)
     try:
         if (any(email_to_send.to.email.replace(">","").replace("<","")==x for x in SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS)):
@@ -51,21 +51,19 @@ def send_ses_mail(email_to_send: Email):
                 Source=SENDER
             )
         else:
-            print("before exception")
-            raise FilteredEmailException(f"{email_to_send.to.email} is not inside {SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS}, not sending mail while in sandbox mode")   
-            print("after exception")
+            raise FilteredEmailException(f"{email_to_send.to.email} is not inside {SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS}, not sending mail while in sandbox mode")
     except ClientError as e:
-        print("before printing exception")
         print(e.response['Error']['Message'])
-        print("after printing exception")
+        return False
     except FilteredEmailException as e:
         print(e)
         print(traceback.format_exc())
+        return False
     except Exception as e:
         print("caughed an unexpected exception, please investigate stack")
         print(e)
         print(traceback.format_exc())
-
+        return False
     else:
-        print("Email sent, HuRRAH! Message ID:"),
-        print(response['MessageId'])
+        print(f"Email sent, with following Message ID:{response['MessageId']}"),
+        return True
