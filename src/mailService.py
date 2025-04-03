@@ -1,4 +1,5 @@
 import asyncio,threading,datetime,os
+from typing import Tuple
 from systemEntities import User,NotificationType
 from mailClient import send_ses_mail, Email
 from sys import stdout
@@ -19,12 +20,38 @@ async def every(__seconds: float, func, *args, **kwargs):
 
 def load_template_by_notification(notification_type:NotificationType):    
     with open(os.path.join(MAIL_TEMPLATES_DIR,notification_type.name+".subject"), "r") as f:
-        subject=f.read()
+        subject_template=f.read()
     with open(os.path.join(MAIL_TEMPLATES_DIR,notification_type.name+".body_html"), "r") as f:
-        body_html=f.read()
+        body_html_template=f.read()
     with open(os.path.join(MAIL_TEMPLATES_DIR,notification_type.name+".body_txt"), "r") as f:
-        body_txt=f.read()
-    return {"subject":subject,"body_html":body_html,"body_txt":body_txt}
+        body_txt_template=f.read()
+    return subject_template, body_html_template, body_txt_template
+
+def substitute_template_variables(subject_template:str,body_html_template:str,body_txt_template:str, user:User)->Tuple[str,str,str]:
+    subject=subject_template\
+        .replace("$${{DOMAIN_NAME}}$$",domain_name)\
+        .replace("$${{PROTOCOL}}$$",protocol)\
+        .replace("$${{HACKER_ID}}$$",user.hacker_id)\
+        .replace("$${{NAME}}$$",user.name)
+    body_html=body_html_template\
+        .replace("$${{DOMAIN_NAME}}$$",domain_name)\
+        .replace("$${{PROTOCOL}}$$",protocol)\
+        .replace("$${{HACKER_ID}}$$",user.hacker_id)\
+        .replace("$${{NAME}}$$",user.name)
+    body_txt=body_txt_template\
+        .replace("$${{DOMAIN_NAME}}$$",domain_name)\
+        .replace("$${{PROTOCOL}}$$",protocol)\
+        .replace("$${{HACKER_ID}}$$",user.hacker_id)\
+        .replace("$${{NAME}}$$",user.name)
+    return subject, body_html, body_txt
+
+def send_single_notification(item_to_consume):
+    print(f"processing notification of type '{item_to_consume["notification_type"]}'")
+    user=item_to_consume["user"]
+    subject_template, body_html_template, body_txt_template=load_template_by_notification(item_to_consume["notification_type"])
+    subject, body_html, body_txt = substitute_template_variables(subject_template, body_html_template, body_txt_template, user)
+    email_to_send=Email(to=user.email, subject=subject, body_txt=body_txt, body_html=body_html)
+    send_ses_mail(email_to_send)
 
 def notification_consumer():
     global notification_queue
@@ -36,22 +63,15 @@ def notification_consumer():
         print("item_to_consume::",item_to_consume)
         match item_to_consume["notification_type"]:
             case NotificationType.CANDIDATE_KID_INTRO:
-                print(f"processing notification of type '{item_to_consume["notification_type"]}'")
-                user=item_to_consume["user"]
-                notification_template=load_template_by_notification(item_to_consume["notification_type"])
-                subject=notification_template["subject"]
-                body_txt=notification_template["body_txt"].replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol).replace("$${{HACKER_ID}}$$",user.hacker_id).replace("$${{NAME}}$$",user.name)
-                body_html=notification_template["body_html"].replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol).replace("$${{HACKER_ID}}$$",user.hacker_id).replace("$${{NAME}}$$",user.name)
-                email_to_send=Email(to=user.email, subject=subject, body_txt=body_txt, body_html=body_html)
-                send_ses_mail(email_to_send)
+                send_single_notification(item_to_consume)
             case NotificationType.ASSIGNMENT_SUBMISSION_RESULT_PASSING_WITH_NEXT_ASSIGNMENT_LINK:
-                print(f"ERROR: '{item_to_consume["notification_type"]}' notification type not yet implemented, not sending mail.")
+                send_single_notification(item_to_consume)
             case NotificationType.ASSIGNMENT_SUBMISSION_RESULT_PASSING_WITHOUT_NEXT_ASSIGNMENT_LINK:
-                print(f"ERROR: '{item_to_consume["notification_type"]}' notification type not yet implemented, not sending mail.")
+                send_single_notification(item_to_consume)
             case NotificationType.ASSIGNMENT_SUBMISSION_RESULT_FAILING_WITH_ANOTHER_ATTEMPT:
-                print(f"ERROR: '{item_to_consume["notification_type"]}' notification type not yet implemented, not sending mail.")
+                send_single_notification(item_to_consume)
             case NotificationType.ASSIGNMENT_SUBMISSION_RESULT_FAILING_WITHOUT_ANOTHER_ATTEMPT:
-                print(f"ERROR: '{item_to_consume["notification_type"]}' notification type not yet implemented, not sending mail.")
+                send_single_notification(item_to_consume)
             case NotificationType.NEW_ASSIGNMENT_ARRIVED:
                 print(f"ERROR: '{item_to_consume["notification_type"]}' notification type not yet implemented, not sending mail.")
             case _:

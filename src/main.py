@@ -3,7 +3,7 @@ from userService import User, submit_user, user_exists, get_user, initiate_user_
 from assignmentOrchestrator import assignment_description,next_assignment_submission, assignment_task_count, AssignmentSubmission, submit_assignment, user_testing_in_progress, max_submission_for_assignment, last_assignment_submission_result, get_submitted_file
 from mailClient import Email, send_ses_mail
 from exportService import fetch_symmetric_key, download_data
-from fastapi import FastAPI, BackgroundTasks, Request
+from fastapi import FastAPI, BackgroundTasks, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from configurationService import domain_name, protocol, isDevMod
@@ -52,6 +52,30 @@ def validate_session(request: Request=None, hacker_id: str=None):
         else:
             return False
 
+@app.get("/about")
+def serve_about(request: Request, response: Response, hacker_id:str=None):
+    about_page_html = open(os.path.join("resources","templates","about.html"), "r").read()
+    user=validate_session(request=request, hacker_id=hacker_id)
+    print(f"is_session_validated:'{user}'")
+    if user:
+        if user["paid_status"]:
+            about_page_html=about_page_html\
+                .replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')\
+                .replace("$${{ENLISTMENT_PROCESS_SECTION}}$$",'<li>You have successfully passed the challenge and enlisted into our ZeroDayBootcamp program</li><li>You may now engage in our next challenges in the <a href="/assignments" style="color:#778881;">Assignments Page</a></li>')
+        else:
+            about_page_html=about_page_html\
+                .replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')\
+                .replace("$${{ENLISTMENT_PROCESS_SECTION}}$$",'<li>You have successfully passed the initial screening <a href="/challenge" style="color:#778881;">zeroDayBootCamp</a> challenge</li><li>You can now finish our enlistment process in our <a href="/enlist" style="color:#778881;">Enlistment Page</a></li>')
+        html_response=HTMLResponse(content=about_page_html, status_code=200)
+        html_response.set_cookie(key="sessionKey", value=user["hacker_id"])
+    else:
+        about_page_html=about_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$","")\
+            .replace("$${{ENLISTMENT_PROCESS_SECTION}}$$",'<li>One can enlist only after passing the <a href="/challenge" style="color:#778881;">zeroDayBootCamp</a> challenge</li><li>Once passing the challenge, a dedicated link will be sent via mail enabling payment for registration</li>')
+        html_response=HTMLResponse(content=about_page_html, status_code=200)
+        html_response.set_cookie(key="sessionKey", value="", max_age=0)
+
+    return html_response
+
 @app.get("/challenge")
 def serve_challange():
     return HTMLResponse(content=challenge_page_html, status_code=200)
@@ -92,27 +116,6 @@ def serve_payment_redirect(request: Request, hacker_id:str, ClientName:str, Clie
         #if user has no valid session just redirect him to enlist page so he will see is harsh reality
         payment_page_html = redirect_to_enlistment_page
     return HTMLResponse(content=payment_page_html, status_code=200)
-
-@app.get("/about")
-def serve_about(request: Request, hacker_id:str=None):
-    about_page_html = open(os.path.join("resources","templates","about.html"), "r").read()
-    user=validate_session(request=request, hacker_id=hacker_id)
-    print(f"is_session_validated:'{user}'")
-    if user:
-        if user["paid_status"]:
-            about_page_html=about_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')
-            html_response=HTMLResponse(content=about_page_html, status_code=200)
-            html_response.set_cookie(key="sessionKey", value=user["hacker_id"])
-        else:
-            about_page_html=about_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$","")
-            html_response=HTMLResponse(content=about_page_html, status_code=200)
-            html_response.set_cookie(key="sessionKey", value=user["hacker_id"])
-    else:
-        about_page_html=about_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$","")
-        html_response=HTMLResponse(content=about_page_html, status_code=200)
-
-    return html_response
-
 
 @app.get("/enlist")
 def serve_enlist(request: Request):
