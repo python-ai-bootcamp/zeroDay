@@ -1,4 +1,4 @@
-import os,json, base64
+import os,json, periodicTriggerService
 from userService import User, submit_user, user_exists, get_user, initiate_user_payement_procedure
 from assignmentOrchestrator import assignment_description,next_assignment_submission, assignment_task_count, AssignmentSubmission, submit_assignment, user_testing_in_progress, max_submission_for_assignment, last_assignment_submission_result, get_submitted_file
 from mailClient import Email, send_ses_mail
@@ -153,7 +153,7 @@ def serve_assignments(request: Request):
             .replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')\
             .replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol)\
             .replace("$${{HACKER_ID}}$$",user["hacker_id"])\
-            .replace("$${{ASSIGNMENT_DESCRIPTION_CONTENT}}$$","please check back in a few days")\
+            .replace("$${{ASSIGNMENT_DESCRIPTION_CONTENT}}$$","<p>Please check back in a few days</p><p>We will notify you in an email if anything changes</p>")\
             .replace("$${{TITLE}}$$","No Currently Available New Assignments")\
             .replace("$${{BREACH_MAX_ATTEMPT_MESSAGE}}$$","")\
             .replace("$${{SUBMIT_ASSIGNMENT_BUTTON_VISIBILITY}}$$","hidden")

@@ -28,7 +28,7 @@ def mocker__on_empty_data(mocker,request):
     mocker.patch("assignmentOrchestrator.ASSIGNMENT_MAPPER_FILE",   gconf["test_assignment_mapper_json_file_location"])
     mocker.patch("assignmentOrchestrator.DATA_FILE_DIRECTORY",      gconf["assignment_data_file_directory"])
 
-    mocker.patch("assignmentOrchestrator.trigger_mail_after_assignment_submission", return_value=True)
+    mocker.patch("assignmentOrchestrator.send_mail_after_assignment_submission", return_value=True)
 
 
 @patch("assignmentOrchestrator.check_assignment_submission")

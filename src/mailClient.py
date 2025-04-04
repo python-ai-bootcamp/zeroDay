@@ -57,7 +57,7 @@ def send_ses_mail(email_to_send: Email):
         return False
     except FilteredEmailException as e:
         print(e)
-        print(traceback.format_exc())
+        #print(traceback.format_exc())
         return False
     except Exception as e:
         print("caughed an unexpected exception, please investigate stack")

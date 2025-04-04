@@ -2,12 +2,8 @@ import asyncio,datetime,os, json
 from typing import Tuple
 from systemEntities import User,NotificationType, Notification
 from mailClient import send_ses_mail, Email
-from sys import stdout
 from configurationService import domain_name, protocol
 
-
-
-NOTIFICATION_CONSUMER_INTERVAL=15
 MAIL_TEMPLATES_DIR=os.path.join("resources","mailTemplates")
 MAIL_QUEUE_DATA_FILE = os.path.join("./data/","notification_queue_data.json")
 UNDELIVERED_MAIL_DATA_FILE = os.path.join("./data/","notification_queue_undelivered_data.json")
@@ -40,11 +36,6 @@ def save_undelivered_notification_data(data):
 def notification_producer(user:User,notification_type:NotificationType):
     notification_queue.append(Notification(user=user,notification_type=notification_type))
     save_notification_queue_data()
-
-async def every(__seconds: float, func, *args, **kwargs):
-    while True:
-        await asyncio.sleep(__seconds)
-        func(*args, **kwargs)
 
 def load_template_by_notification(notification_type:NotificationType):    
     with open(os.path.join(MAIL_TEMPLATES_DIR,notification_type.name+".subject"), "r") as f:
@@ -88,15 +79,15 @@ def send_single_notification(item_to_consume:Notification):
 
 def notification_consumer():
     global notification_queue
-    timestamp="entered notification_consumer at: "+datetime.datetime.now().isoformat()
-    print(timestamp)
-    print("current notification_queue::",notification_queue)
     if len(notification_queue)>0:
+        timestamp="entered notification_consumer at: "+datetime.datetime.now().isoformat()
+        print(timestamp)
+        print("current notification_queue::",notification_queue)
         item_to_consume=notification_queue.pop(0)
         if item_to_consume.send_attempt_counter<MAX_DELIVERY_ATTEMPTS:
             print("item_to_consume::",item_to_consume)
             match item_to_consume.notification_type:
-                case NotificationType.NEW_ASSIGNMENT_ARRIVED | NotificationType.PAYMENT_ACCEPTED:
+                case NotificationType.PAYMENT_ACCEPTED:
                     print(f"ERROR: '{item_to_consume.notification_type}' notification type not yet implemented, not sending mail.")
                 case _:
                     send_single_notification(item_to_consume)
@@ -105,17 +96,3 @@ def notification_consumer():
             data=load_undelivered_notification_data()
             data.append(item_to_consume)
             save_undelivered_notification_data(data)
-
-def flush_stdout_workaround():
-    stdout.flush()
-    
-def init_authentication_service():
-    try:
-        #ev_loop = asyncio.get_event_loop() #this one works and tested but making depracation warning in tests
-        ev_loop = asyncio.get_running_loop()
-        ev_loop.create_task(every(NOTIFICATION_CONSUMER_INTERVAL, notification_consumer))
-        ev_loop.create_task(every(0.1, flush_stdout_workaround))
-    except:
-        print("test mode, no event loop necessary")
-
-init_authentication_service()

@@ -2,5 +2,9 @@
     "1":{
         "description":"description_1.md",
         "validators":["validate_assignment_1_task_1.py"]
+    },
+    "2":{
+        "description":"description_1.md",
+        "validators":["validate_assignment_2_task_1.py"]
     }
 }

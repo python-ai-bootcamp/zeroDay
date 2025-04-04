@@ -6,7 +6,7 @@ from threading import Lock, Semaphore, Thread
 from systemEntities import User,NotificationType
 from userService import get_user
 import sandboxService, mailService
-import json, os, random, sys, subprocess, base64,functools, importlib.util,urllib
+import json, os, sys, base64,functools, importlib.util, time, datetime
 
 app = FastAPI()
 
@@ -22,6 +22,7 @@ relative_data_directory="./data"
 relative_assignments_directory="./resources/config/assignments/"
 DATA_FILE_DIRECTORY = os.path.join(relative_data_directory,"assignment_data")
 ASSIGNMENT_MAPPER_FILE = os.path.join(relative_assignments_directory,"assignment_mapper.json")
+NOTIFIED_ASSIGNMENTS_FILE = os.path.join(relative_data_directory,"notified_assignments.json")
 ASSIGNMENT_VALIDATOR_DIR = os.path.join(relative_assignments_directory,"validators")
 ASSIGNMENT_DESCRIPTIONS_DIR = os.path.join(relative_assignments_directory,"assignment_descriptions")
 SUBMITTED_FILES_DIR=os.path.join(relative_data_directory,"submitted_files")
@@ -74,6 +75,21 @@ def load_assignment_mapper():
         with open(ASSIGNMENT_MAPPER_FILE, "r") as f:
             return json.load(f)
     return {}
+
+def load_notified_assignments():
+    if os.path.exists(NOTIFIED_ASSIGNMENTS_FILE):
+        with open(NOTIFIED_ASSIGNMENTS_FILE, "r") as f:
+            return json.load(f)
+    ts = time.time()
+    return [{"assignment_id":0, "timestamp":datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')}]
+
+def save_notified_assignments(assignment_id: int):
+    ts = time.time()
+    notified_assignments_data=load_notified_assignments()
+    notified_assignments_data.append({"assignment_id":assignment_id, "timestamp":datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')})
+    with open(NOTIFIED_ASSIGNMENTS_FILE, "w") as f:
+        json.dump(notified_assignments_data, f, indent=4)
+
 
 def save_data(data: dict):
     hacker_id=list(data.keys())[0]
@@ -222,10 +238,10 @@ def submit_assignment(assignment_submission: AssignmentSubmission):
         return assignment_submission.model_dump()
     lockRepository[assignment_submission.hacker_id].release()
     submision_processing_concurrency_semaphore.release()
-    trigger_mail_after_assignment_submission(assignment_submission)
+    send_mail_after_assignment_submission(assignment_submission)
     return assignment_submission.model_dump()
 
-def trigger_mail_after_assignment_submission(assignment_submission:AssignmentSubmission):
+def send_mail_after_assignment_submission(assignment_submission:AssignmentSubmission):
     user=User.model_validate(get_user(assignment_submission.hacker_id)["user"])
     if assignment_submission.result["status"] == "PASS":
         if assignment_submission.assignment_id < last_available_assignment_id():
@@ -237,6 +253,38 @@ def trigger_mail_after_assignment_submission(assignment_submission:AssignmentSub
             mailService.notification_producer(user=user,notification_type=NotificationType.ASSIGNMENT_SUBMISSION_RESULT_FAILING_WITH_ANOTHER_ATTEMPT)
         else:        
             mailService.notification_producer(user=user,notification_type=NotificationType.ASSIGNMENT_SUBMISSION_RESULT_FAILING_WITHOUT_ANOTHER_ATTEMPT)
+
+def send_new_assignment_mail_for_user(hacker_id):
+    #print(f"send_new_assignment_mail_for_user for hacker_id='{hacker_id}'")
+    #print(f"loading user with hacker_id='{hacker_id}'")
+    fetched_user_result=get_user(hacker_id)
+    #print(f"fetched_user_result for hacker_id='{hacker_id} is fetched_user_result='{fetched_user_result}'")
+    if fetched_user_result["status"] == "OK":
+        user=User.model_validate(fetched_user_result["user"])
+        mailService.notification_producer(user=user,notification_type=NotificationType.NEW_ASSIGNMENT_ARRIVED)
+    else:
+        print(f"user with hacker_id='{hacker_id}' referenced by assignmentOrchestrator module, does not exist in userService data and will not get notified on new assignment")
+
+def new_assignment_added():
+    currently_available_last_assignment_id=last_available_assignment_id()
+    last_notified_assignment_id=load_notified_assignments()[-1]["assignment_id"]
+    if currently_available_last_assignment_id>last_notified_assignment_id:
+        save_notified_assignments(currently_available_last_assignment_id)
+        return True
+    else:
+        return False
+    
+
+def trigger_new_assignment_mail_if_needed():
+    if new_assignment_added():
+        latest_assignment_id=last_available_assignment_id()
+        all_user_data=load_data()
+        #print("all_user_data:: ",all_user_data)
+        for hacker_id in all_user_data:
+            hacker_data=all_user_data[hacker_id]
+            user_last_assignment_key=last_assignment_key(hacker_data)
+            if int(user_last_assignment_key)+1 == int(latest_assignment_id):
+                send_new_assignment_mail_for_user(hacker_id)
 
 def next_assignment_submission(hacker_id:str):
     data=load_data()
@@ -285,15 +333,18 @@ def user_testing_in_progress(hacker_id:str):
         return lockRepository[hacker_id].locked()
     else:
         return False
+    
+def last_assignment_key(hacker_data):
+    assignment_keys=list(map(lambda key: int(key), hacker_data.keys()))
+    assignment_keys.sort()
+    return str(assignment_keys[-1])
 
 def last_assignment_submission_result(hacker_id:str):
     data=load_data_by_hacker_id(hacker_id)
     if hacker_id in data:    
-        data=data[hacker_id]    
-        assignment_keys=list(map(lambda key: int(key), data.keys()))
-        assignment_keys.sort()
-        last_assignment_keys=str(assignment_keys[-1])
-        last_assignment_submissions= data[last_assignment_keys]
+        hacker_data=data[hacker_id]
+        assignment_key=last_assignment_key(hacker_data)
+        last_assignment_submissions= hacker_data[assignment_key]
         last_submission=last_assignment_submissions[-1]
         return {"status":"OK", "last_assignment_submission_result":last_submission}
     else:
