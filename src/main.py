@@ -77,7 +77,12 @@ def serve_about(request: Request, response: Response, hacker_id:str=None):
     return html_response
 
 @app.get("/challenge")
-def serve_challange():
+def serve_challange(advertise_code:str="unknown"):
+    challenge_page_html=open(os.path.join("resources","templates","challenge.html"), "r").read().\
+        replace("$${{DOMAIN_NAME}}$$",domain_name).\
+        replace("$${{PROTOCOL}}$$",protocol).\
+        replace("$${{IS_DEV_MODE}}$$",isDevMod).\
+        replace("$${{ADVERTISE_CODE}}$$",advertise_code)
     return HTMLResponse(content=challenge_page_html, status_code=200)
 
 @app.get("/")
