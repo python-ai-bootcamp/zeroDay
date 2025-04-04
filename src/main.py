@@ -7,6 +7,7 @@ from fastapi import FastAPI, BackgroundTasks, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from configurationService import domain_name, protocol, isDevMod
+from starlette.responses import FileResponse
 
 
 app = FastAPI()
@@ -314,3 +315,8 @@ def post_submit_assignment(assignment_submission: AssignmentSubmission, backgrou
     background_tasks.add_task(create_submit_assignment_background_task, assignment_submission)
     print("assignment_submission added as background task")
     return {"status":"SUBMITTED"}
+
+
+@app.get("/cf13f168b4db4e08cf6906e44146d991.txt")
+def emtpy_domain_validation_file():
+    return FileResponse("./cf13f168b4db4e08cf6906e44146d991.txt", media_type='application/octet-stream',filename="cf13f168b4db4e08cf6906e44146d991.txt")
