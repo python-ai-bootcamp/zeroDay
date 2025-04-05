@@ -1,7 +1,8 @@
 import asyncio,datetime,os, json
 from typing import Tuple
 from systemEntities import User,NotificationType, Notification
-from mailClient import send_ses_mail, Email
+from mailClientSes import send_mail, Email
+#from mailClientBrevo import send_mail, Email
 from configurationService import domain_name, protocol
 
 MAIL_TEMPLATES_DIR=os.path.join("resources","mailTemplates")
@@ -71,7 +72,7 @@ def send_single_notification(item_to_consume:Notification):
     subject_template, body_html_template, body_txt_template=load_template_by_notification(item_to_consume.notification_type)
     subject, body_html, body_txt = substitute_template_variables(subject_template, body_html_template, body_txt_template, user)
     email_to_send=Email(to=user.email, subject=subject, body_txt=body_txt, body_html=body_html)
-    send_succeeded=send_ses_mail(email_to_send)
+    send_succeeded=send_mail(email_to_send)
     if not send_succeeded:
        item_to_consume.send_attempt_counter=item_to_consume.send_attempt_counter+1
        notification_queue.append(item_to_consume)

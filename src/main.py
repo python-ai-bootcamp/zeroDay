@@ -1,7 +1,6 @@
 import os,json, periodicTriggerService
 from userService import User, submit_user, user_exists, get_user, initiate_user_payement_procedure
 from assignmentOrchestrator import assignment_description,next_assignment_submission, assignment_task_count, AssignmentSubmission, submit_assignment, user_testing_in_progress, max_submission_for_assignment, last_assignment_submission_result, get_submitted_file
-from mailClient import Email, send_ses_mail
 from exportService import fetch_symmetric_key, download_data
 from fastapi import FastAPI, BackgroundTasks, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -151,9 +150,11 @@ def serve_assignments(request: Request):
     user=validate_session(request=request)
     assignments_page_html = open(os.path.join("resources","templates","assignments.html"), "r").read()
     if user and user["paid_status"]:
-        next_assignment_id=next_assignment_submission(user["hacker_id"])
-        current_assignment_description=assignment_description(next_assignment_id["assignment_id"])
-        print(current_assignment_description)
+        next_assignment=next_assignment_submission(user["hacker_id"])
+        print(f"next_assignment::{next_assignment}")
+        current_assignment_id=next_assignment["assignment_id"]
+        current_assignment_description=assignment_description(current_assignment_id)
+        #print(current_assignment_description)
         if(current_assignment_description["status"] == "ERROR"):
             assignments_page_html=assignments_page_html\
             .replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')\
@@ -171,9 +172,9 @@ def serve_assignments(request: Request):
             max_allowed_submissions_breach_message=""
             if submission_result["status"] == "OK":
                 submission_result=submission_result["last_assignment_submission_result"]
-                assignment_id=submission_result["assignment_id"]
-                max_allowed_attempts=max_submission_for_assignment(assignment_id)
-                if submission_result["submission_id"] == max_allowed_attempts:
+                last_submitted_assignment_id=submission_result["assignment_id"]
+                max_allowed_attempts = max_submission_for_assignment(last_submitted_assignment_id)
+                if last_submitted_assignment_id == current_assignment_id and submission_result["submission_id"] == max_allowed_attempts:
                     submit_assignment_button_visibility="hidden"
                     max_allowed_submissions_breach_message=f'<h4 style="color:red;">(User failed max allowed submission attempts ({max_allowed_attempts}) and can not continue submitting)</h4>'
 
