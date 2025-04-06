@@ -3,9 +3,16 @@ from brevo_python.rest import ApiException
 from pprint import pprint
 import traceback
 from pydantic import BaseModel, NameEmail, constr
+from os import path
+
+
+API_KEY_FILE="./resources/keys/private_keys/brevo_api_key.txt"
+
+with open(API_KEY_FILE,"r") as f:
+    api_key=f.read()
 
 configuration = brevo_python.Configuration()
-configuration.api_key['api-key'] = 'SPACE FILLER UNTIL I RESOLVE CODE FETCHING'
+configuration.api_key['api-key'] = api_key
 api_instance = brevo_python.TransactionalEmailsApi(brevo_python.ApiClient(configuration))
 
 
