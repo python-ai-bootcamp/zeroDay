@@ -1,4 +1,4 @@
-import os,json, periodicTriggerService
+import os,json, periodicTriggerService, analyticsService,time
 from userService import User, submit_user, user_exists, get_user, initiate_user_payement_procedure
 from assignmentOrchestrator import assignment_description,next_assignment_submission, assignment_task_count, AssignmentSubmission, submit_assignment, user_testing_in_progress, max_submission_for_assignment, last_assignment_submission_result, get_submitted_file
 from exportService import fetch_symmetric_key, download_data
@@ -6,7 +6,6 @@ from fastapi import FastAPI, BackgroundTasks, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from configurationService import domain_name, protocol, isDevMod
-from starlette.responses import FileResponse
 
 
 app = FastAPI()
@@ -313,3 +312,13 @@ def post_submit_assignment(assignment_submission: AssignmentSubmission, backgrou
     background_tasks.add_task(create_submit_assignment_background_task, assignment_submission)
     print("assignment_submission added as background task")
     return {"status":"SUBMITTED"}
+
+
+print("====================")
+
+bla=analyticsService.AnalyticsEvent(analyticsService.AnalyticsEventType.CHALLENGE_TRAFFIC)
+print(bla.persist_to_disk())
+bla2=analyticsService.ChallengeTrafficAnalyticsEvent(advertise_code="bla", advertise_code_sub_category="blubr")
+print(bla2.persist_to_disk())
+
+print("====================")
