@@ -6,7 +6,7 @@ from pydantic import BaseModel, NameEmail, constr
 from os import path
 
 
-API_KEY_FILE="./resources/keys/private_keys/brevo_api_key.txt"
+API_KEY_FILE="./resources/keys/private_keys/.brevo_api_key.txt"
 
 with open(API_KEY_FILE,"r") as f:
     api_key=f.read().strip()
