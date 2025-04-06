@@ -9,6 +9,7 @@ else
     mkdir -p archivedDeployments
     archiveName=`date +%Y_%m_%d__%H_%M_%S.tar.gz`
     tar -zcvf ./archivedDeployments/${archiveName} ./zeroDay/*
+    mv ./resources/keys/private_keys ./archivedDeployments/
     rm -rf ./zeroDay
     yum install git -y
     git clone https://github.com/python-ai-bootcamp/zeroDay.git
@@ -18,6 +19,7 @@ else
         tar -zxvf ./archivedDeployments/${archiveName} ./zeroDay/data
     fi
     cd ./zeroDay
+    mv ./archivedDeployments/private_keys ./resources/keys/
     git remote set-url origin git@github.com:python-ai-bootcamp/zeroDay.git
     chmod 777 ./installService.sh ./tailLog.sh ./redeploy.sh ./renewCertificate.sh
     service zeroDay start

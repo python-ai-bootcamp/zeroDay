@@ -165,20 +165,17 @@ def serve_assignments(request: Request):
             .replace("$${{BREACH_MAX_ATTEMPT_MESSAGE}}$$","")\
             .replace("$${{SUBMIT_ASSIGNMENT_BUTTON_VISIBILITY}}$$","hidden")
         else:
-            ########### playground for checking if user breached max submissions for task
             submission_result=last_assignment_submission_result(user["hacker_id"])
             submit_assignment_button_visibility=""
             assignment_title="Assignment Description:"
             max_allowed_submissions_breach_message=""
-            if submission_result["status"] == "OK":
+            if submission_result["status"] == "OK": # this branch checks if user breached the max submission results, if so, it blocks him from submitting any more
                 submission_result=submission_result["last_assignment_submission_result"]
                 last_submitted_assignment_id=submission_result["assignment_id"]
                 max_allowed_attempts = max_submission_for_assignment(last_submitted_assignment_id)
-                if last_submitted_assignment_id == current_assignment_id and submission_result["submission_id"] == max_allowed_attempts:
+                if last_submitted_assignment_id == current_assignment_id and submission_result["submission_id"] == max_allowed_attempts: 
                     submit_assignment_button_visibility="hidden"
                     max_allowed_submissions_breach_message=f'<h4 style="color:red;">(User failed max allowed submission attempts ({max_allowed_attempts}) and can not continue submitting)</h4>'
-
-            ########### end of playground for checking if user breached max submissions for task
             current_assignment_description=current_assignment_description["assignment_description"]
             assignments_page_html=assignments_page_html\
             .replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')\
@@ -316,8 +313,3 @@ def post_submit_assignment(assignment_submission: AssignmentSubmission, backgrou
     background_tasks.add_task(create_submit_assignment_background_task, assignment_submission)
     print("assignment_submission added as background task")
     return {"status":"SUBMITTED"}
-
-
-@app.get("/cf13f168b4db4e08cf6906e44146d991.txt")
-def emtpy_domain_validation_file():
-    return FileResponse("./cf13f168b4db4e08cf6906e44146d991.txt", media_type='application/octet-stream',filename="cf13f168b4db4e08cf6906e44146d991.txt")
