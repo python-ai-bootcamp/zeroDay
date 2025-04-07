@@ -89,12 +89,16 @@ def persist_analytics_events():
                 json.dump([x.serialize() for x in persistance_queue],f)
             persistance_queue.clear()
 
-def filter_relevant_time_ranges(file_times_list:list[Tuple[int, int]], range_query:Tuple[int, int])->list[Tuple[int, int]]:        
-    return [time_range for time_range in file_times_list if time_range[0]<=range_query[0]<=time_range[1] or time_range[0]<=range_query[1]<=time_range[1]]
+def filter_relevant_time_ranges(file_times_list:list[Tuple[int, int]], range_query:Tuple[int, int])->list[Tuple[int, int]]:   
+    return [time_range for time_range in file_times_list if range_query[0]<=time_range[0]<=range_query[1] or range_query[0]<=time_range[1]<=range_query[1]]
 
 def fetch_analytics_data(from_time:int, to_time:int, analytics_event_type: AnalyticsEventType):
-    keys=("start","end")
     file_times_list = [re.findall('from_([0-9]*)_to_([0-9]*).json',str(file_name))[0] for file_name in pathlib.Path(analytics_event_type.value).iterdir() if file_name.is_file()]
     file_times_list = [(int(file_times[0]),int(file_times[1])) for file_times in file_times_list]
-    filter_relevant_time_ranges(file_times_list,(from_time,to_time))
-    return filter_relevant_time_ranges(file_times_list,(from_time,to_time))
+    file_data=[]
+    for file_times in filter_relevant_time_ranges(file_times_list,(from_time,to_time)):
+        print(file_times)
+        with open(os.path.join(analytics_event_type.value,f"from_{file_times[0]}_to_{file_times[1]}.json")) as f:
+            single_file_data=json.load(f)
+            file_data=file_data+single_file_data
+    return file_data
