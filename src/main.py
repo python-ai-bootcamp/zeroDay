@@ -1,4 +1,5 @@
-import os,json, periodicTriggerService, analyticsService,time
+import os,json, periodicTriggerService
+from analyticsService import insert_analytic_event, ChallengeTrafficAnalyticsEvent, NewUserAnalyticsEvent, UserPaidAnalyticsEvent, UserSubmittedAssignmentAnalyticsEvent, UserPassedAssignmentAnalyticsEvent
 from userService import User, submit_user, user_exists, get_user, initiate_user_payement_procedure
 from assignmentOrchestrator import assignment_description,next_assignment_submission, assignment_task_count, AssignmentSubmission, submit_assignment, user_testing_in_progress, max_submission_for_assignment, last_assignment_submission_result, get_submitted_file
 from exportService import fetch_symmetric_key, download_data
@@ -76,12 +77,14 @@ def serve_about(request: Request, response: Response, hacker_id:str=None):
     return html_response
 
 @app.get("/challenge")
-def serve_challange(advertise_code:str="unknown"):
-    challenge_page_html=open(os.path.join("resources","templates","challenge.html"), "r").read().\
-        replace("$${{DOMAIN_NAME}}$$",domain_name).\
-        replace("$${{PROTOCOL}}$$",protocol).\
-        replace("$${{IS_DEV_MODE}}$$",isDevMod).\
-        replace("$${{ADVERTISE_CODE}}$$",advertise_code)
+def serve_challange(advertise_code:str="unknown",advertise_code_sub_category:str="unknown"):
+    insert_analytic_event(ChallengeTrafficAnalyticsEvent(advertise_code=advertise_code, advertise_code_sub_category=advertise_code_sub_category))
+    challenge_page_html=open(os.path.join("resources","templates","challenge.html"), "r").read()\
+        .replace("$${{DOMAIN_NAME}}$$",domain_name)\
+        .replace("$${{PROTOCOL}}$$",protocol)\
+        .replace("$${{IS_DEV_MODE}}$$",isDevMod)\
+        .replace("$${{ADVERTISE_CODE}}$$",advertise_code)\
+        .replace("$${{ADVERTISE_CODE_SUB_CATEGORY}}$$",advertise_code_sub_category)
     return HTMLResponse(content=challenge_page_html, status_code=200)
 
 @app.get("/")
@@ -293,7 +296,10 @@ def get_assignment_description(hacker_id:str):
 
 @app.post("/submit_user")
 def submit_user_endpoint(user: User):
-    return submit_user(user) 
+    submit_user_response=submit_user(user) 
+    if submit_user_response["status"]=="SAVED":
+        insert_analytic_event(NewUserAnalyticsEvent(advertise_code=user.advertise_code, advertise_code_sub_category=user.advertise_code_sub_category))
+    return submit_user_response
 
 @app.get("/fetch_symmetric_key")
 def fetch_symmetric_key_endpoint():
@@ -314,11 +320,24 @@ def post_submit_assignment(assignment_submission: AssignmentSubmission, backgrou
     return {"status":"SUBMITTED"}
 
 
-print("====================")
+# print("====================")
 
-bla=analyticsService.AnalyticsEvent(analyticsService.AnalyticsEventType.CHALLENGE_TRAFFIC)
-print(bla.persist_to_disk())
-bla2=analyticsService.ChallengeTrafficAnalyticsEvent(advertise_code="bla", advertise_code_sub_category="blubr")
-print(bla2.persist_to_disk())
+# #bla=analyticsService.AnalyticsEvent(analyticsService.AnalyticsEventType.CHALLENGE_TRAFFIC)
+# #print(bla.persist())
+# insert_analytic_event(analyticsService.ChallengeTrafficAnalyticsEvent(advertise_code="event1", advertise_code_sub_category="event1"))
+# insert_analytic_event(analyticsService.ChallengeTrafficAnalyticsEvent(advertise_code="event2", advertise_code_sub_category="event2"))
+# insert_analytic_event(analyticsService.ChallengeTrafficAnalyticsEvent(advertise_code="event3", advertise_code_sub_category="event3"))
+# insert_analytic_event(analyticsService.NewUserAnalyticsEvent(advertise_code="event1", advertise_code_sub_category="event1"))
+# insert_analytic_event(analyticsService.NewUserAnalyticsEvent(advertise_code="event2", advertise_code_sub_category="event2"))
+# insert_analytic_event(analyticsService.NewUserAnalyticsEvent(advertise_code="event3", advertise_code_sub_category="event3"))
+# insert_analytic_event(analyticsService.UserPaidAnalyticsEvent(advertise_code="event1", advertise_code_sub_category="event1"))
+# insert_analytic_event(analyticsService.UserPaidAnalyticsEvent(advertise_code="event2", advertise_code_sub_category="event2"))
+# insert_analytic_event(analyticsService.UserPaidAnalyticsEvent(advertise_code="event3", advertise_code_sub_category="event3"))
+# insert_analytic_event(analyticsService.UserSubmittedAssignmentAnalyticsEvent(assignment_id=1, submisison_id=1))
+# insert_analytic_event(analyticsService.UserSubmittedAssignmentAnalyticsEvent(assignment_id=2, submisison_id=1))
+# insert_analytic_event(analyticsService.UserSubmittedAssignmentAnalyticsEvent(assignment_id=3, submisison_id=1))
+# insert_analytic_event(analyticsService.UserPassedAssignmentAnalyticsEvent(assignment_id=1, submisison_id=1))
+# insert_analytic_event(analyticsService.UserPassedAssignmentAnalyticsEvent(assignment_id=2, submisison_id=1))
+# insert_analytic_event(analyticsService.UserPassedAssignmentAnalyticsEvent(assignment_id=3, submisison_id=1))
 
-print("====================")
+# print("====================")

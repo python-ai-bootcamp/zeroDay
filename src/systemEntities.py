@@ -8,6 +8,7 @@ class User(BaseModel):
     phone: str
     paid_status: bool
     advertise_code: str = "unknown"
+    advertise_code_sub_category: str = "unknown"
 
 class NotificationType(StrEnum):
     CANDIDATE_KID_INTRO = "CANDIDATE_KID_INTRO"
