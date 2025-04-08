@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <!--meta http-equiv="refresh" content="1"-->
+    <title>Online Store</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #121212;  /* Dark background */
+            color: #e0e0e0;  /* Light text color */
+        }
+
+        header {
+            background-color: #1c1c1c;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: center;
+            background-color: #333333;
+            padding: 15px;
+        }
+
+        .navbar a {
+            color: #e0e0e0;
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 0 15px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .navbar a:hover {
+            background-color: #555555;
+        }
+
+        .hero {
+            background-image: url('https://via.placeholder.com/1920x800/333333/ffffff');
+            background-size: cover;
+            background-position: center;
+            color: #ffffff;
+            text-align: left;
+            margin-top: 20px;
+            margin-left: 5%;
+            margin-right: 5%;
+            padding: 0px;
+        }
+
+        challenge-section {
+            text-align: center;
+            margin-left: 0px;
+        }
+
+        .hero h2 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background-color: #ff6600;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            text-align: center;
+        }
+
+        .cta-button:hover {
+            background-color: #ff8500;
+        }
+
+        .products {
+            display: flex;
+            justify-content: space-around;
+            margin: 40px 0;
+            padding: 0 20px;
+        }
+
+        .product {
+            background-color: #2c2c2c;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            width: 100%;
+            text-align: center;
+        }
+
+        .product img {
+            width: 100%;
+            height: auto;
+        }
+
+        .product-info {
+            padding: 20px;
+        }
+
+        .product-info h3 {
+            font-size: 1.6rem;
+            margin-bottom: 10px;
+        }
+
+        .product-info p {
+            color: #b0b0b0;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        .product-info .price {
+            font-size: 1.5rem;
+            color: #ff6600;
+            margin-bottom: 15px;
+        }
+
+        footer {
+            background-color: #1c1c1c;
+            color: white;
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            padding: 15px;
+        }
+
+    </style>
+    <script src='https://cdn.plot.ly/plotly-3.0.1.min.js'></script>
+    <script>
+        window.onload = function () {
+            fetch(`/analytics/data?time_bucket=400`)
+            .then(function(response) { return response.json(); })
+            .then(function(json) {
+                var layout = {barmode: 'stack', height:650};
+                data_with_formatted_time=json.map(trace=> new Object(trace,{x:json.map(trace=> trace.x=trace.x.map(epoch=>new Date(epoch)  ))}))
+                bla=Plotly.newPlot('myDiv', data_with_formatted_time, layout);
+            })
+            //var data = [{"x": [1744051508418, 1744051538418, 1744051568418, 1744051598418, 1744051628418, 1744051658418, 1744051688418, 1744051718418, 1744051748418, 1744051778418, 1744051808418, 1744051838418, 1744051868418, 1744051898418, 1744051928418, 1744051958418, 1744051988418, 1744052018418, 1744052048418, 1744052078418, 1744052108418, 1744052138418, 1744052168418, 1744052198418, 1744052228418, 1744052258418, 1744052288418, 1744052318418, 1744052348418, 1744052378418, 1744052408418, 1744052438418, 1744052468418, 1744052498418, 1744052528418, 1744052558418, 1744052588418, 1744052618418, 1744052648418, 1744052678418, 1744052708418, 1744052738418, 1744052768418, 1744052798418, 1744052828418, 1744052858418, 1744052888418, 1744052918418, 1744052948418, 1744052978418, 1744053008418, 1744053038418, 1744053068418], "y": [24, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 46], "type": "bar", "name": "reddit"}, {"x": [1744051508418, 1744051538418, 1744051568418, 1744051598418, 1744051628418, 1744051658418, 1744051688418, 1744051718418, 1744051748418, 1744051778418, 1744051808418, 1744051838418, 1744051868418, 1744051898418, 1744051928418, 1744051958418, 1744051988418, 1744052018418, 1744052048418, 1744052078418, 1744052108418, 1744052138418, 1744052168418, 1744052198418, 1744052228418, 1744052258418, 1744052288418, 1744052318418, 1744052348418, 1744052378418, 1744052408418, 1744052438418, 1744052468418, 1744052498418, 1744052528418, 1744052558418, 1744052588418, 1744052618418, 1744052648418, 1744052678418, 1744052708418, 1744052738418, 1744052768418, 1744052798418, 1744052828418, 1744052858418, 1744052888418, 1744052918418, 1744052948418, 1744052978418, 1744053008418, 1744053038418, 1744053068418], "y": [0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11], "type": "bar", "name": "unknown"}];
+            //data_with_formatted_time=data.map(trace=> new Object(trace,{x:data.map(trace=> trace.x=trace.x.map(epoch=>new Date(epoch)  ))})) //`${(new Date(epoch)).toLocaleTimeString()} - ${(new Date(epoch)).toLocaleTimeString()}`
+            //var layout = {barmode: 'stack'};
+            //Plotly.newPlot('myDiv', data_with_formatted_time, layout);
+        }
+    </script>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <header>
+        <h1>ZeroDay Bootcamp</h1>
+    </header>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <a href="/">Home</a>
+        <a href="/enlist">Enlist</a>
+        <a href="/about">About Us</a>
+        <a href="/contact">Contact</a>
+        <a href="/analytics" style="color:#ff6600; text-decoration:  underline #ff6600 30%;">Analytics</a>
+    </nav>
+
+    <!-- Hero Section -->
+
+    <section class="hero">
+        <div class="product">
+            <div class="product-info">
+                <div id='myDiv'></div>
+            </div>
+        </div> 
+    </section>
+
+    <!-- Footer Section -->
+    <footer>
+        <p>&copy; 2025 ZeroDay BootCamp | All Rights Reserved</p>
+    </footer>
+
+</body>
+</html>

@@ -1,6 +1,6 @@
 from enum import StrEnum
 import time, os, json, pathlib, re
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 from pydantic import BaseModel
 
 ANALYTICS_DATA_DIR=os.path.join("./data","analytics_data")
@@ -21,12 +21,12 @@ class AnalyticsEvent():
     epoch_time: int
     def __init__(self, analytic_event_type:AnalyticsEventType):
         self.analytic_event_type = analytic_event_type
-        self.epoch_time = int(time.time_ns())
+        self.epoch_time = int(time.time_ns()/1000000)
         #self.persist()
     def __str__(self):
         return f"analytic_event_type::'{self.analytic_event_type}', epoch_time::'{self.epoch_time}'"
     def serialize(self):
-        return [{k:(v if k!="analytic_event_type" else v.name) for (k,v) in self.__dict__.items()}]
+        return {k:(v if k!="analytic_event_type" else v.name) for (k,v) in self.__dict__.items()}
     def persist(self):
         data_file=os.path.join(self.analytic_event_type.value,f"from_{str(self.epoch_time)}_to_{str(self.epoch_time)}.json")
         with open(data_file, 'w') as f:
@@ -97,8 +97,75 @@ def fetch_analytics_data(from_time:int, to_time:int, analytics_event_type: Analy
     file_times_list = [(int(file_times[0]),int(file_times[1])) for file_times in file_times_list]
     file_data=[]
     for file_times in filter_relevant_time_ranges(file_times_list,(from_time,to_time)):
-        print(file_times)
+        #print(file_times)
         with open(os.path.join(analytics_event_type.value,f"from_{file_times[0]}_to_{file_times[1]}.json")) as f:
             single_file_data=json.load(f)
             file_data=file_data+single_file_data
+    file_data=[x for x in file_data if from_time <= x["epoch_time"] <=to_time]
     return file_data
+
+def create_time_buckets(from_time: int, to_time: int, group_by_time_bucket_sec: int)->list[Tuple[int,int]]:
+    time_buckets:list[Tuple[int,int]]=[]
+    #print("create_time_buckets::time_buckets",time_buckets)
+    group_by_time_bucket_sec=group_by_time_bucket_sec*1000
+
+    current_bucket=(from_time, from_time+group_by_time_bucket_sec-1)
+    #print("create_time_buckets::current_bucket",current_bucket)
+    while current_bucket[0]<=to_time:
+        time_buckets.append(current_bucket)
+        #print("create_time_buckets::time_buckets",time_buckets)
+        current_bucket=(current_bucket[1]+1, current_bucket[1]+group_by_time_bucket_sec)
+        #print("create_time_buckets::current_bucket",current_bucket)
+    return time_buckets
+
+def split_data_to_buckets(data:list[dict], time_buckets:list[Tuple[int,int]]) -> list[list[dict]]:
+    #print("data::",data)
+    #print("time_buckets::",time_buckets)
+    return [[event for event in data if time_bucket[0]<=event["epoch_time"]<=time_bucket[1]] for time_bucket in time_buckets]
+
+def group_data_by_field_per_bucket_using_known_field_values(field_name:str, field_values:list[Any], data:list[list[dict]])->list[dict]:
+    grouped_data=[]
+    for group in data:
+        group_aggragated_data={key:0 for key in field_values}
+        for event in group:
+            if event[field_name] in group_aggragated_data:
+                group_aggragated_data[event[field_name]]=group_aggragated_data[event[field_name]]+1
+            else:
+                group_aggragated_data[event[field_name]]=1
+        grouped_data.append(group_aggragated_data)
+    return grouped_data
+        
+def group_data(from_time: int, to_time: int, group_by_time_bucket_sec: int, group_by_field: str, analytics_event_type: AnalyticsEventType)->Tuple[list[dict], list[Tuple[int,int]]]:
+    data=fetch_analytics_data(from_time, to_time, analytics_event_type)
+    field_values=set()
+    for event in data:
+        field_values.add(event[group_by_field])
+    if to_time >= data[-1]["epoch_time"]:
+        to_time=data[-1]["epoch_time"]
+    if from_time <= data[0]["epoch_time"]:
+        from_time=data[0]["epoch_time"]
+    time_buckets:list[Tuple[int,int]]=create_time_buckets(from_time, to_time, group_by_time_bucket_sec)
+    data_splitted_to_buckets=split_data_to_buckets(data, time_buckets)
+    #print("data_splitted_to_buckets::",data_splitted_to_buckets)
+    grouped_data=group_data_by_field_per_bucket_using_known_field_values("advertise_code", field_values, data_splitted_to_buckets)
+    return grouped_data,time_buckets
+
+def convert_group_data_to_plotly_traces(group_data:list[dict], time_buckets:list[Tuple[int,int]]):
+    #need to convert it into plotly traces like https://plotly.com/javascript/bar-charts/ stacked bar chart
+    #print(group_data)
+    #print(time_buckets)
+    traces={k:{"x":[], "y":[], "type":'bar', "name":k} for k in [key for key in group_data[0].keys()]}
+    #print(traces)
+    idx=0
+    for start_time,end_time in time_buckets:
+        #print(f"start_time::{start_time}, end_time::{end_time}")
+        for traceName in traces.keys():
+            traces[traceName]["x"].append(start_time)
+            traces[traceName]["y"].append(group_data[idx][traceName])
+        idx=idx+1
+    traces=[v for k,v in traces.items()]
+    return traces
+
+grouped_data,time_buckets=group_data(from_time=0, to_time=float('inf'), group_by_time_bucket_sec=30, group_by_field="advertise_code", analytics_event_type=AnalyticsEventType.CHALLENGE_TRAFFIC)   
+plotly_traces=convert_group_data_to_plotly_traces(grouped_data, time_buckets)
+print(json.dumps(plotly_traces))

@@ -1,5 +1,5 @@
 import os,json, periodicTriggerService
-from analyticsService import insert_analytic_event, ChallengeTrafficAnalyticsEvent, NewUserAnalyticsEvent, UserPaidAnalyticsEvent, UserSubmittedAssignmentAnalyticsEvent, UserPassedAssignmentAnalyticsEvent
+from analyticsService import AnalyticsEventType, convert_group_data_to_plotly_traces, group_data, insert_analytic_event, ChallengeTrafficAnalyticsEvent, NewUserAnalyticsEvent, UserPaidAnalyticsEvent, UserSubmittedAssignmentAnalyticsEvent, UserPassedAssignmentAnalyticsEvent
 from userService import User, submit_user, user_exists, get_user, initiate_user_payement_procedure
 from assignmentOrchestrator import assignment_description,next_assignment_submission, assignment_task_count, AssignmentSubmission, submit_assignment, user_testing_in_progress, max_submission_for_assignment, last_assignment_submission_result, get_submitted_file
 from exportService import fetch_symmetric_key, download_data
@@ -319,25 +319,14 @@ def post_submit_assignment(assignment_submission: AssignmentSubmission, backgrou
     print("assignment_submission added as background task")
     return {"status":"SUBMITTED"}
 
+@app.get("/analytics")
+def serve_analytics():
+    analytics_page_html = open(os.path.join("resources","templates","analytics.html"), "r").read()
+    html_response=HTMLResponse(content=analytics_page_html, status_code=200)
+    return html_response
 
-# print("====================")
-
-# #bla=analyticsService.AnalyticsEvent(analyticsService.AnalyticsEventType.CHALLENGE_TRAFFIC)
-# #print(bla.persist())
-# insert_analytic_event(analyticsService.ChallengeTrafficAnalyticsEvent(advertise_code="event1", advertise_code_sub_category="event1"))
-# insert_analytic_event(analyticsService.ChallengeTrafficAnalyticsEvent(advertise_code="event2", advertise_code_sub_category="event2"))
-# insert_analytic_event(analyticsService.ChallengeTrafficAnalyticsEvent(advertise_code="event3", advertise_code_sub_category="event3"))
-# insert_analytic_event(analyticsService.NewUserAnalyticsEvent(advertise_code="event1", advertise_code_sub_category="event1"))
-# insert_analytic_event(analyticsService.NewUserAnalyticsEvent(advertise_code="event2", advertise_code_sub_category="event2"))
-# insert_analytic_event(analyticsService.NewUserAnalyticsEvent(advertise_code="event3", advertise_code_sub_category="event3"))
-# insert_analytic_event(analyticsService.UserPaidAnalyticsEvent(advertise_code="event1", advertise_code_sub_category="event1"))
-# insert_analytic_event(analyticsService.UserPaidAnalyticsEvent(advertise_code="event2", advertise_code_sub_category="event2"))
-# insert_analytic_event(analyticsService.UserPaidAnalyticsEvent(advertise_code="event3", advertise_code_sub_category="event3"))
-# insert_analytic_event(analyticsService.UserSubmittedAssignmentAnalyticsEvent(assignment_id=1, submisison_id=1))
-# insert_analytic_event(analyticsService.UserSubmittedAssignmentAnalyticsEvent(assignment_id=2, submisison_id=1))
-# insert_analytic_event(analyticsService.UserSubmittedAssignmentAnalyticsEvent(assignment_id=3, submisison_id=1))
-# insert_analytic_event(analyticsService.UserPassedAssignmentAnalyticsEvent(assignment_id=1, submisison_id=1))
-# insert_analytic_event(analyticsService.UserPassedAssignmentAnalyticsEvent(assignment_id=2, submisison_id=1))
-# insert_analytic_event(analyticsService.UserPassedAssignmentAnalyticsEvent(assignment_id=3, submisison_id=1))
-
-# print("====================")
+@app.get("/analytics/data")
+def serve_analytics(time_bucket:int=600):
+    grouped_data,time_buckets=group_data(from_time=0, to_time=float('inf'), group_by_time_bucket_sec=time_bucket, group_by_field="advertise_code", analytics_event_type=AnalyticsEventType.CHALLENGE_TRAFFIC)   
+    plotly_traces=convert_group_data_to_plotly_traces(grouped_data, time_buckets)
+    return plotly_traces
