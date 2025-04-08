@@ -148,17 +148,19 @@
     <script src='https://cdn.plot.ly/plotly-3.0.1.min.js'></script>
     <script>
         window.onload = function () {
-            fetch(`/analytics/data?time_bucket=400`)
+            // possible ways to filter api:: from_time, to_time, time_bucket, group_by_field, AnalyticsEventType
+            time_bucket=400
+            group_by_field="advertise_code_sub_category"
+            from_time=0
+            to_time=9999999999999
+            AnalyticsEventType="CHALLENGE_TRAFFIC"
+            fetch(`/analytics/data?time_bucket=${time_bucket}&group_by_field=${group_by_field}&from_time=${from_time}&to_time=${to_time}&AnalyticsEventType=${AnalyticsEventType}`)
             .then(function(response) { return response.json(); })
             .then(function(json) {
                 var layout = {barmode: 'stack', height:650};
-                data_with_formatted_time=json.map(trace=> new Object(trace,{x:json.map(trace=> trace.x=trace.x.map(epoch=>new Date(epoch)  ))}))
-                bla=Plotly.newPlot('myDiv', data_with_formatted_time, layout);
+                data_with_formatted_time=json.map(trace=> new Object(trace,{x:json.map(trace=> trace.x=trace.x.map(epoch=>new Date(epoch) ))}))
+                Plotly.newPlot('myDiv', data_with_formatted_time, layout);
             })
-            //var data = [{"x": [1744051508418, 1744051538418, 1744051568418, 1744051598418, 1744051628418, 1744051658418, 1744051688418, 1744051718418, 1744051748418, 1744051778418, 1744051808418, 1744051838418, 1744051868418, 1744051898418, 1744051928418, 1744051958418, 1744051988418, 1744052018418, 1744052048418, 1744052078418, 1744052108418, 1744052138418, 1744052168418, 1744052198418, 1744052228418, 1744052258418, 1744052288418, 1744052318418, 1744052348418, 1744052378418, 1744052408418, 1744052438418, 1744052468418, 1744052498418, 1744052528418, 1744052558418, 1744052588418, 1744052618418, 1744052648418, 1744052678418, 1744052708418, 1744052738418, 1744052768418, 1744052798418, 1744052828418, 1744052858418, 1744052888418, 1744052918418, 1744052948418, 1744052978418, 1744053008418, 1744053038418, 1744053068418], "y": [24, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 46], "type": "bar", "name": "reddit"}, {"x": [1744051508418, 1744051538418, 1744051568418, 1744051598418, 1744051628418, 1744051658418, 1744051688418, 1744051718418, 1744051748418, 1744051778418, 1744051808418, 1744051838418, 1744051868418, 1744051898418, 1744051928418, 1744051958418, 1744051988418, 1744052018418, 1744052048418, 1744052078418, 1744052108418, 1744052138418, 1744052168418, 1744052198418, 1744052228418, 1744052258418, 1744052288418, 1744052318418, 1744052348418, 1744052378418, 1744052408418, 1744052438418, 1744052468418, 1744052498418, 1744052528418, 1744052558418, 1744052588418, 1744052618418, 1744052648418, 1744052678418, 1744052708418, 1744052738418, 1744052768418, 1744052798418, 1744052828418, 1744052858418, 1744052888418, 1744052918418, 1744052948418, 1744052978418, 1744053008418, 1744053038418, 1744053068418], "y": [0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11], "type": "bar", "name": "unknown"}];
-            //data_with_formatted_time=data.map(trace=> new Object(trace,{x:data.map(trace=> trace.x=trace.x.map(epoch=>new Date(epoch)  ))})) //`${(new Date(epoch)).toLocaleTimeString()} - ${(new Date(epoch)).toLocaleTimeString()}`
-            //var layout = {barmode: 'stack'};
-            //Plotly.newPlot('myDiv', data_with_formatted_time, layout);
         }
     </script>
 </head>

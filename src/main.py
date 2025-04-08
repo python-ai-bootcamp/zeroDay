@@ -326,7 +326,7 @@ def serve_analytics():
     return html_response
 
 @app.get("/analytics/data")
-def serve_analytics(time_bucket:int=600):
-    grouped_data,time_buckets=group_data(from_time=0, to_time=float('inf'), group_by_time_bucket_sec=time_bucket, group_by_field="advertise_code", analytics_event_type=AnalyticsEventType.CHALLENGE_TRAFFIC)   
+def serve_analytics(time_bucket:int=3600, group_by_field:str="advertise_code", from_time:int=0, to_time:int=99999999999999, analytics_event_type:str="CHALLENGE_TRAFFIC"):
+    grouped_data,time_buckets=group_data(from_time, to_time, time_bucket, group_by_field, AnalyticsEventType[analytics_event_type])   
     plotly_traces=convert_group_data_to_plotly_traces(grouped_data, time_buckets)
     return plotly_traces
