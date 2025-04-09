@@ -104,6 +104,7 @@
             overflow: hidden;
             width: 100%;
             text-align: center;
+            margin-bottom: 10px;
         }
 
         .product img {
@@ -141,7 +142,28 @@
             bottom: 0;
             width: 100%;
             text-align: center;
-            padding: 15px;
+            padding: 5px;
+        }
+        .graphSelectorWrapper {
+            display: flex; /* This enables Flexbox */
+            flex-direction: row; /* The default, so it's redundant but keeps it clear */
+            justify-content: center; /* Distribute divs with space between */
+            gap: 10px; 
+        }
+        .graphSelector {
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 0;             /* Prevent the div from growing */
+            flex-shrink: 0;           /* Prevent the div from shrinking */
+            background-color: #ff8500;
+            border-radius: 10px;
+            padding: 10px;
+        }
+        .graphSelector label {
+            margin-right: 10px;
+            color: #f0edea;
         }
 
     </style>
@@ -151,27 +173,120 @@
         group_by_field="advertise_code"
         from_time=0
         to_time=9999999999999
-        AnalyticsEventType="CHALLENGE_TRAFFIC"
+        analytics_event_type="CHALLENGE_TRAFFIC"
+        populateAnalyticsEventFieldFilterDropdown_dont_chage_after_selector_event=false
         window.onload = function () {
-            fetch(`/analytics/data?time_bucket=${time_bucket}&group_by_field=${group_by_field}&from_time=${from_time}&to_time=${to_time}&AnalyticsEventType=${AnalyticsEventType}`)
+            refreshGraph()
+            fetchAnalyticsEventTypesValues()
+            window.addEventListener('resize', resizeGraph);
+        }
+        function refreshGraph(){            
+            fetch(`/analytics/data?time_bucket=${time_bucket}&group_by_field=${group_by_field}&from_time=${from_time}&to_time=${to_time}&analytics_event_type=${analytics_event_type}`)
             .then(function(response) { return response.json(); })
             .then(function(json) {
-                var layout = {barmode: 'stack', height:650};
+                const footerHeight = document.querySelector('footer').offsetHeight;
+                const filterSectionHeight = document.querySelector('.graphSelectorWrapper').offsetHeight;
+                const availableHeight = window.innerHeight - footerHeight - filterSectionHeight - 230; 
+                var layout = {barmode: 'stack', height:availableHeight, plot_bgcolor:"#e0d6c1", paper_bgcolor:"#e0d6c1"};
                 data_with_formatted_time=json.map(trace=> new Object(trace,{x:json.map(trace=> trace.x=trace.x.map(epoch=>new Date(epoch) ))}))
+                eventFields=data_with_formatted_time.map(x=>x.name)
+                if (!populateAnalyticsEventFieldFilterDropdown_dont_chage_after_selector_event){
+                    populateAnalyticsEventFieldFilterDropdown(eventFields)
+                }
+                
                 Plotly.newPlot('myDiv', data_with_formatted_time, layout);
             })
         }
+        function resizeGraph() {
+            const graphDiv = document.getElementById('myDiv');           
+            const footerHeight = document.querySelector('footer').offsetHeight;
+            const filterSectionHeight = document.querySelector('.graphSelectorWrapper').offsetHeight;
+            const availableHeight = window.innerHeight - footerHeight - filterSectionHeight - 230; // Some padding adjustments
+            graphDiv.style.height = availableHeight + 'px'; // Set dynamic height
+            
+            Plotly.Plots.resize(graphDiv);
+        }
         function handleTimeBucketSelector() {
-            var selectedValue = document.getElementById("valueSelector").value;
+            let selectedValue = document.getElementById("timeBucketSelector").value;
             console.log("Selected value is: " + selectedValue);
             time_bucket=selectedValue
-            fetch(`/analytics/data?time_bucket=${time_bucket}&group_by_field=${group_by_field}&from_time=${from_time}&to_time=${to_time}&AnalyticsEventType=${AnalyticsEventType}`)
-            .then(function(response) { return response.json(); })
-            .then(function(json) {
-                var layout = {barmode: 'stack', height:650};
-                data_with_formatted_time=json.map(trace=> new Object(trace,{x:json.map(trace=> trace.x=trace.x.map(epoch=>new Date(epoch) ))}))
-                Plotly.newPlot('myDiv', data_with_formatted_time, layout);
-            })
+            refreshGraph()
+        }
+        function handleAnalyticsEventTypeSelector() {
+            let selectedValue = document.getElementById("analyticsEventTypeSelector").value;
+            console.log("Selected value is: " + selectedValue);
+            analytics_event_type=selectedValue
+            populateAnalyticsEventFieldFilterDropdown_dont_chage_after_selector_event=false
+            refreshGraph()
+        }
+        function handleAnalyticsEventFieldFilterSelector() {
+            let selectedValue = document.getElementById("analyticsEventFieldFilterSelector").value;
+            console.log("Selected value is: " + selectedValue);
+            analytics_event_advertise_code=selectedValue
+            populateAnalyticsEventFieldFilterDropdown_dont_chage_after_selector_event=true
+            refreshGraph()
+        }
+        function processTimeRange() {
+            // Get values from input fields
+            const fromDate = document.getElementById('fromTimeSelector').value;
+            const toDate = document.getElementById('toTimeSelector').value;
+
+            // Convert input strings to Date objects
+            if(fromDate){
+                from_time = new Date(fromDate).getTime();
+            }
+            if(toDate){
+                to_time = new Date(toDate).getTime();
+            }
+
+            // Check if 'from' time is before 'to' time
+            if (from_time > to_time) {
+                alert("'From' date must be earlier than 'To' date!");
+                return;
+            }
+            refreshGraph()
+        }
+        async function fetchAnalyticsEventTypesValues() {
+            try {
+                // Replace with your actual backend API URL
+                const response = await fetch('/analytics/eventTypes');
+                if (!response.ok) throw new Error('Network response was not ok');               
+                const enumValues = await response.json(); // Assuming response is a JSON array
+                populateAnalyticsEventTypeDropdown(enumValues);
+            } catch (error) {
+                console.error('Error fetching enum values:', error);
+                document.getElementById('selector').innerHTML = "<option>Error loading values</option>";
+            }
+        }
+        function populateAnalyticsEventTypeDropdown(values) {
+            const selector = document.getElementById('analyticsEventTypeSelector');
+            document.getElementById('analyticsEventTypeSelector');
+            selector.innerHTML = ''; // Clear loading text
+            
+            // Loop through values and add options
+            values.forEach(value => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = value;
+                selector.appendChild(option);
+            });
+        }
+        function populateAnalyticsEventFieldFilterDropdown(values) {
+            const selector = document.getElementById('analyticsEventFieldFilterSelector');
+            selector.innerHTML = 'N/A'; // reset loading text
+           
+            // Loop through values and add options
+            values.forEach(value => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = value;
+                selector.appendChild(option);
+            });
+            const option = document.createElement('option');
+            option.value = null;
+            option.textContent =  "None";
+            selector.appendChild(option);
+            selector.value=null
         }
     </script>
 </head>
@@ -194,64 +309,57 @@
     <!-- Hero Section -->
 
     <section class="hero">
-        <div class="product">
-            <div class="graphSelector">
-                Time Bucket
-                <select id="valueSelector" onchange="handleTimeBucketSelector()">
-                    <option value=60>1 minute</option>
-                    <option value=300>5 minutes</option>
-                    <option value=600>10 minutes</option>
-                    <option value=900>15 minutes</option>
-                    <option value=1200>20 minutes</option>
-                    <option value=1800>30 minutes</option>
-                    <option value=3600>1 hour</option>
-                    <option value=7200>2 hour</option>
-                    <option value=10800>3 hours</option>
-                    <option value=21600>6 hours</option>
-                    <option value=43200>12 hours</option>
-                    <option value=86400>1 day</option>
-                    <option value=172800>2 days</option>
-                    <option value=259200>3 days</option>
-                    <option value=604800>1 week</option>
-                    <option value=1209600>2 weeks</option>
-                    <option value=1814400>3 weeks</option>
-                    <option value=4233600>1 month</option>
-                    <option value=8467200>2 months</option>
-                    <option value=12700800>3 months</option>
-                    <!--option value=25401600>6 months</option>
-                    <option value=50803200>1 year</option>
-                    <option value=101606400>2 year</option>
-                    <option value=152409600>3 year</option-->
-                </select>
-            </div>
-            <div class="graphSelector">
-                Time Bucket
-                <select id="valueSelector" onchange="handleTimeBucketSelector()">
-                    <option value=60>1 minute</option>
-                    <option value=300>5 minutes</option>
-                    <option value=600>10 minutes</option>
-                    <option value=900>15 minutes</option>
-                    <option value=1200>20 minutes</option>
-                    <option value=1800>30 minutes</option>
-                    <option value=3600>1 hour</option>
-                    <option value=7200>2 hour</option>
-                    <option value=10800>3 hours</option>
-                    <option value=21600>6 hours</option>
-                    <option value=43200>12 hours</option>
-                    <option value=86400>1 day</option>
-                    <option value=172800>2 days</option>
-                    <option value=259200>3 days</option>
-                    <option value=604800>1 week</option>
-                    <option value=1209600>2 weeks</option>
-                    <option value=1814400>3 weeks</option>
-                    <option value=4233600>1 month</option>
-                    <option value=8467200>2 months</option>
-                    <option value=12700800>3 months</option>
-                    <!--option value=25401600>6 months</option>
-                    <option value=50803200>1 year</option>
-                    <option value=101606400>2 year</option>
-                    <option value=152409600>3 year</option-->
-                </select>
+        <div class="product">   
+            <div class="graphSelectorWrapper">         
+                <div class="graphSelector">
+                    <label>Event Type :</label>
+                    <select id="analyticsEventTypeSelector" onchange="handleAnalyticsEventTypeSelector()">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+                <div class="graphSelector">
+                    <label>Field Filter :</label>
+                    <select id="analyticsEventFieldFilterSelector" onchange="handleAnalyticsEventFieldFilterSelector()">
+                        <option value="">N/A</option>
+                    </select>
+                </div>
+                <div class="graphSelector">
+                    <label>Time Resolution :</label>
+                    <select id="timeBucketSelector" onchange="handleTimeBucketSelector()">
+                        <option value=60>1 minute</option>
+                        <option value=300>5 minutes</option>
+                        <option value=600>10 minutes</option>
+                        <option value=900>15 minutes</option>
+                        <option value=1200>20 minutes</option>
+                        <option value=1800>30 minutes</option>
+                        <option value=3600>1 hour</option>
+                        <option value=7200>2 hour</option>
+                        <option value=10800>3 hours</option>
+                        <option value=21600>6 hours</option>
+                        <option value=43200>12 hours</option>
+                        <option value=86400>1 day</option>
+                        <option value=172800>2 days</option>
+                        <option value=259200>3 days</option>
+                        <option value=604800>1 week</option>
+                        <option value=1209600>2 weeks</option>
+                        <option value=1814400>3 weeks</option>
+                        <option value=4233600>1 month</option>
+                        <option value=8467200>2 months</option>
+                        <option value=12700800>3 months</option>
+                        <!--option value=25401600>6 months</option>
+                        <option value=50803200>1 year</option>
+                        <option value=101606400>2 year</option>
+                        <option value=152409600>3 year</option-->
+                    </select>
+                </div>
+                <div class="graphSelector">
+                    <label>From Time :</label>
+                    <input id="fromTimeSelector" type="datetime-local" onChange="processTimeRange()">
+                </div>
+                <div class="graphSelector">
+                    <label>To Time :</label>
+                    <input id="toTimeSelector" type="datetime-local" onChange="processTimeRange()">
+                </div>
             </div>
         </div> 
         <div class="product">

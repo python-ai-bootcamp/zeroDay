@@ -1,5 +1,6 @@
 import os,json, periodicTriggerService
-from analyticsService import AnalyticsEventType, convert_group_data_to_plotly_traces, group_data, insert_analytic_event, ChallengeTrafficAnalyticsEvent, NewUserAnalyticsEvent, UserPaidAnalyticsEvent, UserSubmittedAssignmentAnalyticsEvent, UserPassedAssignmentAnalyticsEvent
+from systemEntities import AnalyticsEventType
+from analyticsService import convert_group_data_to_plotly_traces, group_data, insert_analytic_event, ChallengeTrafficAnalyticsEvent, NewUserAnalyticsEvent, UserPaidAnalyticsEvent, UserSubmittedAssignmentAnalyticsEvent, UserPassedAssignmentAnalyticsEvent
 from userService import User, submit_user, user_exists, get_user, initiate_user_payement_procedure
 from assignmentOrchestrator import assignment_description,next_assignment_submission, assignment_task_count, AssignmentSubmission, submit_assignment, user_testing_in_progress, max_submission_for_assignment, last_assignment_submission_result, get_submitted_file
 from exportService import fetch_symmetric_key, download_data
@@ -330,3 +331,9 @@ def serve_analytics(time_bucket:int=3600, group_by_field:str="advertise_code", f
     grouped_data,time_buckets=group_data(from_time, to_time, time_bucket, group_by_field, AnalyticsEventType[analytics_event_type])   
     plotly_traces=convert_group_data_to_plotly_traces(grouped_data, time_buckets)
     return plotly_traces
+
+@app.get("/analytics/eventTypes")
+def serve_analytics():
+    analytics_event_type=list(AnalyticsEventType.__members__.keys())
+    return analytics_event_type 
+

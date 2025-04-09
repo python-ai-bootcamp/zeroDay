@@ -1,5 +1,6 @@
 from enum import StrEnum
 from pydantic import BaseModel
+import os
 
 class User(BaseModel):
     email: str
@@ -9,6 +10,14 @@ class User(BaseModel):
     paid_status: bool
     advertise_code: str = "unknown"
     advertise_code_sub_category: str = "unknown"
+
+ANALYTICS_DATA_DIR=os.path.join("./data","analytics_data")
+class AnalyticsEventType(StrEnum):
+    CHALLENGE_TRAFFIC           = os.path.join(ANALYTICS_DATA_DIR,"CHALLENGE_TRAFFIC")
+    NEW_USER                    = os.path.join(ANALYTICS_DATA_DIR,"NEW_USER")
+    USER_PAID                   = os.path.join(ANALYTICS_DATA_DIR,"USER_PAID")
+    USER_SUBMITTED_ASSIGNMENT   = os.path.join(ANALYTICS_DATA_DIR,"USER_SUBMITTED_ASSIGNMENT")
+    USER_PASSED_ASSIGNMENT      = os.path.join(ANALYTICS_DATA_DIR,"USER_PASSED_ASSIGNMENT")
 
 class NotificationType(StrEnum):
     CANDIDATE_KID_INTRO = "CANDIDATE_KID_INTRO"

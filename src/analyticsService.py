@@ -2,15 +2,7 @@ from enum import StrEnum
 import time, os, json, pathlib, re
 from typing import Any, Dict, Tuple
 from pydantic import BaseModel
-
-ANALYTICS_DATA_DIR=os.path.join("./data","analytics_data")
-
-class AnalyticsEventType(StrEnum):
-    CHALLENGE_TRAFFIC           = os.path.join(ANALYTICS_DATA_DIR,"CHALLENGE_TRAFFIC")
-    NEW_USER                    = os.path.join(ANALYTICS_DATA_DIR,"NEW_USER")
-    USER_PAID                   = os.path.join(ANALYTICS_DATA_DIR,"USER_PAID")
-    USER_SUBMITTED_ASSIGNMENT   = os.path.join(ANALYTICS_DATA_DIR,"USER_SUBMITTED_ASSIGNMENT")
-    USER_PASSED_ASSIGNMENT      = os.path.join(ANALYTICS_DATA_DIR,"USER_PASSED_ASSIGNMENT")
+from systemEntities import AnalyticsEventType
 
 for enum_entry in AnalyticsEventType:
     #print(f"enum_entry.name::'{enum_entry.name}', enum_entry.value::'{enum_entry.value}'")
@@ -129,30 +121,36 @@ def group_data_by_field_per_bucket_using_known_field_values(field_name:str, fiel
         
 def group_data(from_time: int, to_time: int, group_by_time_bucket_sec: int, group_by_field: str, analytics_event_type: AnalyticsEventType)->Tuple[list[dict], list[Tuple[int,int]]]:
     data=fetch_analytics_data(from_time, to_time, analytics_event_type)
-    field_values=set()
-    for event in data:
-        field_values.add(event[group_by_field])
-    if to_time >= data[-1]["epoch_time"]:
-        to_time=data[-1]["epoch_time"]
-    if from_time <= data[0]["epoch_time"]:
-        from_time=data[0]["epoch_time"]
-    time_buckets:list[Tuple[int,int]]=create_time_buckets(from_time, to_time, group_by_time_bucket_sec)
-    data_splitted_to_buckets=split_data_to_buckets(data, time_buckets)
-    grouped_data=group_data_by_field_per_bucket_using_known_field_values(group_by_field, field_values, data_splitted_to_buckets)
-    return grouped_data,time_buckets
+    print("group_data::data=",data)
+    if len(data)>0:
+        field_values=set()
+        for event in data:
+            field_values.add(event[group_by_field])
+        if to_time >= data[-1]["epoch_time"]:
+            to_time=data[-1]["epoch_time"]
+        if from_time <= data[0]["epoch_time"]:
+            from_time=data[0]["epoch_time"]
+        time_buckets:list[Tuple[int,int]]=create_time_buckets(from_time, to_time, group_by_time_bucket_sec)
+        data_splitted_to_buckets=split_data_to_buckets(data, time_buckets)
+        grouped_data=group_data_by_field_per_bucket_using_known_field_values(group_by_field, field_values, data_splitted_to_buckets)
+        return grouped_data,time_buckets
+    else:
+        return [],[]
 
 def convert_group_data_to_plotly_traces(group_data:list[dict], time_buckets:list[Tuple[int,int]]):
-    traces={k:{"x":[], "y":[], "type":'bar', "name":k} for k in [key for key in group_data[0].keys()]}
-    print("traces::", traces)
-    idx=0
-    for start_time,end_time in time_buckets:
-        for traceName in traces.keys():
-            print("group_data[idx]::",group_data[idx])
-            traces[traceName]["x"].append(start_time)
-            traces[traceName]["y"].append(group_data[idx][traceName])
-        idx=idx+1
-    traces=[v for k,v in traces.items()]
-    return traces
+    if len(group_data)>0:
+        traces={k:{"x":[], "y":[], "type":'bar', "name":k} for k in [key for key in group_data[0].keys()]}
+        idx=0
+        for start_time,end_time in time_buckets:
+            for traceName in traces.keys():
+                print("group_data[idx]::",group_data[idx])
+                traces[traceName]["x"].append(start_time)
+                traces[traceName]["y"].append(group_data[idx][traceName])
+            idx=idx+1
+        traces=[v for k,v in traces.items()]
+        return traces
+    else:
+        return []
 
 #grouped_data,time_buckets=group_data(from_time=0, to_time=float('inf'), group_by_time_bucket_sec=30, group_by_field="advertise_code", analytics_event_type=AnalyticsEventType.CHALLENGE_TRAFFIC)   
 #plotly_traces=convert_group_data_to_plotly_traces(grouped_data, time_buckets)
