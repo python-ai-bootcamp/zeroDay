@@ -5,3 +5,4 @@ starlette
 cryptography
 boto3
 pydantic[email]
+brevo-python

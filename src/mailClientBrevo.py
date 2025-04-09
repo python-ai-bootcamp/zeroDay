@@ -1,6 +1,5 @@
 import brevo_python
 from brevo_python.rest import ApiException
-from pprint import pprint
 import traceback
 from pydantic import BaseModel, NameEmail, constr
 from os import path
