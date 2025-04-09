@@ -147,13 +147,24 @@
     </style>
     <script src='https://cdn.plot.ly/plotly-3.0.1.min.js'></script>
     <script>
+        time_bucket=300
+        group_by_field="advertise_code"
+        from_time=0
+        to_time=9999999999999
+        AnalyticsEventType="CHALLENGE_TRAFFIC"
         window.onload = function () {
-            // possible ways to filter api:: from_time, to_time, time_bucket, group_by_field, AnalyticsEventType
-            time_bucket=400
-            group_by_field="advertise_code_sub_category"
-            from_time=0
-            to_time=9999999999999
-            AnalyticsEventType="CHALLENGE_TRAFFIC"
+            fetch(`/analytics/data?time_bucket=${time_bucket}&group_by_field=${group_by_field}&from_time=${from_time}&to_time=${to_time}&AnalyticsEventType=${AnalyticsEventType}`)
+            .then(function(response) { return response.json(); })
+            .then(function(json) {
+                var layout = {barmode: 'stack', height:650};
+                data_with_formatted_time=json.map(trace=> new Object(trace,{x:json.map(trace=> trace.x=trace.x.map(epoch=>new Date(epoch) ))}))
+                Plotly.newPlot('myDiv', data_with_formatted_time, layout);
+            })
+        }
+        function handleTimeBucketSelector() {
+            var selectedValue = document.getElementById("valueSelector").value;
+            console.log("Selected value is: " + selectedValue);
+            time_bucket=selectedValue
             fetch(`/analytics/data?time_bucket=${time_bucket}&group_by_field=${group_by_field}&from_time=${from_time}&to_time=${to_time}&AnalyticsEventType=${AnalyticsEventType}`)
             .then(function(response) { return response.json(); })
             .then(function(json) {
@@ -183,6 +194,66 @@
     <!-- Hero Section -->
 
     <section class="hero">
+        <div class="product">
+            <div class="graphSelector">
+                Time Bucket
+                <select id="valueSelector" onchange="handleTimeBucketSelector()">
+                    <option value=60>1 minute</option>
+                    <option value=300>5 minutes</option>
+                    <option value=600>10 minutes</option>
+                    <option value=900>15 minutes</option>
+                    <option value=1200>20 minutes</option>
+                    <option value=1800>30 minutes</option>
+                    <option value=3600>1 hour</option>
+                    <option value=7200>2 hour</option>
+                    <option value=10800>3 hours</option>
+                    <option value=21600>6 hours</option>
+                    <option value=43200>12 hours</option>
+                    <option value=86400>1 day</option>
+                    <option value=172800>2 days</option>
+                    <option value=259200>3 days</option>
+                    <option value=604800>1 week</option>
+                    <option value=1209600>2 weeks</option>
+                    <option value=1814400>3 weeks</option>
+                    <option value=4233600>1 month</option>
+                    <option value=8467200>2 months</option>
+                    <option value=12700800>3 months</option>
+                    <!--option value=25401600>6 months</option>
+                    <option value=50803200>1 year</option>
+                    <option value=101606400>2 year</option>
+                    <option value=152409600>3 year</option-->
+                </select>
+            </div>
+            <div class="graphSelector">
+                Time Bucket
+                <select id="valueSelector" onchange="handleTimeBucketSelector()">
+                    <option value=60>1 minute</option>
+                    <option value=300>5 minutes</option>
+                    <option value=600>10 minutes</option>
+                    <option value=900>15 minutes</option>
+                    <option value=1200>20 minutes</option>
+                    <option value=1800>30 minutes</option>
+                    <option value=3600>1 hour</option>
+                    <option value=7200>2 hour</option>
+                    <option value=10800>3 hours</option>
+                    <option value=21600>6 hours</option>
+                    <option value=43200>12 hours</option>
+                    <option value=86400>1 day</option>
+                    <option value=172800>2 days</option>
+                    <option value=259200>3 days</option>
+                    <option value=604800>1 week</option>
+                    <option value=1209600>2 weeks</option>
+                    <option value=1814400>3 weeks</option>
+                    <option value=4233600>1 month</option>
+                    <option value=8467200>2 months</option>
+                    <option value=12700800>3 months</option>
+                    <!--option value=25401600>6 months</option>
+                    <option value=50803200>1 year</option>
+                    <option value=101606400>2 year</option>
+                    <option value=152409600>3 year</option-->
+                </select>
+            </div>
+        </div> 
         <div class="product">
             <div class="product-info">
                 <div id='myDiv'></div>
