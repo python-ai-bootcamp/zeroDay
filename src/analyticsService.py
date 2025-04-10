@@ -1,8 +1,13 @@
 from enum import StrEnum
 import time, os, json, pathlib, re
 from typing import Any, Dict, Tuple
+from collections import OrderedDict
 from pydantic import BaseModel
 from systemEntities import AnalyticsEventType
+
+ANALYTICS_DATA_MEMOIZATION_MAX_ITEMS=10
+analytics_data_memoization_state=OrderedDict()
+
 
 for enum_entry in AnalyticsEventType:
     #print(f"enum_entry.name::'{enum_entry.name}', enum_entry.value::'{enum_entry.value}'")
@@ -85,15 +90,25 @@ def filter_relevant_time_ranges(file_times_list:list[Tuple[int, int]], range_que
     return [time_range for time_range in file_times_list if range_query[0]<=time_range[0]<=range_query[1] or range_query[0]<=time_range[1]<=range_query[1]]
 
 def fetch_analytics_data(from_time:int, to_time:int, analytics_event_type: AnalyticsEventType):
-    file_times_list = [re.findall('from_([0-9]*)_to_([0-9]*).json',str(file_name))[0] for file_name in pathlib.Path(analytics_event_type.value).iterdir() if file_name.is_file()]
-    file_times_list = [(int(file_times[0]),int(file_times[1])) for file_times in file_times_list]
-    file_data=[]
-    for file_times in filter_relevant_time_ranges(file_times_list,(from_time,to_time)):
-        with open(os.path.join(analytics_event_type.value,f"from_{file_times[0]}_to_{file_times[1]}.json")) as f:
-            single_file_data=json.load(f)
-            file_data=file_data+single_file_data
-    file_data=[x for x in file_data if from_time <= x["epoch_time"] <=to_time]
-    return file_data
+    memoization_key=f"from_time_{str(from_time)}_to_time_{str(to_time)}_analytics_event_type_{analytics_event_type.name}"
+    if memoization_key in analytics_data_memoization_state:
+        print(f"fetch_analytics_data_memoization_state:: {memoization_key} is already in cache, sending memoized data")
+        return analytics_data_memoization_state[memoization_key]
+    else:
+        print(f"fetch_analytics_data_memoization_state:: {memoization_key} not found in cache, reading data from disk")
+        file_times_list = [re.findall('from_([0-9]*)_to_([0-9]*).json',str(file_name))[0] for file_name in pathlib.Path(analytics_event_type.value).iterdir() if file_name.is_file()]
+        file_times_list = [(int(file_times[0]),int(file_times[1])) for file_times in file_times_list]
+        file_data=[]
+        for file_times in filter_relevant_time_ranges(file_times_list,(from_time,to_time)):
+            with open(os.path.join(analytics_event_type.value,f"from_{file_times[0]}_to_{file_times[1]}.json")) as f:
+                single_file_data=json.load(f)
+                file_data=file_data+single_file_data
+        file_data=[x for x in file_data if from_time <= x["epoch_time"] <=to_time]
+        if len(analytics_data_memoization_state.keys())>=ANALYTICS_DATA_MEMOIZATION_MAX_ITEMS:
+            analytics_data_memoization_state.popitem(last=False)
+        analytics_data_memoization_state[memoization_key]=file_data
+        #print(f"fetch_analytics_data_memoization_state:: analytics_data_memoization_state.keys()='{analytics_data_memoization_state.keys()}'")
+        return file_data
 
 def create_time_buckets(from_time: int, to_time: int, group_by_time_bucket_sec: int)->list[Tuple[int,int]]:
     time_buckets:list[Tuple[int,int]]=[]
@@ -118,10 +133,17 @@ def group_data_by_field_per_bucket_using_known_field_values(field_name:str, fiel
                 group_aggragated_data[event[field_name]]=1
         grouped_data.append(group_aggragated_data)
     return grouped_data
-        
+
+def filter_data_by_filter_field(data:list[dict], filter_field_name: str, filter_field_value: Any)->list:
+    print("filter_data_by_filter_field::data=",data)
+    print("filter_data_by_filter_field::filter_field_name=",filter_field_name)
+    print("filter_data_by_filter_field::filter_field_value=",filter_field_value)
+    return data
+
 def group_data(from_time: int, to_time: int, group_by_time_bucket_sec: int, group_by_field: str, analytics_event_type: AnalyticsEventType)->Tuple[list[dict], list[Tuple[int,int]]]:
     data=fetch_analytics_data(from_time, to_time, analytics_event_type)
-    print("group_data::data=",data)
+    #print("group_data::data=",data)
+    #data=filter_data_by_filter_field(data, filter_field_name, filter_field_value)
     if len(data)>0:
         field_values=set()
         for event in data:
@@ -143,7 +165,7 @@ def convert_group_data_to_plotly_traces(group_data:list[dict], time_buckets:list
         idx=0
         for start_time,end_time in time_buckets:
             for traceName in traces.keys():
-                print("group_data[idx]::",group_data[idx])
+                #print("group_data[idx]::",group_data[idx])
                 traces[traceName]["x"].append(start_time)
                 traces[traceName]["y"].append(group_data[idx][traceName])
             idx=idx+1
@@ -151,6 +173,18 @@ def convert_group_data_to_plotly_traces(group_data:list[dict], time_buckets:list
         return traces
     else:
         return []
+    
+def group_by_fields(from_time:int, to_time:int, analytics_event_type: AnalyticsEventType)->list[str]:
+    data=fetch_analytics_data(from_time, to_time, analytics_event_type)
+    unique_field_names=set()
+    for entry in data:
+        keys=entry.keys()
+        for key in keys:
+            if not(key=="analytic_event_type") and not(key=="epoch_time"):
+                unique_field_names.add(key)
+    unique_field_names=list(unique_field_names)
+    #print("group_by_fields::unique_field_names=",unique_field_names)
+    return list(unique_field_names)
 
 #grouped_data,time_buckets=group_data(from_time=0, to_time=float('inf'), group_by_time_bucket_sec=30, group_by_field="advertise_code", analytics_event_type=AnalyticsEventType.CHALLENGE_TRAFFIC)   
 #plotly_traces=convert_group_data_to_plotly_traces(grouped_data, time_buckets)

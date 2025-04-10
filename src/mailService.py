@@ -1,8 +1,8 @@
 import asyncio,datetime,os, json
 from typing import Tuple
 from systemEntities import User,NotificationType, Notification
-from mailClientSes import send_mail, Email
-#from mailClientBrevo import send_mail, Email
+#from mailClientSes import send_mail, Email
+from mailClientBrevo import send_mail, Email
 from configurationService import domain_name, protocol
 
 MAIL_TEMPLATES_DIR=os.path.join("resources","mailTemplates")
