@@ -135,15 +135,20 @@ def group_data_by_field_per_bucket_using_known_field_values(field_name:str, fiel
     return grouped_data
 
 def filter_data_by_filter_field(data:list[dict], filter_field_name: str, filter_field_value: Any)->list:
-    print("filter_data_by_filter_field::data=",data)
-    print("filter_data_by_filter_field::filter_field_name=",filter_field_name)
-    print("filter_data_by_filter_field::filter_field_value=",filter_field_value)
-    return data
+    if filter_field_value==None:
+        print("filter_data_by_filter_field:: filter_field_value==None, returning unfiltered results")
+        return data
+    else:       
+        #print("filter_data_by_filter_field::data=",data)
+        print("filter_data_by_filter_field::filter_field_name=",filter_field_name)
+        print("filter_data_by_filter_field::filter_field_value=",filter_field_value)
+        return [event for event in data if event[filter_field_name]==filter_field_value]
 
-def group_data(from_time: int, to_time: int, group_by_time_bucket_sec: int, group_by_field: str, analytics_event_type: AnalyticsEventType)->Tuple[list[dict], list[Tuple[int,int]]]:
+def group_data(from_time: int, to_time: int, group_by_time_bucket_sec: int, group_by_field: str, analytics_event_type: AnalyticsEventType, filter_field_name: str, filter_field_value:Any)->Tuple[list[dict], list[Tuple[int,int]]]:
     data=fetch_analytics_data(from_time, to_time, analytics_event_type)
     #print("group_data::data=",data)
-    #data=filter_data_by_filter_field(data, filter_field_name, filter_field_value)
+    data=filter_data_by_filter_field(data=data, filter_field_name=filter_field_name, filter_field_value=filter_field_value)
+    print("group_data::data_after_filter=",data)
     if len(data)>0:
         field_values=set()
         for event in data:
@@ -173,8 +178,8 @@ def convert_group_data_to_plotly_traces(group_data:list[dict], time_buckets:list
         return traces
     else:
         return []
-    
-def group_by_fields(from_time:int, to_time:int, analytics_event_type: AnalyticsEventType)->list[str]:
+
+def get_group_by_fields(from_time:int, to_time:int, analytics_event_type: AnalyticsEventType, filter_field_name: str, filter_field_value: Any)->list[str]:
     data=fetch_analytics_data(from_time, to_time, analytics_event_type)
     unique_field_names=set()
     for entry in data:

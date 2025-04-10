@@ -1,6 +1,6 @@
 import os,json, periodicTriggerService
 from systemEntities import AnalyticsEventType
-from analyticsService import group_by_fields,convert_group_data_to_plotly_traces, group_data, insert_analytic_event, ChallengeTrafficAnalyticsEvent, NewUserAnalyticsEvent, UserPaidAnalyticsEvent, UserSubmittedAssignmentAnalyticsEvent, UserPassedAssignmentAnalyticsEvent
+from analyticsService import get_group_by_fields,convert_group_data_to_plotly_traces, group_data, insert_analytic_event, ChallengeTrafficAnalyticsEvent, NewUserAnalyticsEvent, UserPaidAnalyticsEvent, UserSubmittedAssignmentAnalyticsEvent, UserPassedAssignmentAnalyticsEvent
 from userService import User, submit_user, user_exists, get_user, initiate_user_payement_procedure
 from assignmentOrchestrator import assignment_description,next_assignment_submission, assignment_task_count, AssignmentSubmission, submit_assignment, user_testing_in_progress, max_submission_for_assignment, last_assignment_submission_result, get_submitted_file
 from exportService import fetch_symmetric_key, download_data
@@ -327,18 +327,29 @@ def serve_analytics():
     return html_response
 
 @app.get("/analytics/data")
-def serve_analytics(time_bucket:int=3600, group_by_field:str="advertise_code", from_time:int=0, to_time:int=99999999999999, analytics_event_type:str="CHALLENGE_TRAFFIC"):
-    grouped_data,time_buckets=group_data(from_time, to_time, time_bucket, group_by_field, AnalyticsEventType[analytics_event_type])   
+def serve_analytics_data(time_bucket:int=3600, group_by_field:str="advertise_code", from_time:int=0, to_time:int=99999999999999, analytics_event_type:str="CHALLENGE_TRAFFIC", filter_field_name:str=None, filter_field_value=None):
+    print(f"serve_analytics_data:: filter_field_name='{filter_field_name}', filter_field_value='{filter_field_value}'")
+    if filter_field_value=="null":
+        print("serve_analytics_data:: entered non existing filter_field_value branch")
+        grouped_data,time_buckets=group_data(from_time, to_time, time_bucket, group_by_field, AnalyticsEventType[analytics_event_type], None, None)   
+    else:
+        print("serve_analytics_data:: entered existing filter_field_value branch")
+        grouped_data,time_buckets=group_data(from_time, to_time, time_bucket, group_by_field, AnalyticsEventType[analytics_event_type], filter_field_name, filter_field_value)
     plotly_traces=convert_group_data_to_plotly_traces(grouped_data, time_buckets)
     return plotly_traces
 
 @app.get("/analytics/eventTypes")
-def serve_analytics():
+def serve_event_types():
     analytics_event_type=list(AnalyticsEventType.__members__.keys())
     return analytics_event_type 
 
 @app.get("/analytics/groupByFields")
-def serve_analytics(from_time:int=0, to_time:int=99999999999999, analytics_event_type:str="CHALLENGE_TRAFFIC"):
-    return group_by_fields(from_time, to_time, AnalyticsEventType[analytics_event_type])
-      
+def serve_get_group_by_fields(from_time:int=0, to_time:int=99999999999999, analytics_event_type:str="CHALLENGE_TRAFFIC", filter_field_name:str=None, filter_field_value=None):
+    print(f"serve_get_group_by_fields:: filter_field_name='{filter_field_name}', filter_field_value='{filter_field_value}'")
+    if filter_field_value=="null":
+        print("serve_analytics_data:: entered non existing filter_field_value branch")
+        return get_group_by_fields(from_time, to_time, AnalyticsEventType[analytics_event_type], None, None)
+    else:
+        print("serve_analytics_data:: entered existing filter_field_value branch")
+        return get_group_by_fields(from_time, to_time, AnalyticsEventType[analytics_event_type], filter_field_name, filter_field_value)
 
