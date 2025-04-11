@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <meta http-equiv="refresh" content="1">
     <title>Online Store</title>
     <style>
         body {
@@ -65,7 +64,6 @@
             font-size: 1.5rem;
             margin-bottom: 30px;
         }
-
         .cta-button {
             background-color: #ff6600;
             color: white;
@@ -74,6 +72,10 @@
             text-decoration: none;
             border-radius: 5px;
             transition: background-color 0.3s;
+        }
+        
+        .seperator {
+            padding: 10px;
         }
 
         .cta-button:hover {
@@ -94,11 +96,6 @@
             overflow: hidden;
             width: 600px;
             text-align: center;
-            transition: transform 0.3s;
-        }
-
-        .product:hover {
-            transform: translateY(-10px);
         }
 
         .product img {
@@ -109,6 +106,7 @@
         .product-info {
             padding: 20px;
         }
+
 
         .product-info h3 {
             font-size: 1.6rem;
@@ -126,7 +124,6 @@
             color: #ff6600;
             margin-bottom: 15px;
         }
-
         footer {
             background-color: #1c1c1c;
             color: white;
@@ -152,8 +149,10 @@
                 <p class="price">We noticed you attempted to submit a task and failed to pass</p>
                 <p class="price">But don't despair, you can still try agin</p>
                 <p class="price">No funny business this time, we expect you to pass!</p>
-                <a href="$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/last_submission_result" class="cta-button">View Last Submission Results</a>
-                <a href="$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/assignments" class="cta-button">Resubmit Current Assingment</a>
+                <p class="seperator"></p>
+                <p><a href="$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/last_submission_result" class="cta-button">View Last Submission Results</a></p>
+                <p class="seperator"></p>
+                <p><a href="$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/assignments" class="cta-button">Resubmit Current Assingment</a></p>
             </div>
         </div>
     </section>
@@ -166,5 +165,3 @@
 
 </body>
 </html>
-
-

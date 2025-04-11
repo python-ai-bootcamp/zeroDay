@@ -149,6 +149,7 @@
             flex-direction: row; /* The default, so it's redundant but keeps it clear */
             justify-content: center; /* Distribute divs with space between */
             gap: 4px; 
+            flex-wrap: wrap;
         }
         .graphSelector {
             color: white;
@@ -161,6 +162,9 @@
             border-radius: 10px;
             padding: 8px 5px 8px 5px;
             font-size: 0.85em;
+        }
+        .dynamicTextDropdownGraphSelector {
+            width: 250px;
         }
         .graphSelector select{
             font-size: 0.85em;
@@ -197,12 +201,11 @@
                 const footerHeight = document.querySelector('footer').offsetHeight;
                 const filterSectionHeight = document.querySelector('.graphSelectorWrapper').offsetHeight;
                 const availableHeight = window.innerHeight - footerHeight - filterSectionHeight - 230; 
-                var layout = {barmode: 'stack', height:availableHeight, plot_bgcolor:"#e0d6c1", paper_bgcolor:"#e0d6c1"};
+                const title={text:`'${analytics_event_type}' events, filtered by field '${filter_field_name}'='${filter_field_value}' grouped by field '${group_by_field}'`}
+                var layout = {barmode: 'stack', height:availableHeight, plot_bgcolor:"#e0d6c1", paper_bgcolor:"#e0d6c1", title};
                 data_with_formatted_time=json.map(trace=> new Object(trace,{x:json.map(trace=> trace.x=trace.x.map(epoch=>new Date(epoch) ))}))                
-                //if (!populateAnalyticsEventFieldFilterDropdown_dont_chage_after_selector_event){
-                    eventFields=data_with_formatted_time.map(x=>x.name)
-                    populateAnalyticsEventFieldFilterDropdown(eventFields, nullify_filter_field_value)
-                //}
+                eventFields=data_with_formatted_time.map(x=>x.name)
+                populateAnalyticsEventFieldFilterDropdown(eventFields, nullify_filter_field_value)
                 Plotly.newPlot('myDiv', data_with_formatted_time, layout);
             })
         }
@@ -381,19 +384,19 @@
     <section class="hero">
         <div class="product">   
             <div class="graphSelectorWrapper">         
-                <div class="graphSelector">
+                <div class="graphSelector dynamicTextDropdownGraphSelector">
                     <label>Event Type</label>
                     <select id="analyticsEventTypeSelector" onchange="handleAnalyticsEventTypeSelector()">
                         <option value="">Loading...</option>
                     </select>
                 </div> 
-                <div class="graphSelector">
+                <div class="graphSelector dynamicTextDropdownGraphSelector">
                     <label>Group by</label>
                     <select id="analyticsGroupByFieldSelector" onchange="handleAnalyticsGroupByFieldSelector()">
                         <option value="">Loading...</option>
                     </select>
                 </div>
-                <div class="graphSelector">
+                <div class="graphSelector dynamicTextDropdownGraphSelector">
                     <label>Field Filter</label>
                     <select id="analyticsEventFieldFilterSelector" onchange="handleAnalyticsEventFieldFilterSelector()">
                         <option value="">N/A</option>

@@ -299,8 +299,7 @@ def next_assignment_submission(hacker_id:str):
         else:
             return {"assignment_id":1,"submission_id":1}
     else:
-        return {"assignment_id":1,"submission_id":1} # changed because of ui manual system tests failing, it makes more sense this way since new users still do not actually exist in assignment orchestrator data
-        #return {"status": "ERROR", "ERROR_message":f"hacker_id:'{hacker_id}' does not exist"}
+        return {"assignment_id":1,"submission_id":1} 
 
 def assignment_description(assignment_id:int):
     assignment_mapper=load_assignment_mapper()
