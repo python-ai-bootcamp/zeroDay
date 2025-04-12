@@ -1,5 +1,5 @@
 import os,json, periodicTriggerService
-from systemEntities import AnalyticsEventType
+from systemEntities import AnalyticsEventType, print
 from analyticsService import insert_analytic_event, get_group_by_fields,convert_group_data_to_plotly_traces, group_data, ChallengeTrafficAnalyticsEvent, NewUserAnalyticsEvent, UserPaidAnalyticsEvent, UserSubmittedAssignmentAnalyticsEvent, UserPassedAssignmentAnalyticsEvent
 from userService import User, submit_user, user_exists, get_user
 from paymentService import initiate_user_payement_procedure
@@ -9,6 +9,7 @@ from fastapi import FastAPI, BackgroundTasks, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from configurationService import domain_name, protocol, isDevMod
+
 
 app = FastAPI()
 
@@ -195,7 +196,7 @@ def serve_assignments(request: Request):
     assignments_page_html = get_template("assignments_page")
     if user and user["paid_status"]:
         next_assignment=next_assignment_submission(user["hacker_id"])
-        print(f"next_assignment::{next_assignment}")
+        #print(f"next_assignment::{next_assignment}")
         current_assignment_id=next_assignment["assignment_id"]
         current_assignment_description=assignment_description(current_assignment_id)
         #print(current_assignment_description)
@@ -362,12 +363,9 @@ def serve_analytics():
 
 @app.get("/analytics/data")
 def serve_analytics_data(time_bucket:int=3600, group_by_field:str="advertise_code", from_time:int=0, to_time:int=99999999999999, analytics_event_type:str="CHALLENGE_TRAFFIC", filter_field_name:str=None, filter_field_value=None):
-    print(f"serve_analytics_data:: filter_field_name='{filter_field_name}', filter_field_value='{filter_field_value}'")
     if filter_field_value=="null":
-        print("serve_analytics_data:: entered non existing filter_field_value branch")
         grouped_data,time_buckets=group_data(from_time, to_time, time_bucket, group_by_field, AnalyticsEventType[analytics_event_type], None, None)   
     else:
-        print("serve_analytics_data:: entered existing filter_field_value branch")
         grouped_data,time_buckets=group_data(from_time, to_time, time_bucket, group_by_field, AnalyticsEventType[analytics_event_type], filter_field_name, filter_field_value)
     plotly_traces=convert_group_data_to_plotly_traces(grouped_data, time_buckets)
     return plotly_traces
@@ -379,11 +377,7 @@ def serve_event_types():
 
 @app.get("/analytics/groupByFields")
 def serve_get_group_by_fields(from_time:int=0, to_time:int=99999999999999, analytics_event_type:str="CHALLENGE_TRAFFIC", filter_field_name:str=None, filter_field_value=None):
-    print(f"serve_get_group_by_fields:: filter_field_name='{filter_field_name}', filter_field_value='{filter_field_value}'")
     if filter_field_value=="null":
-        print("serve_analytics_data:: entered non existing filter_field_value branch")
         return get_group_by_fields(from_time, to_time, AnalyticsEventType[analytics_event_type], None, None)
     else:
-        print("serve_analytics_data:: entered existing filter_field_value branch")
         return get_group_by_fields(from_time, to_time, AnalyticsEventType[analytics_event_type], filter_field_name, filter_field_value)
-

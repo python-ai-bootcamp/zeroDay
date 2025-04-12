@@ -1,6 +1,6 @@
 import asyncio,datetime,os, json
 from typing import Tuple
-from systemEntities import User,NotificationType, Notification
+from systemEntities import User,NotificationType
 #from mailClientSes import send_mail, Email
 from mailClientBrevo import send_mail, Email
 from configurationService import domain_name, protocol

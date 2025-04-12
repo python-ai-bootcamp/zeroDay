@@ -1,6 +1,13 @@
 from enum import StrEnum
 from pydantic import BaseModel
 import os
+import datetime
+
+_print = print  # preserve original
+def print(*args, **kwargs):
+    _print(f"{str(datetime.datetime.now())[0:27]}\t", end='')
+    _print(*args, **kwargs)
+
 
 class User(BaseModel):
     email: str
@@ -28,8 +35,3 @@ class NotificationType(StrEnum):
     NEW_ASSIGNMENT_ARRIVED = "NEW_ASSIGNMENT_ARRIVED"
     NEW_USER_FIRST_ASSIGNMENT_AFTER_ENLISTMENT = "NEW_USER_FIRST_ASSIGNMENT_AFTER_ENLISTMENT"
     PAYMENT_ACCEPTED = "PAYMENT_ACCEPTED"
-
-class Notification(BaseModel):
-    notification_type: NotificationType
-    user: User
-    send_attempt_counter: int = 0
