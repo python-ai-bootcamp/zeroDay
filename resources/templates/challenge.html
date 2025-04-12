@@ -142,7 +142,7 @@
           if (state === 'email') {
             userData.email = inputValue;
             if(validateEmail(userData.email)){
-              mailNotExist=await fetch(`$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/user_exists?email=${userData.email}`).then(x=>x.text()).then(x=>x=="false")
+              mailNotExist=await fetch(`/user_exists?email=${userData.email}`).then(x=>x.text()).then(x=>x=="false")
               if(mailNotExist){
                 appendLine(riddle);
                 state = 'riddle';
@@ -268,7 +268,7 @@
     };
 
     function createNewUserCandidate(data) {
-      fetch('$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/submit_user', {
+      fetch('/submit_user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

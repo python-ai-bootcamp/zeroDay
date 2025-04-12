@@ -13,19 +13,19 @@ from configurationService import domain_name, protocol, isDevMod
 app = FastAPI()
 
 templates_processors={
-    "challenge_page":                           lambda: open(os.path.join("resources","templates","challenge.html"), "r").read().replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol).replace("$${{IS_DEV_MODE}}$$",isDevMod),
+    "challenge_page":                           lambda: open(os.path.join("resources","templates","challenge.html"), "r").read().replace("$${{IS_DEV_MODE}}$$",isDevMod),
     "home_page":                                lambda: open(os.path.join("resources","templates","home.html"), "r").read(),
     "payment_page":                             lambda: open(os.path.join("resources","templates","payment.html"), "r").read(),
-    "payment_redirect_page":                    lambda: f'<html><head><meta http-equiv="refresh" content="5; url={protocol}://{domain_name}/enlist"/></head><body><p>This Page Is Still Under Construction</p><p>User will be redirected back to enlistment page in 5 seconds</p></body></html>',
-    "redirect_to_enlistment_page":              lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/enlist"/></head><body></body></html>',
     "enlist_page":                              lambda: open(os.path.join("resources","templates","enlist.html"), "r").read(),
     "contact_page":                             lambda: open(os.path.join("resources","templates","contact.html"), "r").read(),
-    "assignments_page":                         lambda: open(os.path.join("resources","templates","assignments.html"), "r").read().replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol),
-    "assignment_submission_page":               lambda: open(os.path.join("resources","templates","assignment_submission.html"), "r").read().replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol),
-    "redirect_to_last_submission_result_page":  lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/last_submission_result"/></head><body></body></html>',
+    "assignments_page":                         lambda: open(os.path.join("resources","templates","assignments.html"), "r").read(),
+    "assignment_submission_page":               lambda: open(os.path.join("resources","templates","assignment_submission.html"), "r").read(),
     "last_submission_results_page":             lambda: open(os.path.join("resources","templates","last_submission_results.html"), "r").read(),
     "submitted_task_file_page":                 lambda: open(os.path.join("resources","templates","submitted_task_file.html"), "r").read(),
     "last_submission_results_no_results_page":  lambda: open(os.path.join("resources","templates","last_submission_results_no_results.html"), "r").read(),
+    "payment_redirect_page":                    lambda: f'<html><head><meta http-equiv="refresh" content="5; url={protocol}://{domain_name}/enlist"/></head><body><p>This Page Is Still Under Construction</p><p>User will be redirected back to enlistment page in 5 seconds</p></body></html>',
+    "redirect_to_enlistment_page":              lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/enlist"/></head><body></body></html>',
+    "redirect_to_last_submission_result_page":  lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/last_submission_result"/></head><body></body></html>',
 }
 
 processed_templates_for_prod_efficiency={}
@@ -129,8 +129,6 @@ def serve_payment(request: Request):
     if(user):
         payment_page_html = payment_page_html\
             .replace("$${{ASSIGNMENT_PAGE_LINK}}$$","")\
-            .replace("$${{DOMAIN_NAME}}$$",domain_name)\
-            .replace("$${{PROTOCOL}}$$",protocol)\
             .replace("$${{HACKER_ID}}$$",user["hacker_id"])
     else:
         payment_page_html = get_template("redirect_to_enlistment_page")
