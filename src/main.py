@@ -14,6 +14,7 @@ app = FastAPI()
 
 templates_processors={
     "challenge_page":                           lambda: open(os.path.join("resources","templates","challenge.html"), "r").read().replace("$${{IS_DEV_MODE}}$$",isDevMod),
+    "about_page":                               lambda: open(os.path.join("resources","templates","about.html"), "r").read(),
     "home_page":                                lambda: open(os.path.join("resources","templates","home.html"), "r").read(),
     "payment_page":                             lambda: open(os.path.join("resources","templates","payment.html"), "r").read(),
     "enlist_page":                              lambda: open(os.path.join("resources","templates","enlist.html"), "r").read(),
@@ -68,7 +69,7 @@ def validate_session(request: Request=None, hacker_id: str=None):
 
 @app.get("/about")
 def serve_about(request: Request, response: Response, hacker_id:str=None):
-    about_page_html = open(os.path.join("resources","templates","about.html"), "r").read()
+    about_page_html = get_template("about_page") 
     user=validate_session(request=request, hacker_id=hacker_id)
     print(f"is_session_validated:'{user}'")
     if user:
