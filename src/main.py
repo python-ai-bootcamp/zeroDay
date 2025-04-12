@@ -24,6 +24,7 @@ templates_processors={
     "last_submission_results_page":             lambda: open(os.path.join("resources","templates","last_submission_results.html"), "r").read(),
     "submitted_task_file_page":                 lambda: open(os.path.join("resources","templates","submitted_task_file.html"), "r").read(),
     "last_submission_results_no_results_page":  lambda: open(os.path.join("resources","templates","last_submission_results_no_results.html"), "r").read(),
+    "analytics_page":                           lambda: open(os.path.join("resources","templates","analytics.html"), "r").read(),
     "payment_redirect_page":                    lambda: f'<html><head><meta http-equiv="refresh" content="5; url={protocol}://{domain_name}/enlist"/></head><body><p>This Page Is Still Under Construction</p><p>User will be redirected back to enlistment page in 5 seconds</p></body></html>',
     "redirect_to_enlistment_page":              lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/enlist"/></head><body></body></html>',
     "redirect_to_last_submission_result_page":  lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/last_submission_result"/></head><body></body></html>',
@@ -355,7 +356,7 @@ def post_submit_assignment(assignment_submission: AssignmentSubmission, backgrou
 
 @app.get("/analytics")
 def serve_analytics():
-    analytics_page_html = open(os.path.join("resources","templates","analytics.html"), "r").read()
+    analytics_page_html = get_template("analytics_page")
     html_response=HTMLResponse(content=analytics_page_html, status_code=200)
     return html_response
 
