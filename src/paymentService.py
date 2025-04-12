@@ -8,7 +8,7 @@ def initiate_user_payement_procedure(user:User, ClientName:str, ClientLName:str,
     print(f"initiate_user_payement_procedure:: received user {user} with following credit api related details:ClientName:{ClientName}, ClientLName:{ClientLName}, UserId:{UserId}, email:{email}, phone:{phone}")
     print("initiate_user_payement_procedure:: not fully implemented procedure, setting user as paid by default")
     set_user_as_paid(user.hacker_id)
-    persistPaymentBooking(user:User, ClientName:str, ClientLName:str, UserId:str, email:str, phone:str)
+    persistPaymentBooking(user, ClientName, ClientLName, UserId, email, phone)
     produceRecieptMail(user)
     persistRecieptInPdfFormat(user)
 
