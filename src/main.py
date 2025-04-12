@@ -10,22 +10,34 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from configurationService import domain_name, protocol, isDevMod
 
-
 app = FastAPI()
 
-challenge_page_html = open(os.path.join("resources","templates","challenge.html"), "r").read().replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol).replace("$${{IS_DEV_MODE}}$$",isDevMod)
-redirect_to_enlistment_page=f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/enlist"/></head><body></body></html>'
-redirect_to_last_submission_result_page=f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/last_submission_result"/></head><body></body></html>'
-home_page_html = open(os.path.join("resources","templates","home.html"), "r").read()
-enlist_page_html = open(os.path.join("resources","templates","enlist.html"), "r").read()
-contact_page_html = open(os.path.join("resources","templates","contact.html"), "r").read()
-payment_page_html = open(os.path.join("resources","templates","payment.html"), "r").read()
-assignments_page_html = open(os.path.join("resources","templates","assignments.html"), "r").read()
-assignment_submission_page_html = open(os.path.join("resources","templates","assignment_submission.html"), "r").read()
-last_submission_results_page_html = open(os.path.join("resources","templates","last_submission_results.html"), "r").read()
-last_submission_results_no_results_page_html = open(os.path.join("resources","templates","last_submission_results_no_results.html"), "r").read()
-submitted_task_file_page_html = open(os.path.join("resources","templates","submitted_task_file.html"), "r").read()
+templates_processors={
+    "challenge_page":                           lambda: open(os.path.join("resources","templates","challenge.html"), "r").read().replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol).replace("$${{IS_DEV_MODE}}$$",isDevMod),
+    "home_page":                                lambda: open(os.path.join("resources","templates","home.html"), "r").read(),
+    "payment_page":                             lambda: open(os.path.join("resources","templates","payment.html"), "r").read(),
+    "payment_redirect_page":                    lambda: f'<html><head><meta http-equiv="refresh" content="5; url={protocol}://{domain_name}/enlist"/></head><body><p>This Page Is Still Under Construction</p><p>User will be redirected back to enlistment page in 5 seconds</p></body></html>',
+    "redirect_to_enlistment_page":              lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/enlist"/></head><body></body></html>',
+    "enlist_page":                              lambda: open(os.path.join("resources","templates","enlist.html"), "r").read(),
+    "contact_page":                             lambda: open(os.path.join("resources","templates","contact.html"), "r").read(),
+    "assignments_page":                         lambda: open(os.path.join("resources","templates","assignments.html"), "r").read().replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol),
+    "assignment_submission_page":               lambda: open(os.path.join("resources","templates","assignment_submission.html"), "r").read().replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol),
+    "redirect_to_last_submission_result_page":  lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/last_submission_result"/></head><body></body></html>',
+    "last_submission_results_page":             lambda: open(os.path.join("resources","templates","last_submission_results.html"), "r").read(),
+    "submitted_task_file_page":                 lambda: open(os.path.join("resources","templates","submitted_task_file.html"), "r").read(),
+    "last_submission_results_no_results_page":  lambda: open(os.path.join("resources","templates","last_submission_results_no_results.html"), "r").read(),
+}
 
+processed_templates_for_prod_efficiency={}
+
+for key,value in templates_processors.items():
+    processed_templates_for_prod_efficiency[key]=value()
+
+def get_template(template_name:str):
+    if isDevMod:
+        return templates_processors[template_name]()
+    else:
+        return processed_templates_for_prod_efficiency[template_name]
 
 app.add_middleware(
     CORSMiddleware,
@@ -66,7 +78,7 @@ def serve_about(request: Request, response: Response, hacker_id:str=None):
                 .replace("$${{ENLISTMENT_PROCESS_SECTION}}$$",'<li>You have successfully passed the challenge and enlisted into our ZeroDayBootcamp program</li><li>You may now engage in our next challenges in the <a href="/assignments" style="color:#778881;">Assignments Page</a></li>')
         else:
             about_page_html=about_page_html\
-                .replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')\
+                .replace("$${{ASSIGNMENT_PAGE_LINK}}$$","")\
                 .replace("$${{ENLISTMENT_PROCESS_SECTION}}$$",'<li>You have successfully passed the initial screening <a href="/challenge" style="color:#778881;">zeroDayBootCamp</a> challenge</li><li>You can now finish our enlistment process in our <a href="/enlist" style="color:#778881;">Enlistment Page</a></li>')
         html_response=HTMLResponse(content=about_page_html, status_code=200)
         html_response.set_cookie(key="sessionKey", value=user["hacker_id"])
@@ -81,10 +93,7 @@ def serve_about(request: Request, response: Response, hacker_id:str=None):
 @app.get("/challenge")
 def serve_challange(advertise_code:str="unknown",advertise_code_sub_category:str="unknown"):
     insert_analytic_event(ChallengeTrafficAnalyticsEvent(advertise_code=advertise_code, advertise_code_sub_category=advertise_code_sub_category))
-    challenge_page_html=open(os.path.join("resources","templates","challenge.html"), "r").read()\
-        .replace("$${{DOMAIN_NAME}}$$",domain_name)\
-        .replace("$${{PROTOCOL}}$$",protocol)\
-        .replace("$${{IS_DEV_MODE}}$$",isDevMod)\
+    challenge_page_html=get_template("challenge_page")\
         .replace("$${{ADVERTISE_CODE}}$$",advertise_code)\
         .replace("$${{ADVERTISE_CODE_SUB_CATEGORY}}$$",advertise_code_sub_category)
     return HTMLResponse(content=challenge_page_html, status_code=200)
@@ -93,57 +102,87 @@ def serve_challange(advertise_code:str="unknown",advertise_code_sub_category:str
 def serve_home(request: Request):
     user=validate_session(request=request)
     print(user)
-    home_page_html = open(os.path.join("resources","templates","home.html"), "r").read()
+    home_page_html = get_template("home_page")
     if(user):
         is_paid=user["paid_status"]
         if(is_paid):
-            home_page_html=home_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>').replace("$${{RECRUITE_NAME}}$$",user["name"]).replace("$${{HOME_CONTENT}}$$",'<p style="padding-bottom:50px">Congratulation for enlisting the ZeroDayBootcamp project!</p><p style="padding-bottom:50px">You may now enter the assignment page to start learning</p><a href="/assignments" class="cta-button" >Enter Assignment Page</a>')
+            home_page_html=home_page_html\
+                .replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')\
+                .replace("$${{RECRUITE_NAME}}$$",user["name"])\
+                .replace("$${{HOME_CONTENT}}$$",'<p style="padding-bottom:50px">Congratulation for enlisting the ZeroDayBootcamp project!</p><p style="padding-bottom:50px">You may now enter the assignment page to start learning</p><a href="/assignments" class="cta-button" >Enter Assignment Page</a>')
         else:
-            home_page_html=home_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$","").replace("$${{RECRUITE_NAME}}$$",user["name"]).replace("$${{HOME_CONTENT}}$$",'<p style="padding-bottom:50px">Congratulation for completeing the ZeroDayBootCamp challenge successfully!</p><p style="padding-bottom:50px">You may now enlist to the continuation of your journy</p><a href="/enlist" class="cta-button" >Enlist</a>')
+            home_page_html=home_page_html\
+                .replace("$${{ASSIGNMENT_PAGE_LINK}}$$","")\
+                .replace("$${{RECRUITE_NAME}}$$",user["name"])\
+                .replace("$${{HOME_CONTENT}}$$",'<p style="padding-bottom:50px">Congratulation for completeing the ZeroDayBootCamp challenge successfully!</p><p style="padding-bottom:50px">You may now enlist to the continuation of your journy</p><a href="/enlist" class="cta-button" >Enlist</a>')
     else:
-        home_page_html=home_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$","").replace("$${{RECRUITE_NAME}}$$",'Dear Recruite').replace("$${{HOME_CONTENT}}$$",'<p style="padding-bottom:50px">After completing the challenge bellow you will be invited to join the ZeroDay BootCamp</p><a href="/challenge" class="cta-button" >Take the Challenge</a>')
+        home_page_html=home_page_html\
+            .replace("$${{ASSIGNMENT_PAGE_LINK}}$$","")\
+            .replace("$${{RECRUITE_NAME}}$$",'Dear Recruite')\
+            .replace("$${{HOME_CONTENT}}$$",'<p style="padding-bottom:50px">After completing the challenge bellow you will be invited to join the ZeroDay BootCamp</p><a href="/challenge" class="cta-button" >Take the Challenge</a>')
     return HTMLResponse(content=home_page_html, status_code=200)
 
 @app.get("/payment")
 def serve_payment(request: Request):
     user=validate_session(request=request)
-    payment_page_html = open(os.path.join("resources","templates","payment.html"), "r").read()
+    payment_page_html = get_template("payment_page")
     if(user):
-        payment_page_html = payment_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$","").replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol).replace("$${{HACKER_ID}}$$",user["hacker_id"])
+        payment_page_html = payment_page_html\
+            .replace("$${{ASSIGNMENT_PAGE_LINK}}$$","")\
+            .replace("$${{DOMAIN_NAME}}$$",domain_name)\
+            .replace("$${{PROTOCOL}}$$",protocol)\
+            .replace("$${{HACKER_ID}}$$",user["hacker_id"])
     else:
-        #if user has no valid session just redirect him to enlist page so he will see is harsh reality
-        payment_page_html = f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/enlist"/></head><body></body></html>'
+        payment_page_html = get_template("redirect_to_enlistment_page")
     return HTMLResponse(content=payment_page_html, status_code=200)
 
 @app.get("/paymentRedirect")
 def serve_payment_redirect(request: Request, hacker_id:str, ClientName:str, ClientLName:str, UserId:str, email:str, phone:str):
     user=validate_session(request=request)
     if(user):
-        payment_page_html =  f'<html><head><meta http-equiv="refresh" content="5; url={protocol}://{domain_name}/enlist"/></head><body><p>This Page Is Still Under Construction</p><p>User will be redirected back to enlistment page in 5 seconds</p></body></html>'
+        payment_page_html = get_template("payment_redirect_page")
         user=User.model_validate(user)
         initiate_user_payement_procedure(user, ClientName, ClientLName, UserId, email, phone)
     else:
-        #if user has no valid session just redirect him to enlist page so he will see is harsh reality
-        payment_page_html = redirect_to_enlistment_page
+        payment_page_html = get_template("redirect_to_enlistment_page")
     return HTMLResponse(content=payment_page_html, status_code=200)
 
 @app.get("/enlist")
 def serve_enlist(request: Request):
     user=validate_session(request=request)
-    enlist_page_html = open(os.path.join("resources","templates","enlist.html"), "r").read()
+    enlist_page_html = get_template("enlist_page")
     if(user):
         if(user["paid_status"]):
-            enlist_page_html=enlist_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>').replace("$${{ENLISTMENT_TITLE}}$$","Enlistment Completed").replace("$${{BUTTON_HREF_ATTRIBUTE}}$$",'href="/assignments"').replace("$${{BUTTON_CLASS}}$$","cta-button").replace("$${{ENLISTMENT_BUTTON_TEXT}}$$","Enter Assignment Page").replace("$${{ENLISTMENT_MESSAGE}}$$",'<p>User Already Enlisted</p><p>You can now enter assignment page</p><p style="margin:40px;"></p>')
+            enlist_page_html=enlist_page_html\
+                .replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')\
+                .replace("$${{ENLISTMENT_TITLE}}$$","Enlistment Completed")\
+                .replace("$${{BUTTON_HREF_ATTRIBUTE}}$$",'href="/assignments"')\
+                .replace("$${{BUTTON_CLASS}}$$","cta-button")\
+                .replace("$${{ENLISTMENT_BUTTON_TEXT}}$$","Enter Assignment Page")\
+                .replace("$${{ENLISTMENT_MESSAGE}}$$",'<p>User Already Enlisted</p><p>You can now enter assignment page</p><p style="margin:40px;"></p>')
         else:
-            enlist_page_html=enlist_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$","").replace("$${{ENLISTMENT_TITLE}}$$","Enlist to Bootcamp").replace("$${{BUTTON_HREF_ATTRIBUTE}}$$",'href="/payment"').replace("$${{BUTTON_CLASS}}$$","cta-button").replace("$${{ENLISTMENT_BUTTON_TEXT}}$$","Enlist Now").replace("$${{ENLISTMENT_MESSAGE}}$$",'<p>Challenge Passed Successfully</p><p>Enlistment is Now Opened</p><p class="price">50&#8362;</p>')      
+            enlist_page_html=enlist_page_html\
+                .replace("$${{ASSIGNMENT_PAGE_LINK}}$$","")\
+                .replace("$${{ENLISTMENT_TITLE}}$$","Enlist to Bootcamp")\
+                .replace("$${{BUTTON_HREF_ATTRIBUTE}}$$",'href="/payment"')\
+                .replace("$${{BUTTON_CLASS}}$$","cta-button")\
+                .replace("$${{ENLISTMENT_BUTTON_TEXT}}$$","Enlist Now")\
+                .replace("$${{ENLISTMENT_MESSAGE}}$$",'<p>Challenge Passed Successfully</p><p>Enlistment is Now Opened</p><p class="price">50&#8362;</p>')      
     else:
-        enlist_page_html=enlist_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$","").replace("$${{ENLISTMENT_TITLE}}$$","Enlist to Bootcamp").replace("$${{BUTTON_HREF_ATTRIBUTE}}$$",'role="link"').replace("$${{BUTTON_CLASS}}$$","cta-button-inactive").replace("$${{ENLISTMENT_BUTTON_TEXT}}$$","Enlist (deactivated)").replace("$${{ENLISTMENT_MESSAGE}}$$",'<p>locked until completing <a href="/challenge" style="color:#778881;"><h2>the challenge</h2><p style="padding-bottom:10px"></p></a></p>')
+        enlist_page_html=enlist_page_html\
+            .replace("$${{ASSIGNMENT_PAGE_LINK}}$$","")\
+            .replace("$${{ENLISTMENT_TITLE}}$$","Enlist to Bootcamp")\
+            .replace("$${{BUTTON_HREF_ATTRIBUTE}}$$",'role="link"')\
+            .replace("$${{BUTTON_CLASS}}$$","cta-button-inactive")\
+            .replace("$${{ENLISTMENT_BUTTON_TEXT}}$$","Enlist (deactivated)")\
+            .replace("$${{ENLISTMENT_MESSAGE}}$$",'<p>locked until completing <a href="/challenge" style="color:#778881;"><h2>the challenge</h2><p style="padding-bottom:10px"></p></a></p>')
+        
     return HTMLResponse(content=enlist_page_html, status_code=200)
 
 @app.get("/contact")
 def serve_contact(request: Request):
     user=validate_session(request=request)
-    contact_page_html = open(os.path.join("resources","templates","contact.html"), "r").read()
+    contact_page_html = get_template("contact_page")
     if user and user["paid_status"]:
         contact_page_html=contact_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')
     else:
@@ -153,7 +192,7 @@ def serve_contact(request: Request):
 @app.get("/assignments")
 def serve_assignments(request: Request):
     user=validate_session(request=request)
-    assignments_page_html = open(os.path.join("resources","templates","assignments.html"), "r").read()
+    assignments_page_html = get_template("assignments_page")
     if user and user["paid_status"]:
         next_assignment=next_assignment_submission(user["hacker_id"])
         print(f"next_assignment::{next_assignment}")
@@ -162,8 +201,6 @@ def serve_assignments(request: Request):
         #print(current_assignment_description)
         if(current_assignment_description["status"] == "ERROR"):
             assignments_page_html=assignments_page_html\
-            .replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')\
-            .replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol)\
             .replace("$${{HACKER_ID}}$$",user["hacker_id"])\
             .replace("$${{ASSIGNMENT_DESCRIPTION_CONTENT}}$$","<p>Please check back in a few days</p><p>We will notify you in an email if anything changes</p>")\
             .replace("$${{TITLE}}$$","No Currently Available New Assignments")\
@@ -183,26 +220,24 @@ def serve_assignments(request: Request):
                     max_allowed_submissions_breach_message=f'<h4 style="color:red;">(User failed max allowed submission attempts ({max_allowed_attempts}) and can not continue submitting)</h4>'
             current_assignment_description=current_assignment_description["assignment_description"]
             assignments_page_html=assignments_page_html\
-            .replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')\
-            .replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol)\
             .replace("$${{HACKER_ID}}$$",user["hacker_id"])\
             .replace("$${{ASSIGNMENT_DESCRIPTION_CONTENT}}$$",current_assignment_description)\
             .replace("$${{TITLE}}$$",assignment_title)\
             .replace("$${{BREACH_MAX_ATTEMPT_MESSAGE}}$$",max_allowed_submissions_breach_message)\
             .replace("$${{SUBMIT_ASSIGNMENT_BUTTON_VISIBILITY}}$$",submit_assignment_button_visibility)
     else:
-        assignments_page_html=redirect_to_enlistment_page
+        assignments_page_html=get_template("redirect_to_enlistment_page")
     return HTMLResponse(content=assignments_page_html, status_code=200)
 
 @app.get("/assignment_submission")
 def serve_assignment_submission(request: Request):
     user=validate_session(request=request) 
-    assignment_submission_page_html = open(os.path.join("resources","templates","assignment_submission.html"), "r").read()
+    assignment_submission_page_html = get_template("assignment_submission_page")
     if user and user["paid_status"]:
         next_assignment_id=next_assignment_submission(user["hacker_id"])["assignment_id"]
         if user_testing_in_progress(user["hacker_id"]):
             print(f'user {user["hacker_id"]} is locked for testing')
-            assignment_submission_page_html=redirect_to_last_submission_result_page
+            assignment_submission_page_html=get_template("redirect_to_last_submission_result_page")
         else:           
             print(f'user {user["hacker_id"]} is not locked for testing')
             task_count=assignment_task_count(next_assignment_id)["task_count"]
@@ -213,20 +248,18 @@ def serve_assignment_submission(request: Request):
                 print(task_submission_sections)
             task_submission_sections="\n".join(task_submission_sections)
             assignment_submission_page_html=assignment_submission_page_html\
-            .replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')\
-            .replace("$${{DOMAIN_NAME}}$$",domain_name).replace("$${{PROTOCOL}}$$",protocol)\
             .replace("$${{HACKER_ID}}$$",user["hacker_id"])\
             .replace("$${{ASSIGNMENT_ID}}$$",str(next_assignment_id))\
             .replace("$${{TASK_SUBMITION_SECTIONS}}$$",task_submission_sections)\
             .replace("$${{MUMBER_OF_TASKS_IN_ASSIGNMENT}}$$",str(task_count))
     else:
-        assignment_submission_page_html=redirect_to_enlistment_page
+        assignment_submission_page_html=get_template("redirect_to_enlistment_page")
     return HTMLResponse(content=assignment_submission_page_html, status_code=200)
 
 @app.get("/last_submission_result")
 def serve_last_submission_result(request: Request):
     user=validate_session(request=request) 
-    last_submission_results_page_html = open(os.path.join("resources","templates","last_submission_results.html"), "r").read()
+    last_submission_results_page_html = get_template("last_submission_results_page")
     if user and user["paid_status"]:
         if user_testing_in_progress(user["hacker_id"]):
             assignment_id=next_assignment_submission(user["hacker_id"])["assignment_id"]
@@ -248,7 +281,6 @@ def serve_last_submission_result(request: Request):
                 assignment_files=submission_result_for_view["assignment_files"]
                 del submission_result_for_view["assignment_files"]
                 del submission_result_for_view["assignment_file_names"]
-                #submission_result_for_view["assignment_files"]=list(map(lambda x: base64.b64decode(x).decode('utf-8') ,submission_result_for_view["assignment_files"]))
                 submission_result_for_view["result"]["collected_results"]=list(map(lambda task_result:{**task_result,"submitted_task_file":f"{protocol}://{domain_name}/submitted_task_file?assignment_id={assignment_id}&submission_id={submission_id}&task_id={task_result['task_idx']}"},submission_result_for_view["result"]["collected_results"]))
                 submission_result_content=f"data={json.dumps(submission_result_for_view)}"
                 assignment_id=submission_result["assignment_id"]
@@ -260,17 +292,17 @@ def serve_last_submission_result(request: Request):
                 .replace("$${{SUBMISSION_RESULT_CONTENT}}$$",submission_result_content)\
                 .replace("$${{WAITING_FOR_RESULT_MESSAGE}}$$","")
             else:
-                last_submission_results_no_results_page_html = open(os.path.join("resources","templates","last_submission_results_no_results.html"), "r").read()
+                last_submission_results_no_results_page_html = get_template("last_submission_results_no_results_page")
                 last_submission_results_page_html=last_submission_results_no_results_page_html
                 print(submission_result["ERROR_message"])
     else:
-        last_submission_results_page_html=redirect_to_enlistment_page
+        last_submission_results_page_html=get_template("redirect_to_enlistment_page")
     return HTMLResponse(content=last_submission_results_page_html, status_code=200)
 
 @app.get("/submitted_task_file")
 def serve_last_submission_result(request: Request,assignment_id:str, submission_id:str, task_id:str):
     user=validate_session(request=request) 
-    submitted_task_file_page_html = open(os.path.join("resources","templates","submitted_task_file.html"), "r").read()
+    submitted_task_file_page_html = get_template("submitted_task_file_page")
     if user and user["paid_status"]:
         file_content=get_submitted_file(user["hacker_id"], assignment_id, submission_id, task_id)
         submitted_task_file_page_html=submitted_task_file_page_html\
@@ -280,7 +312,7 @@ def serve_last_submission_result(request: Request,assignment_id:str, submission_
         .replace("$${{TASK_ID}}$$",task_id)\
         .replace("$${{FILE_CONTENT}}$$",file_content)
     else:
-        last_submission_results_page_html=redirect_to_enlistment_page
+        submitted_task_file_page_html=get_template("redirect_to_enlistment_page")
     return HTMLResponse(content=submitted_task_file_page_html, status_code=200)
 
 @app.get("/user_exists")
