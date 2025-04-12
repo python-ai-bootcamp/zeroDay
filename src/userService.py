@@ -48,11 +48,6 @@ def user_exists(email:str) -> bool:
     user=list(filter(lambda existing_user: email==existing_user["email"],data))
     return len(user)>0
 
-def initiate_user_payement_procedure(hacker_id:str, ClientName:str, ClientLName:str, UserId:str, email:str, phone:str):
-    print(f"initiate_user_payement_procedure for user {hacker_id} with following details:ClientName:{ClientName}, ClientLName:{ClientLName}, UserId:{UserId}, email:{email}, phone:{phone}")
-    print("initiate_user_payement_procedure:: unimplemented procedure, setting user as paied by default")
-    set_user_as_paid(hacker_id)
-
 def set_user_as_paid(hacker_id:str):
     data = load_data()
     user=list(filter(lambda existing_user: hacker_id==existing_user["hacker_id"],data))

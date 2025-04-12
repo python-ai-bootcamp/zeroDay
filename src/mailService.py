@@ -4,11 +4,17 @@ from systemEntities import User,NotificationType, Notification
 #from mailClientSes import send_mail, Email
 from mailClientBrevo import send_mail, Email
 from configurationService import domain_name, protocol
+from pydantic import BaseModel
 
 MAIL_TEMPLATES_DIR=os.path.join("resources","mailTemplates")
 MAIL_QUEUE_DATA_FILE = os.path.join("./data/","notification_queue_data.json")
 UNDELIVERED_MAIL_DATA_FILE = os.path.join("./data/","notification_queue_undelivered_data.json")
 MAX_DELIVERY_ATTEMPTS = 3
+
+class Notification(BaseModel):
+    notification_type: NotificationType
+    user: User
+    send_attempt_counter: int = 0
 
 def load_notification_queue_data():
     if os.path.exists(MAIL_QUEUE_DATA_FILE):

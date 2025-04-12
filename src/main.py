@@ -1,7 +1,8 @@
 import os,json, periodicTriggerService
 from systemEntities import AnalyticsEventType
-from analyticsService import get_group_by_fields,convert_group_data_to_plotly_traces, group_data, insert_analytic_event, ChallengeTrafficAnalyticsEvent, NewUserAnalyticsEvent, UserPaidAnalyticsEvent, UserSubmittedAssignmentAnalyticsEvent, UserPassedAssignmentAnalyticsEvent
-from userService import User, submit_user, user_exists, get_user, initiate_user_payement_procedure
+from analyticsService import insert_analytic_event, get_group_by_fields,convert_group_data_to_plotly_traces, group_data, ChallengeTrafficAnalyticsEvent, NewUserAnalyticsEvent, UserPaidAnalyticsEvent, UserSubmittedAssignmentAnalyticsEvent, UserPassedAssignmentAnalyticsEvent
+from userService import User, submit_user, user_exists, get_user
+from paymentService import initiate_user_payement_procedure
 from assignmentOrchestrator import assignment_description,next_assignment_submission, assignment_task_count, AssignmentSubmission, submit_assignment, user_testing_in_progress, max_submission_for_assignment, last_assignment_submission_result, get_submitted_file
 from exportService import fetch_symmetric_key, download_data
 from fastapi import FastAPI, BackgroundTasks, Request, Response
@@ -119,7 +120,8 @@ def serve_payment_redirect(request: Request, hacker_id:str, ClientName:str, Clie
     user=validate_session(request=request)
     if(user):
         payment_page_html =  f'<html><head><meta http-equiv="refresh" content="5; url={protocol}://{domain_name}/enlist"/></head><body><p>This Page Is Still Under Construction</p><p>User will be redirected back to enlistment page in 5 seconds</p></body></html>'
-        initiate_user_payement_procedure(hacker_id, ClientName, ClientLName, UserId, email, phone)
+        user=User.model_validate(user)
+        initiate_user_payement_procedure(user, ClientName, ClientLName, UserId, email, phone)
     else:
         #if user has no valid session just redirect him to enlist page so he will see is harsh reality
         payment_page_html = redirect_to_enlistment_page
