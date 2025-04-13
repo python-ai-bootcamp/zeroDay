@@ -3,7 +3,7 @@ import time, os, json, pathlib, re
 from typing import Any, Dict, Tuple
 from collections import OrderedDict
 from pydantic import BaseModel
-from systemEntities import AnalyticsEventType
+from systemEntities import AnalyticsEventType, print
 
 ANALYTICS_DATA_MEMOIZATION_MAX_ITEMS=10
 analytics_data_memoization_state=OrderedDict()

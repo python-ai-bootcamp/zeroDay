@@ -5,7 +5,7 @@ import datetime
 
 _print = print  # preserve original
 def print(*args, **kwargs):
-    _print(f"{str(datetime.datetime.now())[0:27]}\t", end='')
+    _print(f"{str(datetime.datetime.now())[0:23]}\t", end='')
     _print(*args, **kwargs)
 
 

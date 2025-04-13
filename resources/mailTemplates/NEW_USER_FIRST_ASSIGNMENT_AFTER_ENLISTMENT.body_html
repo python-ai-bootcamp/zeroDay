@@ -152,7 +152,7 @@
                 <p class="price">You have successfully enlisted to our service</p>
                 <p class="price">We just created new task, just for you!</p>
                 <p class="price">You can view the challenge in the following link</p>
-                <a href="$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/assignments" class="cta-button">ZeroDay First Assignment</a>
+                <a href="$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/assignments?hacker_id=$${{HACKER_ID}}$$" class="cta-button">ZeroDay First Assignment</a>
             </div>
         </div>
     </section>

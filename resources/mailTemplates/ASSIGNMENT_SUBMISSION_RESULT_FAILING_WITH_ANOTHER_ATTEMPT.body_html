@@ -150,9 +150,9 @@
                 <p class="price">But don't despair, you can still try agin</p>
                 <p class="price">No funny business this time, we expect you to pass!</p>
                 <p class="seperator"></p>
-                <p><a href="$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/last_submission_result" class="cta-button">View Last Submission Results</a></p>
+                <p><a href="$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/last_submission_result?hacker_id=$${{HACKER_ID}}$$" class="cta-button">View Last Submission Results</a></p>
                 <p class="seperator"></p>
-                <p><a href="$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/assignments" class="cta-button">Resubmit Current Assingment</a></p>
+                <p><a href="$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/assignments?hacker_id=$${{HACKER_ID}}$$" class="cta-button">Resubmit Current Assingment</a></p>
             </div>
         </div>
     </section>

@@ -1,4 +1,4 @@
-import os,json, periodicTriggerService
+import os,json, periodicTriggerService, logging
 from systemEntities import AnalyticsEventType, print
 from analyticsService import insert_analytic_event, get_group_by_fields,convert_group_data_to_plotly_traces, group_data, ChallengeTrafficAnalyticsEvent, NewUserAnalyticsEvent, UserPaidAnalyticsEvent, UserSubmittedAssignmentAnalyticsEvent, UserPassedAssignmentAnalyticsEvent
 from userService import User, submit_user, user_exists, get_user
@@ -9,8 +9,16 @@ from fastapi import FastAPI, BackgroundTasks, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from configurationService import domain_name, protocol, isDevMod
+from starlette.middleware.base import BaseHTTPMiddleware
 
-
+class DotTimeFormatter(logging.Formatter):
+    def format(self, record):
+        msg = super().format(record)
+        return msg.replace(",", ".",1)
+for handler in logging.getLogger().handlers:
+    handler.setFormatter(DotTimeFormatter(
+        fmt="%(asctime)s - %(levelname)s - %(name)s - %(message)s"
+    ))    
 app = FastAPI()
 
 templates_processors={
@@ -50,29 +58,42 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def validate_session(request: Request=None, hacker_id: str=None):
-    if hacker_id:
-        user=get_user(hacker_id) 
-        if user["status"]=="OK":
-            return user["user"]
-        else:
-            return False
-    else:
-        hacker_id=request.cookies.get('sessionKey')
-        print(f"got following cookey value for sessionKey hacker_id:'{hacker_id}'")
+class SessionAuthenticationMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        hacker_id=request.query_params.get("hacker_id")
+        print(f"got following value for hacker_id url parameter:'{hacker_id}'")
         if hacker_id:
             user=get_user(hacker_id) 
             if user["status"]=="OK":
-                return user["user"]
+                request.state.authenticated_user = user["user"]
             else:
-                return False
+                request.state.authenticated_user = False
         else:
-            return False
+            hacker_id=request.cookies.get('sessionKey')
+            print(f"got following cookey value for sessionKey hacker_id:'{hacker_id}'")
+            if hacker_id:
+                user=get_user(hacker_id) 
+                if user["status"]=="OK":
+                    request.state.authenticated_user = user["user"]
+                else:
+                    request.state.authenticated_user = False
+            else:
+                request.state.authenticated_user = False
+
+        response = await call_next(request)
+        if request.state.authenticated_user:
+            response.set_cookie(key="sessionKey", value=request.state.authenticated_user["hacker_id"])
+        else:
+            response.set_cookie(key="sessionKey", value="", max_age=0)
+
+        return response
+    
+app.add_middleware(SessionAuthenticationMiddleware)    
 
 @app.get("/about")
-def serve_about(request: Request, response: Response, hacker_id:str=None):
+def serve_about(request: Request):
     about_page_html = get_template("about_page") 
-    user=validate_session(request=request, hacker_id=hacker_id)
+    user=request.state.authenticated_user
     print(f"is_session_validated:'{user}'")
     if user:
         if user["paid_status"]:
@@ -84,13 +105,10 @@ def serve_about(request: Request, response: Response, hacker_id:str=None):
                 .replace("$${{ASSIGNMENT_PAGE_LINK}}$$","")\
                 .replace("$${{ENLISTMENT_PROCESS_SECTION}}$$",'<li>You have successfully passed the initial screening <a href="/challenge" style="color:#778881;">zeroDayBootCamp</a> challenge</li><li>You can now finish our enlistment process in our <a href="/enlist" style="color:#778881;">Enlistment Page</a></li>')
         html_response=HTMLResponse(content=about_page_html, status_code=200)
-        html_response.set_cookie(key="sessionKey", value=user["hacker_id"])
     else:
         about_page_html=about_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$","")\
             .replace("$${{ENLISTMENT_PROCESS_SECTION}}$$",'<li>One can enlist only after passing the <a href="/challenge" style="color:#778881;">zeroDayBootCamp</a> challenge</li><li>Once passing the challenge, a dedicated link will be sent via mail enabling payment for registration</li>')
         html_response=HTMLResponse(content=about_page_html, status_code=200)
-        html_response.set_cookie(key="sessionKey", value="", max_age=0)
-
     return html_response
 
 @app.get("/challenge")
@@ -103,7 +121,7 @@ def serve_challange(advertise_code:str="unknown",advertise_code_sub_category:str
 
 @app.get("/")
 def serve_home(request: Request):
-    user=validate_session(request=request)
+    user=request.state.authenticated_user
     print(user)
     home_page_html = get_template("home_page")
     if(user):
@@ -127,7 +145,7 @@ def serve_home(request: Request):
 
 @app.get("/payment")
 def serve_payment(request: Request):
-    user=validate_session(request=request)
+    user=request.state.authenticated_user
     payment_page_html = get_template("payment_page")
     if(user):
         payment_page_html = payment_page_html\
@@ -139,7 +157,7 @@ def serve_payment(request: Request):
 
 @app.get("/paymentRedirect")
 def serve_payment_redirect(request: Request, hacker_id:str, ClientName:str, ClientLName:str, UserId:str, email:str, phone:str):
-    user=validate_session(request=request)
+    user=request.state.authenticated_user
     if(user):
         payment_page_html = get_template("payment_redirect_page")
         user=User.model_validate(user)
@@ -150,7 +168,7 @@ def serve_payment_redirect(request: Request, hacker_id:str, ClientName:str, Clie
 
 @app.get("/enlist")
 def serve_enlist(request: Request):
-    user=validate_session(request=request)
+    user=request.state.authenticated_user
     enlist_page_html = get_template("enlist_page")
     if(user):
         if(user["paid_status"]):
@@ -182,7 +200,7 @@ def serve_enlist(request: Request):
 
 @app.get("/contact")
 def serve_contact(request: Request):
-    user=validate_session(request=request)
+    user=request.state.authenticated_user
     contact_page_html = get_template("contact_page")
     if user and user["paid_status"]:
         contact_page_html=contact_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')
@@ -192,7 +210,7 @@ def serve_contact(request: Request):
 
 @app.get("/assignments")
 def serve_assignments(request: Request):
-    user=validate_session(request=request)
+    user=request.state.authenticated_user
     assignments_page_html = get_template("assignments_page")
     if user and user["paid_status"]:
         next_assignment=next_assignment_submission(user["hacker_id"])
@@ -232,7 +250,7 @@ def serve_assignments(request: Request):
 
 @app.get("/assignment_submission")
 def serve_assignment_submission(request: Request):
-    user=validate_session(request=request) 
+    user=request.state.authenticated_user 
     assignment_submission_page_html = get_template("assignment_submission_page")
     if user and user["paid_status"]:
         next_assignment_id=next_assignment_submission(user["hacker_id"])["assignment_id"]
@@ -259,7 +277,7 @@ def serve_assignment_submission(request: Request):
 
 @app.get("/last_submission_result")
 def serve_last_submission_result(request: Request):
-    user=validate_session(request=request) 
+    user=request.state.authenticated_user 
     last_submission_results_page_html = get_template("last_submission_results_page")
     if user and user["paid_status"]:
         if user_testing_in_progress(user["hacker_id"]):
@@ -302,7 +320,7 @@ def serve_last_submission_result(request: Request):
 
 @app.get("/submitted_task_file")
 def serve_last_submission_result(request: Request,assignment_id:str, submission_id:str, task_id:str):
-    user=validate_session(request=request) 
+    user=request.state.authenticated_user 
     submitted_task_file_page_html = get_template("submitted_task_file_page")
     if user and user["paid_status"]:
         file_content=get_submitted_file(user["hacker_id"], assignment_id, submission_id, task_id)

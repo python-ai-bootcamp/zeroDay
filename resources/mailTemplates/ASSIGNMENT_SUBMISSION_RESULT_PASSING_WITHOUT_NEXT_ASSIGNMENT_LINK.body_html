@@ -152,7 +152,7 @@
                 <p class="price">You have successfully submitted the last zeroDay bootcamp assignment.</p>
                 <p class="price">Increadibly enough, you are so awesome that our team cannot produce new assignments fast enough for you to consume.</p>
                 <p class="price">But do not worry. You will be notified by an email as soon as we get a new challenge waiting for you in our website.</p>
-                <a href="$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/assignments" class="cta-button">ZeroDay Next Assignment</a>
+                <a href="$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/assignments?hacker_id=$${{HACKER_ID}}$$" class="cta-button">ZeroDay Next Assignment</a>
             </div>
         </div>
     </section>

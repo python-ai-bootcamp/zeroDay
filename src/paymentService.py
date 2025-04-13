@@ -1,4 +1,4 @@
-from systemEntities import User
+from systemEntities import User, print
 from mailService import notification_producer
 from systemEntities import NotificationType
 from collections import OrderedDict

@@ -1,6 +1,6 @@
 import os, json, random, string
 import mailService
-from systemEntities import User,NotificationType
+from systemEntities import User,NotificationType, print
 from analyticsService import UserPaidAnalyticsEvent, insert_analytic_event
 
 USER_DATA_FILE = os.path.join("./data/","user_data.json")
