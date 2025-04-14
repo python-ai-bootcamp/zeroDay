@@ -11,11 +11,6 @@ from fastapi.responses import HTMLResponse, PlainTextResponse
 from configurationService import domain_name, protocol, isDevMod
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from fastapi import FastAPI
-from starlette.responses import StreamingResponse
-from io import BytesIO
-
-
 class DotTimeFormatter(logging.Formatter):
     def format(self, record):
         msg = super().format(record)
@@ -404,10 +399,3 @@ def serve_get_group_by_fields(from_time:int=0, to_time:int=99999999999999, analy
         return get_group_by_fields(from_time, to_time, AnalyticsEventType[analytics_event_type], None, None)
     else:
         return get_group_by_fields(from_time, to_time, AnalyticsEventType[analytics_event_type], filter_field_name, filter_field_value)
-
-@app.get("/cf13f168b4db4e08cf6906e44146d991.txt")
-def get_empty_file():
-    empty_file = BytesIO(b"")  # Empty bytes
-    return StreamingResponse(empty_file, media_type="text/plain", headers={
-        "Content-Disposition": 'attachment; filename="cf13f168b4db4e08cf6906e44146d991.txt"'
-    })
