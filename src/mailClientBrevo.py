@@ -45,6 +45,12 @@ def send_mail(email_to_send: Email):
                 text_content=email_to_send.body_txt
             )
             api_response = api_instance.send_transac_email(send_smtp_email)
+            #   should poll status.brevo.com
+            #       if can't poll raise exception if service down
+            #       if can poll:
+            #           following xpath should contain zero elements, $x('//div[@class="component component_middle status_td" and descendant::p[text()="Service Disruption"]]//p[@class="component_name" and (text()="API" or text()="Outbound Emails Delivery")]')
+            #               if contains at least one should rais exception of service down 
+            #               else, send the mail
         else:
             raise FilteredEmailException(f"{email_to_send.to.email} is not inside {SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS}, not sending mail while in sandbox mode")
     except ApiException as e:
