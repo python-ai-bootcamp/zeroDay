@@ -15,6 +15,7 @@ class User(BaseModel):
     name: str
     phone: str
     paid_status: bool
+    receipt_index: str
     advertise_code: str = "unknown"
     advertise_code_sub_category: str = "unknown"
 

@@ -1,5 +1,5 @@
 Hello $${{NAME}}$$ !!!
 You have successfully enlisted to our service
-We just created new task, just for you!
+Your sponsor is $${{ClientName}}$$ $${{ClientLName}}$$
 You can view the challenge in the following link
 $${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/assignments?hacker_id=$${{HACKER_ID}}$$

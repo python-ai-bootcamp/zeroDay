@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from configurationService import domain_name, protocol, isDevMod
 from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi.staticfiles import StaticFiles
 
 class DotTimeFormatter(logging.Formatter):
     def format(self, record):
@@ -19,7 +20,12 @@ for handler in logging.getLogger().handlers:
     handler.setFormatter(DotTimeFormatter(
         fmt="%(asctime)s - %(levelname)s - %(name)s - %(message)s"
     ))    
+
+STATIC_FILES_LIBRARY="./resources/static"
+
 app = FastAPI()
+
+app.mount("/static", StaticFiles(directory=STATIC_FILES_LIBRARY), name="static")
 
 templates_processors={
     "challenge_page":                           lambda: open(os.path.join("resources","templates","challenge.html"), "r").read().replace("$${{IS_DEV_MODE}}$$",isDevMod),
@@ -161,7 +167,7 @@ def serve_payment_redirect(request: Request, hacker_id:str, ClientName:str, Clie
     if(user):
         payment_page_html = get_template("payment_redirect_page")
         user=User.model_validate(user)
-        initiate_user_payement_procedure(user, ClientName, ClientLName, UserId, email, phone)
+        initiate_user_payement_procedure(user, ClientName, ClientLName, UserId, email, phone, 50)
     else:
         payment_page_html = get_template("redirect_to_enlistment_page")
     return HTMLResponse(content=payment_page_html, status_code=200)
