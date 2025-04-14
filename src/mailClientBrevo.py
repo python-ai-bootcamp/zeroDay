@@ -4,6 +4,9 @@ import traceback
 from systemEntities import print
 from pydantic import BaseModel, NameEmail, constr
 from os import path
+from urllib.request import urlopen, Request
+from lxml import etree
+
 
 
 API_KEY_FILE="./resources/keys/private_keys/.brevo_api_key.txt"
@@ -27,6 +30,9 @@ CHARSET = "UTF-8"
 class FilteredEmailException(Exception):
     pass
 
+class EmailProviderIssuesException(Exception):
+    pass
+
 class Email(BaseModel):
     to: NameEmail
     subject: constr(max_length=SUBJECT_LENGTH)
@@ -44,13 +50,22 @@ def send_mail(email_to_send: Email):
                 html_content=email_to_send.body_html,
                 text_content=email_to_send.body_txt
             )
-            api_response = api_instance.send_transac_email(send_smtp_email)
-            #   should poll status.brevo.com
-            #       if can't poll raise exception if service down
-            #       if can poll:
-            #           following xpath should contain zero elements, $x('//div[@class="component component_middle status_td" and descendant::p[text()="Service Disruption"]]//p[@class="component_name" and (text()="API" or text()="Outbound Emails Delivery")]')
-            #               if contains at least one should rais exception of service down 
-            #               else, send the mail
+            url = "https://status.brevo.com"
+            user_agent = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.101 Safari/537.36'
+            headers = { 'User-Agent' : user_agent }
+            httprequest = Request(url, headers=headers)
+            with urlopen(httprequest) as response:  
+                statusPageStatusCode=response.status
+                statusPageData=response.read().decode()
+            if(statusPageStatusCode==200):
+                tree = etree.HTML(statusPageData)
+                r = tree.xpath('//div[@class="component component_middle status_td" and descendant::p[text()="Service Disruption"]]//p[@class="component_name" and (text()="API" or text()="Outbound Emails Delivery")]')
+                if len(r)==0:
+                    api_response = api_instance.send_transac_email(send_smtp_email)
+                else:
+                    EmailProviderIssuesException(f"{email_to_send.to.email} was not sent because either API or Outbound Emails Delivery status was down")
+            else:
+                EmailProviderIssuesException(f"{email_to_send.to.email} was not sent because entire status page was down")
         else:
             raise FilteredEmailException(f"{email_to_send.to.email} is not inside {SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS}, not sending mail while in sandbox mode")
     except ApiException as e:
@@ -58,6 +73,10 @@ def send_mail(email_to_send: Email):
         print(traceback.format_exc())
         return False
     except FilteredEmailException as e:
+        print(e)
+        #print(traceback.format_exc())
+        return False
+    except EmailProviderIssuesException as e:
         print(e)
         #print(traceback.format_exc())
         return False
