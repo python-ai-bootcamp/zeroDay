@@ -1,5 +1,6 @@
 import os,json, periodicTriggerService, logging
-from systemEntities import AnalyticsEventType, print
+from datetime import datetime
+from systemEntities import AnalyticsEventType, Payment, print
 from analyticsService import insert_analytic_event, get_group_by_fields,convert_group_data_to_plotly_traces, group_data, ChallengeTrafficAnalyticsEvent, NewUserAnalyticsEvent, UserPaidAnalyticsEvent, UserSubmittedAssignmentAnalyticsEvent, UserPassedAssignmentAnalyticsEvent
 from userService import User, submit_user, user_exists, get_user
 from paymentService import initiate_user_payement_procedure
@@ -166,8 +167,9 @@ def serve_payment_redirect(request: Request, hacker_id:str, ClientName:str, Clie
     user=request.state.authenticated_user
     if(user):
         payment_page_html = get_template("payment_redirect_page")
-        user=User.model_validate(user)
-        initiate_user_payement_procedure(user, ClientName, ClientLName, UserId, email, phone, 50)
+        #user=User.model_validate(user)
+        payment=Payment.model_validate({"user":user,"ClientName":ClientName, "ClientLName":ClientLName, "UserId":UserId, "email":email, "phone":phone, "date":datetime.today().strftime('%Y/%m/%d'), "amount":50})
+        initiate_user_payement_procedure(payment)
     else:
         payment_page_html = get_template("redirect_to_enlistment_page")
     return HTMLResponse(content=payment_page_html, status_code=200)

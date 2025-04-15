@@ -1,5 +1,6 @@
 from enum import StrEnum
-from pydantic import BaseModel
+from typing import Optional
+from pydantic import BaseModel, NameEmail, constr
 import os
 import datetime
 
@@ -36,3 +37,21 @@ class NotificationType(StrEnum):
     NEW_ASSIGNMENT_ARRIVED = "NEW_ASSIGNMENT_ARRIVED"
     NEW_USER_FIRST_ASSIGNMENT_AFTER_ENLISTMENT = "NEW_USER_FIRST_ASSIGNMENT_AFTER_ENLISTMENT"
     PAYMENT_ACCEPTED = "PAYMENT_ACCEPTED"
+
+EMAIL_SUBJECT_LENGTH=250
+class Email(BaseModel):
+    to: NameEmail
+    subject: constr(max_length=EMAIL_SUBJECT_LENGTH)
+    body_txt: str
+    body_html: str
+
+class Payment(BaseModel):
+    receipt_index: Optional[str] = None
+    user:User
+    ClientName:str
+    ClientLName:str
+    UserId:str
+    email:str
+    phone:str
+    amount: int
+    date: str

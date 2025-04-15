@@ -1,9 +1,9 @@
 import os,json
-from systemEntities import User, print
+from systemEntities import User, Payment, print
 from mailService import notification_producer
 from systemEntities import NotificationType
-from collections import OrderedDict
 from userService import set_user_as_paid
+from pydantic import BaseModel
 
 PAYMENT_DATA_DIRECTORY = os.path.join("./data/", "payment_data")
 LAST_RECEIPT_INDEX_FILE = os.path.join(PAYMENT_DATA_DIRECTORY, "last_receipt_index.dat")
@@ -22,26 +22,31 @@ def get_receipt_index():
 
     return str(last_receipt_index+1).zfill(7)
 
-
-def initiate_user_payement_procedure(user:User, ClientName:str, ClientLName:str, UserId:str, email:str, phone:str, amount: int):
-    print(f"initiate_user_payement_procedure:: received user {user} with following credit api related details:ClientName:{ClientName}, ClientLName:{ClientLName}, UserId:{UserId}, email:{email}, phone:{phone}")
-    print("initiate_user_payement_procedure:: not fully implemented procedure, setting user as paid by default")
-    payment_succeeded=True
+#!!!!!!!!!!!!!!!!!!!! NOTE:: need to set the payment to systemEntities and just pass it around and update it as needed instead of copying each parameter every time
+# in addition need to just automatically convert all flat fields of future payment object into array of ($${{fieldName}}$$, $${{fieldValue}}) tuples to save verbosity of passing each field individually
+def initiate_user_payement_procedure(payment:Payment):
+    print(f"initiate_user_payement_procedure:: received user payment with following credit api related payment:{payment.dict()}")
+    payment_succeeded=get_payment_status()
     if payment_succeeded:
-        receipt_index=get_receipt_index()
-        set_user_as_paid(user.hacker_id, receipt_index)
-        persist_payment_data(receipt_index, user, ClientName, ClientLName, UserId, email, phone, amount)
-        produceRecieptMail(receipt_index, user, ClientName, ClientLName, UserId, email, phone, amount)
-        persistRecieptInPdfFormat(user)
+        payment.receipt_index=get_receipt_index()
+        set_user_as_paid(payment)
+        persist_payment_data(payment)
+        produceRecieptMail(payment)
+        persistRecieptInPdfFormat(payment)
     else:
         print("initiate_user_payement_procedure:: unimplemented yet, payment unsuccessful, need to convey error in some way,redirection to error page or something")
 
-def persist_payment_data(receipt_index: str, user:User, ClientName:str, ClientLName:str, UserId:str, email:str, phone:str, amount:int):
-    with open(os.path.join(PAYMENT_DATA_FILES_DIRECTORY,f"{receipt_index}.json"), "w", encoding="utf-8") as f:
-        json.dump({"user":user.dict(), "ClientName":ClientName, "ClientLName":ClientLName, "UserId":UserId, "email": email, "phone": phone, "amount":amount}, f, indent=4, ensure_ascii=False)
+def get_payment_status():
+    print("get_payment_status:: not yet implemented, returning True until it does")
+    return True
 
-def produceRecieptMail(receipt_index: str, user:User, ClientName:str, ClientLName:str, UserId:str, email:str, phone:str, amount:int):
-    notification_producer(user=user,notification_type=NotificationType.PAYMENT_ACCEPTED,optional_template_fields=[("$${{ClientName}}$$",ClientName),("$${{ClientLName}}$$",ClientLName)])
+def persist_payment_data(payment:Payment):
+    with open(os.path.join(PAYMENT_DATA_FILES_DIRECTORY,f"{payment.receipt_index}.json"), "w", encoding="utf-8") as f:
+        json.dump(payment.dict(), f, indent=4, ensure_ascii=False)
 
-def persistRecieptInPdfFormat(user:User):
+def produceRecieptMail(payment:Payment):
+    optional_template_fields=[(f"$${{{{{k}}}}}$$",v) for k,v in payment.model_dump().items()]
+    notification_producer(user=payment.user,notification_type=NotificationType.PAYMENT_ACCEPTED,optional_template_fields=optional_template_fields)
+
+def persistRecieptInPdfFormat(payment:Payment):
     print("persistRecieptInPdfFormat:: not yet implemented")

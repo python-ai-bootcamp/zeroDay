@@ -1,8 +1,11 @@
-import asyncio,datetime,os, json
-from typing import Tuple
-from systemEntities import User, NotificationType, print
-#from mailClientSes import send_mail, Email
-from mailClientBrevo import send_mail, Email
+import datetime, os, json
+from typing import Any, Callable, Tuple, Optional
+from systemEntities import User, NotificationType, Email, print
+#from mailClientSes import send_mail
+
+from mailClientBrevo import send_mail as send_mail_brevo
+from mailClientMalijet import send_mail as send_mail_Malijet
+
 from configurationService import domain_name, protocol
 from pydantic import BaseModel
 
@@ -13,11 +16,22 @@ MAIL_QUEUE_DATA_FILE = os.path.join(NOTIFICATION_DATA_DIR, "notification_queue_d
 UNDELIVERED_MAIL_DATA_FILE = os.path.join(NOTIFICATION_DATA_DIR, "notification_queue_undelivered_data.json")
 MAX_DELIVERY_ATTEMPTS = 3
 
+alternatingMailClient:list[Callable[[Email], None]] = [send_mail_brevo, send_mail_Malijet, send_mail_brevo, send_mail_Malijet, send_mail_brevo]
+alternatingMailClient_idx=0
+
+def send_mail(email_to_send:Email):
+    global alternatingMailClient_idx
+    sendMailResponse=alternatingMailClient[alternatingMailClient_idx](email_to_send)
+    alternatingMailClient_idx=alternatingMailClient_idx+1
+    if alternatingMailClient_idx==len(alternatingMailClient):
+        alternatingMailClient_idx=0
+    return sendMailResponse
+
 class Notification(BaseModel):
     notification_type: NotificationType
     user: User
     send_attempt_counter: int = 0
-    optional_template_fields: list[tuple[str,str]] = []
+    optional_template_fields: Optional[list[tuple[str,Any]]] = None
 
 def load_notification_queue_data():
     if os.path.exists(MAIL_QUEUE_DATA_FILE):
@@ -48,11 +62,11 @@ def notification_producer(user:User,notification_type:NotificationType, optional
     save_notification_queue_data()
 
 def load_template_by_notification(notification_type:NotificationType):    
-    with open(os.path.join(MAIL_TEMPLATES_DIR,notification_type.name+".subject"), "r") as f:
+    with open(os.path.join(MAIL_TEMPLATES_DIR,notification_type.name+".subject"), "r", encoding="utf-8") as f:
         subject_template=f.read()
-    with open(os.path.join(MAIL_TEMPLATES_DIR,notification_type.name+".body_html"), "r") as f:
+    with open(os.path.join(MAIL_TEMPLATES_DIR,notification_type.name+".body_html"), "r", encoding="utf-8") as f:
         body_html_template=f.read()
-    with open(os.path.join(MAIL_TEMPLATES_DIR,notification_type.name+".body_txt"), "r") as f:
+    with open(os.path.join(MAIL_TEMPLATES_DIR,notification_type.name+".body_txt"), "r", encoding="utf-8") as f:
         body_txt_template=f.read()
     return subject_template, body_html_template, body_txt_template
 
@@ -77,11 +91,11 @@ def substitute_template_variables(subject_template:str,body_html_template:str,bo
         print("substitute_template_variables::replacement_tuple=",replacement_tuple)
         print("substitute_template_variables::replacement_tuple[0]=",replacement_tuple[0])
         print("substitute_template_variables::replacement_tuple[1]=",replacement_tuple[1])
-        subject=subject.replace(replacement_tuple[0],replacement_tuple[1])
-        print("substitute_template_variables::body_html before=",body_html)
-        body_html=body_html.replace(replacement_tuple[0],replacement_tuple[1])
-        print("substitute_template_variables::body_html after=",body_html)
-        body_txt=body_txt.replace(replacement_tuple[0],replacement_tuple[1])
+        subject=subject.replace(replacement_tuple[0],str(replacement_tuple[1]))
+        #print("substitute_template_variables::body_html before=",body_html)
+        body_html=body_html.replace(replacement_tuple[0],str(replacement_tuple[1]))
+        #print("substitute_template_variables::body_html after=",body_html)
+        body_txt=body_txt.replace(replacement_tuple[0],str(replacement_tuple[1]))
 
     return subject, body_html, body_txt
 

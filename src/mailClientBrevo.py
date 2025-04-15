@@ -1,9 +1,7 @@
 import brevo_python
 from brevo_python.rest import ApiException
 import traceback
-from systemEntities import print
-from pydantic import BaseModel, NameEmail, constr
-from os import path
+from systemEntities import print, Email
 from urllib.request import urlopen, Request
 from lxml import etree
 
@@ -20,24 +18,13 @@ api_instance = brevo_python.TransactionalEmailsApi(brevo_python.ApiClient(config
 
 
 SENDER ={"name":"Mr. Python McPythony","email":"Sender@zerodaybootcamp.xyz"} # should ALWAYS remain this address, if we switch it might get blocked
-SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS = ["python.ai.bootcamp@outlook.com", "tal.shachar@tufin.com" ,"micha.vardy@tufin.com", "michavardy@tufin.com", "michavardy@gmail.com" ] # currently until we get out of the amazon SES snadbox we must only send this one!!!!!
-
-
-SUBJECT_LENGTH=250
-AWS_REGION = "eu-north-1"
-CHARSET = "UTF-8"
+SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS = ["python.ai.bootcamp@outlook.com", "tal.work.mail@gmail.com", "tal.shachar@tufin.com" ,"micha.vardy@tufin.com", "michavardy@tufin.com", "michavardy@gmail.com" ] # currently until we get out of the amazon SES snadbox we must only send this one!!!!!
 
 class FilteredEmailException(Exception):
     pass
 
 class EmailProviderIssuesException(Exception):
     pass
-
-class Email(BaseModel):
-    to: NameEmail
-    subject: constr(max_length=SUBJECT_LENGTH)
-    body_txt: str
-    body_html: str
 
 def send_mail(email_to_send: Email):
     try:
@@ -63,9 +50,9 @@ def send_mail(email_to_send: Email):
                 if len(r)==0:
                     api_response = api_instance.send_transac_email(send_smtp_email)
                 else:
-                    EmailProviderIssuesException(f"{email_to_send.to.email} was not sent because either API or Outbound Emails Delivery status was down")
+                    raise EmailProviderIssuesException(f"{email_to_send.to.email} was not sent because either API or Outbound Emails Delivery status was down")
             else:
-                EmailProviderIssuesException(f"{email_to_send.to.email} was not sent because entire status page was down")
+                raise EmailProviderIssuesException(f"{email_to_send.to.email} was not sent because entire status page was down")
         else:
             raise FilteredEmailException(f"{email_to_send.to.email} is not inside {SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS}, not sending mail while in sandbox mode")
     except ApiException as e:
