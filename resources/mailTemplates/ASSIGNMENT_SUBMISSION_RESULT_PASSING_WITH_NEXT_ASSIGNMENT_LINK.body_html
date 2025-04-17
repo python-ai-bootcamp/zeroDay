@@ -151,7 +151,7 @@
                 <p class="price">Congragulations $${{NAME}}$$ !!! </p>
                 <p class="price">You have successfully submitted the last zeroDay bootcamp assignment</p>
                 <p class="price">Your next challenge awaits you in the following link</p>
-                <a href="$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/assignments" class="cta-button">ZeroDay Next Assignment</a>
+                <a href="$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/assignments?hacker_id=$${{HACKER_ID}}$$" class="cta-button">ZeroDay Next Assignment</a>
             </div>
         </div>
     </section>

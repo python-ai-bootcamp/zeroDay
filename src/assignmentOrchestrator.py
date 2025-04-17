@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 from threading import Lock, Semaphore, Thread
-from systemEntities import User,NotificationType
+from systemEntities import User, NotificationType, print
 from userService import get_user
 import sandboxService, mailService
 import json, os, sys, base64,functools, importlib.util, time, datetime
@@ -22,7 +22,7 @@ relative_data_directory="./data"
 relative_assignments_directory="./resources/config/assignments/"
 DATA_FILE_DIRECTORY = os.path.join(relative_data_directory,"assignment_data")
 ASSIGNMENT_MAPPER_FILE = os.path.join(relative_assignments_directory,"assignment_mapper.json")
-NOTIFIED_ASSIGNMENTS_FILE = os.path.join(relative_data_directory,"notified_assignments.json")
+NOTIFIED_ASSIGNMENTS_FILE = os.path.join(relative_data_directory,"notification_data","notified_assignments.json")
 ASSIGNMENT_VALIDATOR_DIR = os.path.join(relative_assignments_directory,"validators")
 ASSIGNMENT_DESCRIPTIONS_DIR = os.path.join(relative_assignments_directory,"assignment_descriptions")
 SUBMITTED_FILES_DIR=os.path.join(relative_data_directory,"submitted_files")
@@ -299,8 +299,7 @@ def next_assignment_submission(hacker_id:str):
         else:
             return {"assignment_id":1,"submission_id":1}
     else:
-        return {"assignment_id":1,"submission_id":1} # changed because of ui manual system tests failing, it makes more sense this way since new users still do not actually exist in assignment orchestrator data
-        #return {"status": "ERROR", "ERROR_message":f"hacker_id:'{hacker_id}' does not exist"}
+        return {"assignment_id":1,"submission_id":1} 
 
 def assignment_description(assignment_id:int):
     assignment_mapper=load_assignment_mapper()

@@ -104,6 +104,7 @@
             overflow: hidden;
             width: 100%;
             text-align: center;
+            margin-bottom: 10px;
         }
 
         .product img {
@@ -141,26 +142,224 @@
             bottom: 0;
             width: 100%;
             text-align: center;
-            padding: 15px;
+            padding: 5px;
+        }
+        .graphSelectorWrapper {
+            display: flex; /* This enables Flexbox */
+            flex-direction: row; /* The default, so it's redundant but keeps it clear */
+            justify-content: center; /* Distribute divs with space between */
+            gap: 4px; 
+            flex-wrap: wrap;
+        }
+        .graphSelector {
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 0;             /* Prevent the div from growing */
+            flex-shrink: 0;           /* Prevent the div from shrinking */
+            background-color: #ff8500;
+            border-radius: 10px;
+            padding: 8px 5px 8px 5px;
+            font-size: 0.85em;
+        }
+        .dynamicTextDropdownGraphSelector {
+            width: 250px;
+        }
+        .graphSelector select{
+            font-size: 0.85em;
+        }
+        .graphSelector input {
+            font-size: 0.95em;
+        }
+        .graphSelector label {
+            margin-right: 5px;
+            color: #f0edea;
         }
 
     </style>
     <script src='https://cdn.plot.ly/plotly-3.0.1.min.js'></script>
     <script>
+        time_bucket=1200
+        group_by_field="advertise_code"
+        filter_field_value=null
+        filter_field_name=null
+        from_time=0
+        to_time=9999999999999
+        analytics_event_type="CHALLENGE_TRAFFIC"
+        populateAnalyticsEventFieldFilterDropdown_dont_chage_after_selector_event=false
         window.onload = function () {
-            // possible ways to filter api:: from_time, to_time, time_bucket, group_by_field, AnalyticsEventType
-            time_bucket=400
-            group_by_field="advertise_code_sub_category"
-            from_time=0
-            to_time=9999999999999
-            AnalyticsEventType="CHALLENGE_TRAFFIC"
-            fetch(`/analytics/data?time_bucket=${time_bucket}&group_by_field=${group_by_field}&from_time=${from_time}&to_time=${to_time}&AnalyticsEventType=${AnalyticsEventType}`)
+            refreshGraph()
+            fetchAnalyticsEventTypesValues()
+            setTimeout(fetchGroupByFields, 100)
+            window.addEventListener('resize', resizeGraph);
+        }
+        function refreshGraph(nullify_filter_field_value){            
+            fetch(`/analytics/data?time_bucket=${time_bucket}&group_by_field=${group_by_field}&from_time=${from_time}&to_time=${to_time}&analytics_event_type=${analytics_event_type}&filter_field_name=${filter_field_name}&filter_field_value=${filter_field_value}`)
             .then(function(response) { return response.json(); })
             .then(function(json) {
-                var layout = {barmode: 'stack', height:650};
-                data_with_formatted_time=json.map(trace=> new Object(trace,{x:json.map(trace=> trace.x=trace.x.map(epoch=>new Date(epoch) ))}))
+                const footerHeight = document.querySelector('footer').offsetHeight;
+                const filterSectionHeight = document.querySelector('.graphSelectorWrapper').offsetHeight;
+                const availableHeight = window.innerHeight - footerHeight - filterSectionHeight - 230; 
+                const title={text:`'${analytics_event_type}' events, filtered by field '${filter_field_name}'='${filter_field_value}' grouped by field '${group_by_field}'`}
+                var layout = {barmode: 'stack', height:availableHeight, plot_bgcolor:"#e0d6c1", paper_bgcolor:"#e0d6c1", title};
+                data_with_formatted_time=json.map(trace=> new Object(trace,{x:json.map(trace=> trace.x=trace.x.map(epoch=>new Date(epoch) ))}))                
+                eventFields=data_with_formatted_time.map(x=>x.name)
+                populateAnalyticsEventFieldFilterDropdown(eventFields, nullify_filter_field_value)
                 Plotly.newPlot('myDiv', data_with_formatted_time, layout);
             })
+        }
+        async function fetchAnalyticsEventTypesValues() {
+            try {
+                const response = await fetch('/analytics/eventTypes');
+                if (!response.ok) throw new Error('Network response was not ok');               
+                const enumValues = await response.json(); 
+                populateAnalyticsEventTypeDropdown(enumValues);
+            } catch (error) {
+                console.error('Error fetching enum values:', error);
+                document.getElementById('selector').innerHTML = "<option>Error loading values</option>";
+            }
+        }
+        async function fetchGroupByFields(filterSelectionAndReturnResults){
+            try {
+                if(filterSelectionAndReturnResults){
+                    const response = await fetch(`/analytics/groupByFields?from_time=${from_time}&to_time=${to_time}&analytics_event_type=${analytics_event_type}&filter_field_name=${filter_field_name}&filter_field_value=${filter_field_value}`);
+                    if (!response.ok) throw new Error('Network response was not ok');               
+                    const groupByFieldValues = await response.json();
+                    return groupByFieldValues.filter(x=>x!=filterSelectionAndReturnResults)
+                }else{
+                    const response = await fetch(`/analytics/groupByFields?from_time=${from_time}&to_time=${to_time}&analytics_event_type=${analytics_event_type}&filter_field_name=${filter_field_name}&filter_field_value=${filter_field_value}`);
+                    if (!response.ok) throw new Error('Network response was not ok');               
+                    const groupByFieldValues = await response.json();
+                    populateAnalyticsGroupByFieldDropdown(groupByFieldValues);
+                }
+            } catch (error) {
+                console.error('Error fetching enum values:', error);
+                document.getElementById('selector').innerHTML = "<option>Error loading values</option>";
+            }
+        }
+        function resizeGraph() {
+            const graphDiv = document.getElementById('myDiv');           
+            const footerHeight = document.querySelector('footer').offsetHeight;
+            const filterSectionHeight = document.querySelector('.graphSelectorWrapper').offsetHeight;
+            const availableHeight = window.innerHeight - footerHeight - filterSectionHeight - 230; // Some padding adjustments
+            graphDiv.style.height = availableHeight + 'px'; // Set dynamic height
+            
+            Plotly.Plots.resize(graphDiv);
+        }
+        function handleTimeBucketSelector() {
+            let selectedValue = document.getElementById("timeBucketSelector").value;
+            console.log("Selected value is: " + selectedValue);
+            time_bucket=selectedValue
+            refreshGraph()
+        }
+        async function handleAnalyticsEventTypeSelector() {
+            let selectedValue = document.getElementById("analyticsEventTypeSelector").value;
+            console.log("handleAnalyticsEventTypeSelector:: Selected value=" + selectedValue);
+            analytics_event_type=selectedValue
+            populateAnalyticsEventFieldFilterDropdown_dont_chage_after_selector_event=false
+            await fetchGroupByFields()
+            refreshGraph()
+        }
+        function handleAnalyticsGroupByFieldSelector() {
+            let selectedValue = document.getElementById("analyticsGroupByFieldSelector").value;
+            console.log("handleAnalyticsGroupByFieldSelector:: Selected value=" + selectedValue);
+            group_by_field=selectedValue
+            refreshGraph()
+        }
+        async function handleAnalyticsEventFieldFilterSelector() {
+            fieldFilterSelector = document.getElementById("analyticsEventFieldFilterSelector")
+            let selectedValue = fieldFilterSelector.value;
+            console.log("handleAnalyticsEventFieldFilterSelector:: Selected value= " + selectedValue);
+            if(selectedValue == "null"){
+                console.log("handleAnalyticsEventFieldFilterSelector:: entered selectedValue === null branch");
+                filter_field_value=selectedValue
+                filter_field_name=null
+                //fieldFilterSelector.value="null"
+                //fieldFilterSelector.textContent="None"
+
+            } else {
+                console.log("handleAnalyticsEventFieldFilterSelector:: entered selectedValue not null branch");
+                filter_field_value=selectedValue
+                filter_field_name=group_by_field
+                let groupByFieldSelector=document.getElementById("analyticsGroupByFieldSelector")            
+                console.log("=============>group_by_field=",group_by_field)
+                //fieldFilterSelector.value="null"
+                //fieldFilterSelector.textContent="None"
+                newGroupByField=(await fetchGroupByFields(group_by_field))[0]
+                console.log("=============>newGroupByField=",newGroupByField)
+                group_by_field=newGroupByField
+                groupByFieldSelector.value=newGroupByField
+            }
+            refreshGraph(true)
+        }
+        function processTimeRange() {
+            // Get values from input fields
+            const fromDate = document.getElementById('fromTimeSelector').value;
+            const toDate = document.getElementById('toTimeSelector').value;
+
+            // Convert input strings to Date objects
+            if(fromDate){
+                from_time = new Date(fromDate).getTime();
+            }
+            if(toDate){
+                to_time = new Date(toDate).getTime();
+            }
+
+            // Check if 'from' time is before 'to' time
+            if (from_time > to_time) {
+                alert("'From' date must be earlier than 'To' date!");
+                return;
+            }
+            refreshGraph()
+        }
+        function populateAnalyticsEventTypeDropdown(values) {
+            const selector = document.getElementById('analyticsEventTypeSelector');
+            selector.innerHTML = ''; // Clear loading text
+            
+            // Loop through values and add options
+            values.forEach(value => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = value.toLowerCase();
+                selector.appendChild(option);
+            });
+            selector.value=analytics_event_type
+        }
+        function populateAnalyticsGroupByFieldDropdown(values) {
+            const selector = document.getElementById('analyticsGroupByFieldSelector');
+            selector.innerHTML = ''; // Clear loading text
+            
+            // Loop through values and add options
+            values.forEach(value => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = value;
+                selector.appendChild(option);
+            });
+            selector.value=group_by_field
+        }
+        function populateAnalyticsEventFieldFilterDropdown(values, nullify_filter_field_value) {
+            const selector = document.getElementById('analyticsEventFieldFilterSelector');
+            selector.innerHTML = 'N/A'; // reset loading text
+           
+            // Loop through values and add options
+            values.forEach(value => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = value;
+                selector.appendChild(option);
+            });
+            const option = document.createElement('option');
+            option.value = null;
+            option.textContent =  "None";
+            selector.appendChild(option);
+            if (nullify_filter_field_value){
+                selector.value=undefined
+            }else{
+                selector.value=filter_field_value
+            }
+            
         }
     </script>
 </head>
@@ -183,6 +382,65 @@
     <!-- Hero Section -->
 
     <section class="hero">
+        <div class="product">   
+            <div class="graphSelectorWrapper">         
+                <div class="graphSelector dynamicTextDropdownGraphSelector">
+                    <label>Event Type</label>
+                    <select id="analyticsEventTypeSelector" onchange="handleAnalyticsEventTypeSelector()">
+                        <option value="">Loading...</option>
+                    </select>
+                </div> 
+                <div class="graphSelector dynamicTextDropdownGraphSelector">
+                    <label>Group by</label>
+                    <select id="analyticsGroupByFieldSelector" onchange="handleAnalyticsGroupByFieldSelector()">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+                <div class="graphSelector dynamicTextDropdownGraphSelector">
+                    <label>Field Filter</label>
+                    <select id="analyticsEventFieldFilterSelector" onchange="handleAnalyticsEventFieldFilterSelector()">
+                        <option value="">N/A</option>
+                    </select>
+                </div>
+                <div class="graphSelector">
+                    <label>Time Resolution</label>
+                    <select id="timeBucketSelector" onchange="handleTimeBucketSelector()">
+                        <option value=60>1 minute</option>
+                        <option value=300>5 minutes</option>
+                        <option value=600>10 minutes</option>
+                        <option value=900>15 minutes</option>
+                        <option value=1200>20 minutes</option>
+                        <option value=1800>30 minutes</option>
+                        <option value=3600>1 hour</option>
+                        <option value=7200>2 hour</option>
+                        <option value=10800>3 hours</option>
+                        <option value=21600>6 hours</option>
+                        <option value=43200>12 hours</option>
+                        <option value=86400>1 day</option>
+                        <option value=172800>2 days</option>
+                        <option value=259200>3 days</option>
+                        <option value=604800>1 week</option>
+                        <option value=1209600>2 weeks</option>
+                        <option value=1814400>3 weeks</option>
+                        <option value=4233600>1 month</option>
+                        <option value=8467200>2 months</option>
+                        <option value=12700800>3 months</option>
+                        <!--option value=25401600>6 months</option>
+                        <option value=50803200>1 year</option>
+                        <option value=101606400>2 year</option>
+                        <option value=152409600>3 year</option-->
+                    </select>
+                </div>
+                <div class="graphSelector">
+                    <label>From Time</label>
+                    <input id="fromTimeSelector" type="datetime-local" onChange="processTimeRange()">
+                </div>
+                <div class="graphSelector">
+                    <label>To Time</label>
+                    <input id="toTimeSelector" type="datetime-local" onChange="processTimeRange()">
+                </div>
+            </div>
+        </div> 
         <div class="product">
             <div class="product-info">
                 <div id='myDiv'></div>

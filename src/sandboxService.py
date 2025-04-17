@@ -1,5 +1,6 @@
 import os,subprocess,json
-from tempfile import NamedTemporaryFile,mkstemp
+from systemEntities import print
+from tempfile import mkstemp
 from typing import Callable, List
 from threading import Semaphore
 

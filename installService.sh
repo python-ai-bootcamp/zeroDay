@@ -70,7 +70,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=/opt/zeroDay/
-ExecStart= /bin/sh -c 'DOMAIN_NAME="www.zerodaybootcamp.xyz" /usr/local/bin/uvicorn --app-dir=src main:app --host 0.0.0.0 --port 8000 2>&1 >> /opt/logs/zeroDay_\$\$(date +%%Y_%%m_%%d__%%H_%%M_%%S).log'
+ExecStart= /bin/sh -c 'DOMAIN_NAME="www.zerodaybootcamp.xyz" /usr/local/bin/uvicorn --app-dir=src main:app --host 0.0.0.0 --port 8000 --log-config ./resources/config/logging.yaml 2>&1 >> /opt/logs/zeroDay_\$\$(date +%%Y_%%m_%%d__%%H_%%M_%%S).log'
 Restart=on-failure
 
 [Install]

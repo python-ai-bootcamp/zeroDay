@@ -153,7 +153,7 @@
                 <p class="price">Sadly, there are no more attempts left and you are no longer part of our bootcamp process</p>
                 <p class="price">If you feel this to be an unjust descision, please send us a mail at <a href="mailto:support@zerodaybootcamp.xyz">support@zerodaybootcamp.xyz</a></p>
                 <p class="price">Explain to us why you think you deserve another chance, and we promise to consider your request</p>
-                <a href="$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/last_submission_result" class="cta-button">View Last Submission Results</a>
+                <a href="$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/last_submission_result?hacker_id=$${{HACKER_ID}}$$" class="cta-button">View Last Submission Results</a>
             </div>
         </div>
     </section>

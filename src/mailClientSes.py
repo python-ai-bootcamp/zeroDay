@@ -1,23 +1,17 @@
 import boto3
 import traceback
+from systemEntities import print, Email
 from botocore.exceptions import ClientError
-from pydantic import BaseModel, NameEmail, constr
+
 SENDER = "Mr. Python McPythony <sender@zerodaybootcamp.xyz>" # should ALWAYS remain this address, if we switch it might get blocked
 SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS = ["python.ai.bootcamp@outlook.com", "tal.shachar@tufin.com" ,"micha.vardy@tufin.com", "michavardy@tufin.com", "michavardy@gmail.com" ] # currently until we get out of the amazon SES snadbox we must only send this one!!!!!
 
-
-SUBJECT_LENGTH=250
 AWS_REGION = "eu-north-1"
 CHARSET = "UTF-8"
 
 class FilteredEmailException(Exception):
     pass
 
-class Email(BaseModel):
-    to: NameEmail
-    subject: constr(max_length=SUBJECT_LENGTH)
-    body_txt: str
-    body_html: str
 
 def send_mail(email_to_send: Email):
     #print(email_to_send)

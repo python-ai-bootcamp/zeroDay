@@ -1,6 +1,7 @@
 import os, json, random, string
 import mailService
-from systemEntities import User,NotificationType
+from systemEntities import User,NotificationType, Payment, print
+from analyticsService import UserPaidAnalyticsEvent, insert_analytic_event
 
 USER_DATA_FILE = os.path.join("./data/","user_data.json")
 
@@ -47,18 +48,17 @@ def user_exists(email:str) -> bool:
     user=list(filter(lambda existing_user: email==existing_user["email"],data))
     return len(user)>0
 
-def initiate_user_payement_procedure(hacker_id:str, ClientName:str, ClientLName:str, UserId:str, email:str, phone:str):
-    print(f"initiate_user_payement_procedure for user {hacker_id} with following details:ClientName:{ClientName}, ClientLName:{ClientLName}, UserId:{UserId}, email:{email}, phone:{phone}")
-    print("unimplemented procedure, setting user as paied by default")
-    set_user_as_paid(hacker_id)
-
-def set_user_as_paid(hacker_id:str):
+def set_user_as_paid(payment:Payment):
     data = load_data()
-    user=list(filter(lambda existing_user: hacker_id==existing_user["hacker_id"],data))
+    user=list(filter(lambda existing_user: payment.user.hacker_id ==existing_user["hacker_id"],data))
     if(len(user)>0):
         user[0]["paid_status"]=True
-    print (data)
-    save_data(data)
+        user[0]["receipt_index"]=payment.receipt_index
+        user=User.model_validate(user[0])
+        insert_analytic_event(UserPaidAnalyticsEvent(advertise_code=user.advertise_code, advertise_code_sub_category=user.advertise_code_sub_category))
+        #mailService.notification_producer(user=user,notification_type=NotificationType.PAYMENT_ACCEPTED) #need to send this once i persisted a reciept and set it to the user
+        mailService.notification_producer(user=user,notification_type=NotificationType.NEW_USER_FIRST_ASSIGNMENT_AFTER_ENLISTMENT)
+        save_data(data)
 
 def is_usr_paied(hacker_id: str):
     return get_user["usr"]["paid_status"]

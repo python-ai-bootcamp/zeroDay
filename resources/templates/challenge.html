@@ -75,7 +75,7 @@
     selectedRiddleAnswerPair=riddleAnswerPairs[Math.floor(Math.random()*riddleAnswerPairs.length)];
     let riddle = selectedRiddleAnswerPair.riddle;
     let answer = selectedRiddleAnswerPair.answer;
-    const userData = { email: '', hacker_id: '', name: '', phone: '', paid_status:false , advertise_code:"$${{ADVERTISE_CODE}}$$" , advertise_code_sub_category:"$${{ADVERTISE_CODE_SUB_CATEGORY}}$$"};
+    const userData = { email: '', hacker_id: '', name: '', phone: '', paid_status:false , receipt_index:"", advertise_code:"$${{ADVERTISE_CODE}}$$" , advertise_code_sub_category:"$${{ADVERTISE_CODE_SUB_CATEGORY}}$$"};
   
     const terminal = document.getElementById('terminal');
     let userInput = document.getElementById('userInput');
@@ -142,7 +142,7 @@
           if (state === 'email') {
             userData.email = inputValue;
             if(validateEmail(userData.email)){
-              mailNotExist=await fetch(`$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/user_exists?email=${userData.email}`).then(x=>x.text()).then(x=>x=="false")
+              mailNotExist=await fetch(`/user_exists?email=${userData.email}`).then(x=>x.text()).then(x=>x=="false")
               if(mailNotExist){
                 appendLine(riddle);
                 state = 'riddle';
@@ -268,7 +268,7 @@
     };
 
     function createNewUserCandidate(data) {
-      fetch('$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/submit_user', {
+      fetch('/submit_user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

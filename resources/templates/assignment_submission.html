@@ -140,7 +140,7 @@
             bottom: 0;
             width: 100%;
             text-align: center;
-            padding: 15px;
+            padding: 5px;
         }
 
         .upload-button {
@@ -184,11 +184,6 @@
                         try {
                         console.log("task_id")
                         console.log(target.getAttribute("task_id"))
-                        //console.log("before b64EncodeUnicode")
-                        //newB64Data=b64EncodeUnicode(target.files[0])
-                        //console.log("after b64EncodeUnicode")
-                        //console.log("newB64Data in base64::")
-                        //console.log(newB64Data)
                         rawUploadedImageBase64=await convertFileToBase64(target.files[0])
                         console.log("rawdata in base64::")
                         console.log(rawUploadedImageBase64)
@@ -211,38 +206,14 @@
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 reader.onload = () => resolve(reader.result);
-                // Typescript users: use following line
-                // reader.onload = () => resolve(reader.result as string);
                 reader.onerror = reject;
                 });
             }
-            //function b64EncodeUnicode(file) {
-            //    // first we use encodeURIComponent to get percent-encoded Unicode,
-            //    // then we convert the percent encodings into raw bytes which
-            //    // can be fed into btoa.
-            //    console.log("entered b64EncodeUnicode")
-            //    const reader = new FileReader();
-            //    console.log("created FileReader");
-            //    reader.readAsText(file,"utf-8");  
-            //    reader.onload= function(e){
-            //        console.log("read file to str in utf-8");
-            //        str=e.target.result
-            //        console.log(`str::='${str}'`)
-            //        base64ForUtfEncodedFile=btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
-            //            function toSolidBytes(match, p1) {
-            //                console.log("entered toSolidBytes")
-            //                return String.fromCharCode('0x' + p1);
-            //        }));
-            //        console.log("base64ForUtfEncodedFile::")
-            //        console.log(base64ForUtfEncodedFile)
-            //    }    
-//
-            //}
             document.getElementById("submit_button").addEventListener("click", function(e){
                 body={"assignment_files":assignment_files,"assignment_id":assignment_id,"hacker_id":hacker_id}
                 console.log(body)
                 if(checkIfCanSubmit()){
-                    fetch('$${{PROTOCOL}}$$://$${{DOMAIN_NAME}}$$/submit_assignment', {
+                    fetch('/submit_assignment', {
                         method: 'POST',
                         headers: {
                         'Content-Type': 'application/json',
