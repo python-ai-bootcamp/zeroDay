@@ -12,7 +12,7 @@ pip install -r requirements_test.txt
 # execute app in lab mode:
 UI only
 ```bash
-start uvicorn --app-dir=src main:app --host 0.0.0.0 --port 8000
+start uvicorn --app-dir=src main:app --host 0.0.0.0 --port 8000 --log-config ./resources/config/logging.yaml
 ```
 assignmentOrchestrator backend only
 ```bash
