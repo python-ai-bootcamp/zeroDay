@@ -1,5 +1,4 @@
 from systemEntities import AnalyticsEventType, print
-from userService import get_user
 from fastapi import APIRouter, Request
 
 router = APIRouter(prefix="/v2", tags=["v2"])
