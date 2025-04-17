@@ -8,7 +8,9 @@ export interface CommandExecutorParams {
 
 export type CommandExecutor = (
   args: string[],
-  setHistory: React.Dispatch<React.SetStateAction<(string | JSX.Element)[]>>
+  setHistory: React.Dispatch<React.SetStateAction<(string | JSX.Element)[]>>,
+  setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>,
+  hidePrompt: boolean,
 ) => string | JSX.Element | void;
 
 

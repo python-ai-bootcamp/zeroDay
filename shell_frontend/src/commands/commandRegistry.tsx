@@ -4,12 +4,14 @@ import Help from './implementations/Help';
 import GettingStarted from '../assets/getting_started.md?raw'; // import getting started markdown
 import WizardFromMd from '../components/WizardFromMd';
 
+
 const commandRegistry: Record<string, CommandExecutor> = {
   help: (_args, _setHistory) => {
     return <Help />;
   },
-  getting_started: (_args, _setHistory) => {
-    return <WizardFromMd mdContent={GettingStarted}/>; // return JSX element for getting started
+  getting_started: (_args, _setHistory, _setHidePrompt, _hidePrompt) => {
+
+    return <WizardFromMd mdContent={GettingStarted} setHidePrompt={_setHidePrompt} />
   },
   clear: (_args, setHistory) => {
     setHistory([]); // clear history

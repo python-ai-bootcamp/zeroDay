@@ -1,8 +1,6 @@
 import React, { useState, useEffect} from 'react';
 import { useCommandExecutor } from '../hooks/useCommandExecutor'; // import command executor hook
-import HackerSequence from './HackerSequence'; // import the hacker sequence component
-
-
+import HackerSequence from '../commands/hackerSequence'; // import hacker sequence command
 
 
 
@@ -10,10 +8,9 @@ const Terminal = () => {
   const initial_message = '🖥️ Welcome to Zero Day Terminal OS, \nplease enter `help` for a list of commands';
   const [command, setCommand] = useState('');
   const [history, setHistory] = useState<string[]>([initial_message]);
-  const executeCommand = useCommandExecutor(setHistory);
-
-
-
+  const [hidePrompt, setHidePrompt] = useState(false); // state to control prompt visibility
+  const executeCommand = useCommandExecutor(setHistory, setHidePrompt, hidePrompt);
+  
 
   const handleCommand = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && command.trim()) {
@@ -36,7 +33,9 @@ const Terminal = () => {
 )}
 
       {/* Command prompt */}
-      <div className="flex">
+      {!hidePrompt && ( 
+        <div className="flex">
+
         <span>root@zeroDay$&nbsp;</span>
         <input
           type="text"
@@ -47,6 +46,8 @@ const Terminal = () => {
           autoFocus
         />
       </div>
+      )}
+
     </div>
   );
 };
