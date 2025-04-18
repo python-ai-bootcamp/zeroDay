@@ -13,4 +13,10 @@ export type CommandExecutor = (
   hidePrompt: boolean,
 ) => string | JSX.Element | void;
 
+export type AssignmentStatus = {
+  assignment_id: number;
+  submission_id: number;
+  max_submission_id: number;
+};
+
 

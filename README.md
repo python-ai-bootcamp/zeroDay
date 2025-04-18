@@ -8,7 +8,11 @@ install additional test dependencies
 ```bash
 pip install -r requirements_test.txt
 ```
-
+# run front end in lab mode
+```bash
+cd shell_frontend
+npm run dev
+```
 # execute app in lab mode:
 UI only
 ```bash

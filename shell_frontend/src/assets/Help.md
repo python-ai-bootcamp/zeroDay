@@ -17,14 +17,6 @@
         <td>🏁 if this is your first time</td>
     </tr>
     <tr>
-      <td><strong>requirements</strong></td>
-      <td>📋 View course requirements and expectations</td>
-    </tr>
-    <tr>
-      <td><strong>rewards</strong></td>
-      <td>🏆 View rewards unlocked upon completion</td>
-    </tr>
-    <tr>
       <td><strong>status</strong></td>
       <td>📈 Check your current progress</td>
     </tr>
