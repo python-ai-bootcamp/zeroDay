@@ -166,13 +166,13 @@ def serve_payment(request: Request):
     return HTMLResponse(content=payment_page_html, status_code=200)
 
 @app.get("/paymentRedirect")
-def serve_payment_redirect(request: Request, hacker_id:str, ClientName:str, ClientLName:str, UserId:str, email:str, phone:str):
+def serve_payment_redirect(request: Request, hacker_id:str, ClientName:str, ClientLName:str, UserId:str, email:str, phone:str, background_tasks: BackgroundTasks):
     user=request.state.authenticated_user
     if(user):
         payment_page_html = get_template("payment_redirect_page")
         #user=User.model_validate(user)
         payment=Payment.model_validate({"user":user,"ClientName":ClientName, "ClientLName":ClientLName, "UserId":UserId, "email":email, "phone":phone, "date":datetime.today().strftime('%Y/%m/%d'), "amount":50})
-        initiate_user_payement_procedure(payment)
+        initiate_user_payement_procedure(payment, background_tasks)
     else:
         payment_page_html = get_template("redirect_to_enlistment_page")
     return HTMLResponse(content=payment_page_html, status_code=200)
@@ -374,7 +374,7 @@ def fetch_symmetric_key_endpoint():
 def download_data_endpoint():
     return download_data()
 
-def create_submit_assignment_background_task(assignment_submission):
+def create_submit_assignment_background_task(assignment_submission: AssignmentSubmission):
     submit_assignment(assignment_submission)
 
 @app.post("/submit_assignment")

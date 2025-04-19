@@ -52,3 +52,19 @@ cd $PWD
 ./installService.sh
 ```
 
+# windows os dependencies
+for app to work on windows following os dependencies needs to be installed manually
+```bash
+choco install docker-desktop
+```
+install 64bit version of gtk runtime for windows (64!!!!!)
+```bash
+https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases
+```
+then add following directory into your path
+```bash
+C:\Program Files\GTK3-Runtime Win64\bin\
+```
+
+for redhat, everything should be covered by the installService.sh script
+

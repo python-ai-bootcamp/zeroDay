@@ -56,7 +56,7 @@ const Terminal = () => {
       {/* Command prompt */}
       {!hidePrompt && ( 
         <div className="flex">
-        {userData ? <span>{userData.name}@zeroDay$&nbsp;</span> : <span>root@zeroDay$&nbsp;</span>}
+        {userData ? <span>{(userData.name).replace(/ +/g,".")}@zeroDay$&nbsp;</span> : <span>root@zeroDay$&nbsp;</span>}
         <input
           type="text"
           value={command}

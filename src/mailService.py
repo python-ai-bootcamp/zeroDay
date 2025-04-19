@@ -86,11 +86,11 @@ def substitute_template_variables(subject_template:str,body_html_template:str,bo
         .replace("$${{PROTOCOL}}$$",protocol)\
         .replace("$${{HACKER_ID}}$$",user.hacker_id)\
         .replace("$${{NAME}}$$",user.name)
-    print("substitute_template_variables::optional_template_fields=",optional_template_fields)
+    #print("substitute_template_variables::optional_template_fields=",optional_template_fields)
     for replacement_tuple in optional_template_fields:
-        print("substitute_template_variables::replacement_tuple=",replacement_tuple)
-        print("substitute_template_variables::replacement_tuple[0]=",replacement_tuple[0])
-        print("substitute_template_variables::replacement_tuple[1]=",replacement_tuple[1])
+        #print("substitute_template_variables::replacement_tuple=",replacement_tuple)
+        #print("substitute_template_variables::replacement_tuple[0]=",replacement_tuple[0])
+        #print("substitute_template_variables::replacement_tuple[1]=",replacement_tuple[1])
         subject=subject.replace(replacement_tuple[0],str(replacement_tuple[1]))
         #print("substitute_template_variables::body_html before=",body_html)
         body_html=body_html.replace(replacement_tuple[0],str(replacement_tuple[1]))
