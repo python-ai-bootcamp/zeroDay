@@ -12,8 +12,10 @@ sudo rm -rf /opt/certbot
 yum install python3.12 -y
 pip install -r requirements.txt
 yum install nginx -y 
-yum install augeas-libs -y
+yum install augeas-libs -y #i think its needed for certbot to work
 yum install container-tools -y
+yum install pango -y #dependency pdf generation using weasyprint
+
 
 #touch this file to avoide the "Emulate Docker CLI using podman. Create /etc/containers/nodocker to quiet msg." message displayed for podman docker alias for every docker command activated
 touch /etc/containers/nodocker
