@@ -33,7 +33,7 @@
       <td>🧠 Show your current assignment</td>
     </tr>
     <tr>
-      <td><strong>upload</strong></td>
+      <td><strong>scp</strong></td>
       <td>⬆️ Upload the current assignment for review</td>
     </tr>
     <tr>
