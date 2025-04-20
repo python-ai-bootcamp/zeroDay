@@ -7,7 +7,7 @@ from userService import User, submit_user, user_exists, get_user
 from paymentService import initiate_user_payement_procedure
 from assignmentOrchestrator import assignment_description,next_assignment_submission, assignment_task_count, AssignmentSubmission, submit_assignment, user_testing_in_progress, max_submission_for_assignment, last_assignment_submission_result, get_submitted_file
 from exportService import fetch_symmetric_key, download_data
-from fastapi import FastAPI, BackgroundTasks, Request, Response
+from fastapi import FastAPI, BackgroundTasks, Request, Response, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from configurationService import domain_name, protocol, isDevMod
@@ -38,6 +38,7 @@ templates_processors={
     "contact_page":                             lambda: open(os.path.join("resources","templates","contact.html"), "r").read(),
     "assignments_page":                         lambda: open(os.path.join("resources","templates","assignments.html"), "r").read(),
     "assignment_submission_page":               lambda: open(os.path.join("resources","templates","assignment_submission.html"), "r").read(),
+    "assignment_submission_with_tar_page":      lambda: open(os.path.join("resources","templates","assignment_submission_with_tar.html"), "r").read(),
     "last_submission_results_page":             lambda: open(os.path.join("resources","templates","last_submission_results.html"), "r").read(),
     "submitted_task_file_page":                 lambda: open(os.path.join("resources","templates","submitted_task_file.html"), "r").read(),
     "last_submission_results_no_results_page":  lambda: open(os.path.join("resources","templates","last_submission_results_no_results.html"), "r").read(),
@@ -383,6 +384,32 @@ def post_submit_assignment(assignment_submission: AssignmentSubmission, backgrou
     background_tasks.add_task(create_submit_assignment_background_task, assignment_submission)
     print("assignment_submission added as background task")
     return {"status":"SUBMITTED"}
+
+
+def create_submit_assignment_with_tar_background_task(tar_bytes: bytes, json_data: str = Form(...)):
+    submit_assignment(tar_bytes, json_data)
+
+@app.post("/submit_assignment_with_tar")
+def post_submit_assignment_with_tar(background_tasks: BackgroundTasks, tar_file: UploadFile = File(...), json_data: str = Form(...)):
+    print("entered submit assignment")
+    tar_bytes = tar_file.file.read() 
+    background_tasks.add_task(create_submit_assignment_with_tar_background_task, tar_bytes, json_data)
+    print("assignment_submission added as background task")
+    return {"status":"SUBMITTED"}
+
+@app.get("/assignment_submission_with_tar")
+def serve_assignment_submission_with_tar(request: Request):
+    print("serve_assignment_submission_with_tar:: entered")
+    user=request.state.authenticated_user 
+    if user and user["paid_status"]:
+        print("serve_assignment_submission_with_tar:: user paid")
+        assignment_submission_page_html = get_template("assignment_submission_with_tar_page")
+    else:
+        print("serve_assignment_submission_with_tar:: user did not pay")
+        assignment_submission_page_html = get_template("redirect_to_enlistment_page")
+    
+    print(f"serve_assignment_submission_with_tar:: serving following file='{assignment_submission_page_html}'")
+    return HTMLResponse(content=assignment_submission_page_html, status_code=200)
 
 @app.get("/analytics")
 def serve_analytics():

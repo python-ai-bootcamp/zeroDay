@@ -10,3 +10,4 @@ boto3
 brevo-python
 mailjet-rest
 weasyprint
+python-multipart

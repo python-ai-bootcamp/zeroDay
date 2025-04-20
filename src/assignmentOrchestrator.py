@@ -1,10 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 from threading import Lock, Semaphore, Thread
 from systemEntities import User, NotificationType, print
 from userService import get_user
+import tarfile
 import sandboxService, mailService
 import json, os, sys, base64,functools, importlib.util, time, datetime
 
@@ -151,34 +152,48 @@ def previous_assignment_passed(assignment_submission: AssignmentSubmission, data
         else:
             return assignment_passed(hacker[str(assignment_submission.assignment_id-1)])
 
-def save_assignment_files(assignment_submission: AssignmentSubmission):
+def save_assignment_files(assignment_submission: AssignmentSubmission, tar_bytes:bytes):
     assignment_directory=os.path.join(SUBMITTED_FILES_DIR,assignment_submission.hacker_id,str(assignment_submission.assignment_id),str(assignment_submission.submission_id))
     os.makedirs(assignment_directory,exist_ok=True)
-    task_id=1
-    assignment_file_names=[]
-    print("assignment_submission::",assignment_submission)
-    for assignment_file in assignment_submission.assignment_files:
-        assignment_b64_decoded=base64.b64decode(assignment_file)
-        #assignment_simple_str= assignment_b64_decoded.decode("ascii") #fails on hebrew
-        print("before printing assignment_b64_decoded undecoded::")
-        print(assignment_b64_decoded)
-        print("after printing assignment_b64_decoded undecoded::")
-        assignment_simple_str= assignment_b64_decoded.decode("utf-8") #works for hebrew but fails on printing result from some strange reason
-        #not working from https://stackoverflow.com/questions/64849264/decoding-a-b64-encoded-string-in-python-with-non-english-characters
-        #assignment_simple_str= assignment_b64_decoded.decode('latin-1')
-        #good link to read on how to properly encode on base64 from utf-8 in javascript
-        #https://stackoverflow.com/questions/30106476/using-javascripts-atob-to-decode-base64-doesnt-properly-decode-utf-8-strings
-        print("before printing assignment_simple_str decoded::")
-        #print(assignment_simple_str)
-        print("after printing assignment_simple_str decoded::")
-        assignment_file_name=f'task_{task_id}.py'
-        assignment_file_name_full_path=os.path.join(assignment_directory,f'task_{task_id}.py')
-        assignment_file_names.append(assignment_file_name)
-        #with open(assignment_file_name_full_path, "w") as f:
-        with open(assignment_file_name_full_path, "w", encoding="utf-8") as f:
-            f.write(assignment_simple_str)
-        task_id=task_id+1;
-    return assignment_file_names
+    temp_tar_path=os.path.join(assignment_directory,"submitted_tar.tar.gz")
+    print("save_assignment_files::SUBMITTED_FILES_DIR=", SUBMITTED_FILES_DIR)
+    print("save_assignment_files::assignment_submission.hacker_id=", assignment_submission.hacker_id)
+    print("save_assignment_files::str(assignment_submission.assignment_id)=", str(assignment_submission.assignment_id))
+    print("save_assignment_files::str(assignment_submission.submission_id)=", str(assignment_submission.submission_id))
+    print("save_assignment_files::assignment_directory=", assignment_directory)
+    print("save_assignment_files::temp_tar_path=", temp_tar_path)
+    #task_id=1
+    #assignment_file_names=[]
+    #print("assignment_submission::",assignment_submission)
+    #for assignment_file in assignment_submission.assignment_files:
+    #    assignment_b64_decoded=base64.b64decode(assignment_file)
+    #    #assignment_simple_str= assignment_b64_decoded.decode("ascii") #fails on hebrew
+    #    print("before printing assignment_b64_decoded undecoded::")
+    #    print(assignment_b64_decoded)
+    #    print("after printing assignment_b64_decoded undecoded::")
+    #    assignment_simple_str= assignment_b64_decoded.decode("utf-8") #works for hebrew but fails on printing result from some strange reason
+    #    #not working from https://stackoverflow.com/questions/64849264/decoding-a-b64-encoded-string-in-python-with-non-english-characters
+    #    #assignment_simple_str= assignment_b64_decoded.decode('latin-1')
+    #    #good link to read on how to properly encode on base64 from utf-8 in javascript
+    #    #https://stackoverflow.com/questions/30106476/using-javascripts-atob-to-decode-base64-doesnt-properly-decode-utf-8-strings
+    #    print("before printing assignment_simple_str decoded::")
+    #    #print(assignment_simple_str)
+    #    print("after printing assignment_simple_str decoded::")
+    #    assignment_file_name=f'task_{task_id}.py'
+    #    assignment_file_name_full_path=os.path.join(assignment_directory,f'task_{task_id}.py')
+    #    assignment_file_names.append(assignment_file_name)
+    #    #with open(assignment_file_name_full_path, "w") as f:
+    #    with open(assignment_file_name_full_path, "w", encoding="utf-8") as f:
+    #        f.write(assignment_simple_str)
+    #    task_id=task_id+1;
+    #return assignment_file_names
+    with open(temp_tar_path, "wb") as out_file: 
+        out_file.write(tar_bytes)
+    with tarfile.open(temp_tar_path, "r:gz") as tar:
+        tar.extractall(path=assignment_directory)
+    os.remove(temp_tar_path)
+    print("======= ===mmmmm  mmm ==== ===== ===== ===mmmmmmm     =======  ==========   mm mmmmm==>>>> FINISHED UPLOADING FILE!!!! =")
+    exit()
 
 def max_submission_for_assignment(assignment_id:int):
     assignment_mapper=load_assignment_mapper()
@@ -191,7 +206,8 @@ def max_submission_for_assignment(assignment_id:int):
     else:
         return DEFAULT_MAX_SUBMISSIONS
 @app.post("/submit")
-def submit_assignment(assignment_submission: AssignmentSubmission):
+def submit_assignment(tar_bytes: bytes, json_data: str = Form(...)):
+    assignment_submission=AssignmentSubmission.model_validate(json.loads(json_data))
     assignment_mapper=load_assignment_mapper()
     if not str(assignment_submission.assignment_id) in assignment_mapper:
         return {"status":"ERROR","ERROR_message":f"missing assignment_id={assignment_submission.assignment_id} in assignment_mapper file"}
@@ -211,14 +227,14 @@ def submit_assignment(assignment_submission: AssignmentSubmission):
     if previous_assignment_passed(assignment_submission, data):
         assignment_submission.submission_id = 1 #in case no previous submission, then submission_id=1, will change to calculated value only if exisitng submition_id found
         if(not assignment_submission.hacker_id in data):
-            assignment_submission.assignment_file_names=save_assignment_files(assignment_submission)
+            assignment_submission.assignment_file_names=save_assignment_files(assignment_submission, tar_bytes)
             assignment_submission.result = check_assignment_submission(assignment_submission)
             data[assignment_submission.hacker_id]={assignment_submission.assignment_id:[assignment_submission.model_dump()]}      
         else:
             if(str(assignment_submission.assignment_id) in data[assignment_submission.hacker_id]):
                 assignment_submission.submission_id = len(data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)])+1                
                 if(assignment_submission.submission_id<=max_submissions):
-                    assignment_submission.assignment_file_names=save_assignment_files(assignment_submission)
+                    assignment_submission.assignment_file_names=save_assignment_files(assignment_submission, tar_bytes)
                     assignment_submission.result = check_assignment_submission(assignment_submission)
                     data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)].append(assignment_submission.model_dump())
                 else:
@@ -227,7 +243,7 @@ def submit_assignment(assignment_submission: AssignmentSubmission):
                     submision_processing_concurrency_semaphore.release()
                     return assignment_submission.model_dump()
             else:
-                assignment_submission.assignment_file_names=save_assignment_files(assignment_submission)
+                assignment_submission.assignment_file_names=save_assignment_files(assignment_submission, tar_bytes)
                 assignment_submission.result = check_assignment_submission(assignment_submission)
                 data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)]=[assignment_submission.model_dump()]
         save_data(data)
