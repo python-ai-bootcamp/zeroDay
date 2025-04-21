@@ -156,12 +156,6 @@ def save_assignment_files(assignment_submission: AssignmentSubmission, tar_bytes
     assignment_directory=os.path.join(SUBMITTED_FILES_DIR,assignment_submission.hacker_id,str(assignment_submission.assignment_id),str(assignment_submission.submission_id))
     os.makedirs(assignment_directory,exist_ok=True)
     temp_tar_path=os.path.join(assignment_directory,"submitted_tar.tar.gz")
-    print("save_assignment_files::SUBMITTED_FILES_DIR=", SUBMITTED_FILES_DIR)
-    print("save_assignment_files::assignment_submission.hacker_id=", assignment_submission.hacker_id)
-    print("save_assignment_files::str(assignment_submission.assignment_id)=", str(assignment_submission.assignment_id))
-    print("save_assignment_files::str(assignment_submission.submission_id)=", str(assignment_submission.submission_id))
-    print("save_assignment_files::assignment_directory=", assignment_directory)
-    print("save_assignment_files::temp_tar_path=", temp_tar_path)
     #task_id=1
     #assignment_file_names=[]
     #print("assignment_submission::",assignment_submission)
@@ -192,8 +186,6 @@ def save_assignment_files(assignment_submission: AssignmentSubmission, tar_bytes
     with tarfile.open(temp_tar_path, "r:gz") as tar:
         tar.extractall(path=assignment_directory)
     os.remove(temp_tar_path)
-    print("======= ===mmmmm  mmm ==== ===== ===== ===mmmmmmm     =======  ==========   mm mmmmm==>>>> FINISHED UPLOADING FILE!!!! =")
-    exit()
 
 def max_submission_for_assignment(assignment_id:int):
     assignment_mapper=load_assignment_mapper()
