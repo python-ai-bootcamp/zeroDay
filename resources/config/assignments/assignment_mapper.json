@@ -1,10 +1,10 @@
 {
     "1":{
         "description":"description_1.md",
-        "validators":["validate_assignment_1_task_1.py"]
+        "validators":["validate_assignment_1_task_3.py", "validate_assignment_1_task_3.py", "validate_assignment_1_task_3.py"]
     },
     "2":{
         "description":"description_2.md",
-        "validators":["validate_assignment_2_task_1.py"]
+        "validators":["validate_assignment_1_task_2.py", "validate_assignment_1_task_2.py", "validate_assignment_1_task_2.py"]
     }
 }

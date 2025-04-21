@@ -20,8 +20,11 @@ def startDockerContainer(submision_processing_concurrency_semaphore :Semaphore,M
 def execute_task_as_script_and_validate_text_output(task_file_name :str, kill_timeout: float, task_output_validation_func:Callable[[str], bool], task_input_arguments:List[str]=[] )-> bool:
     task_file_name=task_file_name.replace('\\','/') #because shitty os.path.join will make strange backslashes instead of forward slashes under windows
     task_file_dir_name=os.path.dirname(task_file_name)
-    subprocess.call(["docker", "exec", "-t", "task_runner", "mkdir", "-p", task_file_dir_name])
-    subprocess.call(["docker", "cp", task_file_name, f"task_runner:{task_file_dir_name}"])
+    task_file_submission_directory=os.path.dirname(task_file_dir_name)
+    #subprocess.call(["docker", "exec", "-t", "task_runner", "mkdir", "-p", task_file_dir_name])
+    subprocess.call(["docker", "exec", "-t", "task_runner", "mkdir", "-p", task_file_submission_directory])
+    #subprocess.call(["docker", "cp", task_file_name, f"task_runner:{task_file_dir_name}"])
+    subprocess.call(["docker", "cp", task_file_dir_name, f"task_runner:{task_file_submission_directory}"])
     #cmd=["docker", "exec", "-t", "task_runner", "python", "-u", task_file_name]+task_input_arguments
     cmd=["docker", "exec", "task_runner", "python", "-u", task_file_name]+task_input_arguments
     proc = subprocess.Popen(cmd,
@@ -63,8 +66,11 @@ def execute_task_as_module_and_validate_programatically(task_file_name :str, kil
     task_file_name=task_file_name.replace('\\','/') 
     task_file_dir_name=os.path.dirname(task_file_name)
     task_file_base_name=os.path.basename(task_file_name)
-    subprocess.call(["docker", "exec", "-t", "task_runner", "mkdir", "-p", task_file_dir_name])
-    subprocess.call(["docker", "cp", task_file_name, f"task_runner:{task_file_dir_name}"])
+    task_file_submission_directory=os.path.dirname(task_file_dir_name)
+    #subprocess.call(["docker", "exec", "-t", "task_runner", "mkdir", "-p", task_file_dir_name])
+    subprocess.call(["docker", "exec", "-t", "task_runner", "mkdir", "-p", task_file_submission_directory])
+    #subprocess.call(["docker", "cp", task_file_name, f"task_runner:{task_file_dir_name}"])
+    subprocess.call(["docker", "cp", task_file_dir_name, f"task_runner:{task_file_submission_directory}/"])
     subprocess.call(["docker", "exec", "-t", "task_runner", "mv", task_file_name, f"{task_file_dir_name}/TestedModule.py"])
     task_module_validation_code=f"import TestedModule\n{task_module_validation_code}"
     fd, tmp_file_name = mkstemp()

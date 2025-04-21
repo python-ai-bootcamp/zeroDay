@@ -2,6 +2,7 @@ from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
+from pathlib import Path
 from threading import Lock, Semaphore, Thread
 from systemEntities import User, NotificationType, print
 from userService import get_user
@@ -45,7 +46,7 @@ class AssignmentSubmission(BaseModel):
     assignment_files: List[str]
     submission_id: Optional[int] = None
     result: Optional[dict] = None
-    assignment_file_names:  Optional[List[str]] = None
+    assignment_file_names:  Optional[List[dict]] = None
 
 def load_data(assignment_submission: AssignmentSubmission =None):
     if os.path.exists(DATA_FILE_DIRECTORY):
@@ -110,10 +111,10 @@ def import_module_dynamically_from_path(task_file_name):
         
     return dynamically_loaded_modules_repository[task_file_name]
 
-def execute_validator_on_task_file(validator_script:str, task_file_name:str, assignment_submission: AssignmentSubmission):
+def execute_validator_on_task_file(validator_script:str, task_file_name:str, task_directory_name: str, assignment_submission: AssignmentSubmission):
     checked_task_status_validator = import_module_dynamically_from_path(validator_script)
-    task_file_name_full_path=os.path.join(SUBMITTED_FILES_DIR,str(assignment_submission.hacker_id),str(assignment_submission.assignment_id),str(assignment_submission.submission_id),task_file_name)
-    return checked_task_status_validator.execute_task(task_file_name_full_path,DEFAULT_VALIDATOR_TIMEOUT)
+    task_file_name_full_path=os.path.join(SUBMITTED_FILES_DIR,str(assignment_submission.hacker_id),str(assignment_submission.assignment_id),str(assignment_submission.submission_id),task_directory_name, task_file_name)
+    return checked_task_status_validator.execute_task(task_file_name_full_path, DEFAULT_VALIDATOR_TIMEOUT)
     #https://python.code-maven.com/python-capture-stdout-stderr-exit - this is a nice way to implement a validator with subprocess timeout based killing
 
 def check_assignment_submission(assignment_submission:AssignmentSubmission):  
@@ -122,13 +123,15 @@ def check_assignment_submission(assignment_submission:AssignmentSubmission):
     validator_idx=0
     collected_results=[]
     for validator_script in validator_file_names:
-        task_file_name=f"task_{str(validator_idx+1)}.py"
-        task_file_exists=os.path.isfile(os.path.join(SUBMITTED_FILES_DIR,str(assignment_submission.hacker_id),str(assignment_submission.assignment_id),str(assignment_submission.submission_id),task_file_name))
+        task_directory_name=str(validator_idx+1)
+        #task_file_name=f"task_{str(validator_idx+1)}.py"
+        task_file_name=f"main.py"
+        task_file_exists=os.path.isfile(os.path.join(SUBMITTED_FILES_DIR,str(assignment_submission.hacker_id),str(assignment_submission.assignment_id),str(assignment_submission.submission_id),task_directory_name,task_file_name))
         if task_file_exists:
-            print(f"executing validator_script={validator_script},task_file_name={task_file_name}")
-            collected_results.append({"task_idx":validator_idx+1,**execute_validator_on_task_file(validator_script=validator_script,task_file_name=task_file_name,assignment_submission=assignment_submission)})
+            print(f"executing validator_script={validator_script}, on task_directory_name={task_directory_name} ,task_file_name={task_file_name}")
+            collected_results.append({"task_idx":validator_idx+1,**execute_validator_on_task_file(validator_script=validator_script, task_directory_name=task_directory_name, task_file_name=task_file_name, assignment_submission=assignment_submission)})
         else:
-            collected_results.append({"task_idx":validator_idx+1,"status":"ERROR","ERROR_message":f"missing task ({task_file_name}) in assignment"})
+            collected_results.append({"task_idx":validator_idx+1,"status":"ERROR","ERROR_message":f"missing task file ({task_file_name}) in assignment directory ({task_directory_name})"})
         validator_idx=validator_idx+1        
     statuses=list(map(lambda result: result["status"],collected_results))
     def calculate_status_based_on_temp_and_new(temp_status,new_status):
@@ -153,11 +156,11 @@ def previous_assignment_passed(assignment_submission: AssignmentSubmission, data
             return assignment_passed(hacker[str(assignment_submission.assignment_id-1)])
 
 def save_assignment_files(assignment_submission: AssignmentSubmission, tar_bytes:bytes):
-    assignment_directory=os.path.join(SUBMITTED_FILES_DIR,assignment_submission.hacker_id,str(assignment_submission.assignment_id),str(assignment_submission.submission_id))
-    os.makedirs(assignment_directory,exist_ok=True)
-    temp_tar_path=os.path.join(assignment_directory,"submitted_tar.tar.gz")
+    assignment_submission_directory=os.path.join(SUBMITTED_FILES_DIR,assignment_submission.hacker_id,str(assignment_submission.assignment_id),str(assignment_submission.submission_id))
+    os.makedirs(assignment_submission_directory,exist_ok=True)
+    temp_tar_path=os.path.join(assignment_submission_directory,"submitted_tar.tar.gz")
     #task_id=1
-    #assignment_file_names=[]
+    assignment_file_names=[]
     #print("assignment_submission::",assignment_submission)
     #for assignment_file in assignment_submission.assignment_files:
     #    assignment_b64_decoded=base64.b64decode(assignment_file)
@@ -184,8 +187,10 @@ def save_assignment_files(assignment_submission: AssignmentSubmission, tar_bytes
     with open(temp_tar_path, "wb") as out_file: 
         out_file.write(tar_bytes)
     with tarfile.open(temp_tar_path, "r:gz") as tar:
-        tar.extractall(path=assignment_directory)
+        tar.extractall(path=assignment_submission_directory)
     os.remove(temp_tar_path)
+    assignment_submission_task_directories=[p.name for p in Path(assignment_submission_directory).iterdir() if p.is_dir()]
+    return [{"task_directory":task_directory, "task_file":"main.py"} for task_directory in assignment_submission_task_directories]
 
 def max_submission_for_assignment(assignment_id:int):
     assignment_mapper=load_assignment_mapper()
@@ -231,6 +236,7 @@ def submit_assignment(tar_bytes: bytes, json_data: str = Form(...)):
                     data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)].append(assignment_submission.model_dump())
                 else:
                     assignment_submission.result={"status":"ERROR","ERROR_message":f"cannot test assignment (assignment_id={str(assignment_submission.assignment_id)}) because submission attempts ({str(assignment_submission.submission_id)}) passed the allowed max_submissions (max_submissions={max_submissions})"}
+                    print(assignment_submission.result)
                     lockRepository[assignment_submission.hacker_id].release()
                     submision_processing_concurrency_semaphore.release()
                     return assignment_submission.model_dump()
