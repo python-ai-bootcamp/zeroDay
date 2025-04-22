@@ -38,7 +38,6 @@ templates_processors={
     "contact_page":                             lambda: open(os.path.join("resources","templates","contact.html"), "r").read(),
     "assignments_page":                         lambda: open(os.path.join("resources","templates","assignments.html"), "r").read(),
     "assignment_submission_page":               lambda: open(os.path.join("resources","templates","assignment_submission.html"), "r").read(),
-    "assignment_submission_with_tar_page":      lambda: open(os.path.join("resources","templates","assignment_submission_with_tar.html"), "r").read(),
     "last_submission_results_page":             lambda: open(os.path.join("resources","templates","last_submission_results.html"), "r").read(),
     "submitted_task_file_page":                 lambda: open(os.path.join("resources","templates","submitted_task_file.html"), "r").read(),
     "last_submission_results_no_results_page":  lambda: open(os.path.join("resources","templates","last_submission_results_no_results.html"), "r").read(),
@@ -272,16 +271,9 @@ def serve_assignment_submission(request: Request):
         else:           
             print(f'user {user["hacker_id"]} is not locked for testing')
             task_count=assignment_task_count(next_assignment_id)["task_count"]
-            print(task_count)
-            task_submission_sections=[]
-            for task_id in range(1,task_count+1):
-                task_submission_sections.append(f'<p><h3>task_{task_id}</h3></p><label for="upload-photo"><input task_id={task_id} type="file" id="upload-photo" class="cta-button"></input></label>')
-                print(task_submission_sections)
-            task_submission_sections="\n".join(task_submission_sections)
             assignment_submission_page_html=assignment_submission_page_html\
             .replace("$${{HACKER_ID}}$$",user["hacker_id"])\
             .replace("$${{ASSIGNMENT_ID}}$$",str(next_assignment_id))\
-            .replace("$${{TASK_SUBMITION_SECTIONS}}$$",task_submission_sections)\
             .replace("$${{MUMBER_OF_TASKS_IN_ASSIGNMENT}}$$",str(task_count))
     else:
         assignment_submission_page_html=get_template("redirect_to_enlistment_page")
@@ -309,8 +301,6 @@ def serve_last_submission_result(request: Request):
                 assignment_id=submission_result["assignment_id"]
                 submission_id=submission_result["submission_id"]
                 submission_result_for_view=submission_result
-                assignment_files=submission_result_for_view["assignment_files"]
-                del submission_result_for_view["assignment_files"]
                 del submission_result_for_view["assignment_file_names"]
                 submission_result_for_view["result"]["collected_results"]=list(map(lambda task_result:{**task_result,"submitted_task_file":f"{protocol}://{domain_name}/submitted_task_file?assignment_id={assignment_id}&submission_id={submission_id}&task_id={task_result['task_idx']}"},submission_result_for_view["result"]["collected_results"]))
                 submission_result_content=f"data={json.dumps(submission_result_for_view)}"
@@ -375,41 +365,17 @@ def fetch_symmetric_key_endpoint():
 def download_data_endpoint():
     return download_data()
 
-def create_submit_assignment_background_task(assignment_submission: AssignmentSubmission):
-    submit_assignment(assignment_submission)
 
-@app.post("/submit_assignment")
-def post_submit_assignment(assignment_submission: AssignmentSubmission, background_tasks: BackgroundTasks):
-    print("entered submit assignment")
-    background_tasks.add_task(create_submit_assignment_background_task, assignment_submission)
-    print("assignment_submission added as background task")
-    return {"status":"SUBMITTED"}
-
-
-def create_submit_assignment_with_tar_background_task(tar_bytes: bytes, json_data: str = Form(...)):
+def create_submit_assignment_background_task(tar_bytes: bytes, json_data: str = Form(...)):
     submit_assignment(tar_bytes, json_data)
 
-@app.post("/submit_assignment_with_tar")
-def post_submit_assignment_with_tar(background_tasks: BackgroundTasks, tar_file: UploadFile = File(...), json_data: str = Form(...)):
+@app.post("/submit_assignment")
+def post_submit_assignment(background_tasks: BackgroundTasks, tar_file: UploadFile = File(...), json_data: str = Form(...)):
     print("entered submit assignment")
     tar_bytes = tar_file.file.read() 
-    background_tasks.add_task(create_submit_assignment_with_tar_background_task, tar_bytes, json_data)
+    background_tasks.add_task(create_submit_assignment_background_task, tar_bytes, json_data)
     print("assignment_submission added as background task")
     return {"status":"SUBMITTED"}
-
-@app.get("/assignment_submission_with_tar")
-def serve_assignment_submission_with_tar(request: Request):
-    print("serve_assignment_submission_with_tar:: entered")
-    user=request.state.authenticated_user 
-    if user and user["paid_status"]:
-        print("serve_assignment_submission_with_tar:: user paid")
-        assignment_submission_page_html = get_template("assignment_submission_with_tar_page")
-    else:
-        print("serve_assignment_submission_with_tar:: user did not pay")
-        assignment_submission_page_html = get_template("redirect_to_enlistment_page")
-    
-    print(f"serve_assignment_submission_with_tar:: serving following file='{assignment_submission_page_html}'")
-    return HTMLResponse(content=assignment_submission_page_html, status_code=200)
 
 @app.get("/analytics")
 def serve_analytics():

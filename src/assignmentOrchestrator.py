@@ -43,7 +43,7 @@ sandbox_init_thread.start()
 class AssignmentSubmission(BaseModel):
     hacker_id: str
     assignment_id: int
-    assignment_files: List[str]
+#    assignment_files: List[str]
     submission_id: Optional[int] = None
     result: Optional[dict] = None
     assignment_file_names:  Optional[List[dict]] = None
@@ -70,7 +70,7 @@ def load_data(assignment_submission: AssignmentSubmission =None):
         os.makedirs(DATA_FILE_DIRECTORY,exist_ok=True)    
         return {}
 def load_data_by_hacker_id(hacker_id:str):
-    return load_data(AssignmentSubmission(hacker_id=hacker_id,assignment_id=0,assignment_files=[]))
+    return load_data(AssignmentSubmission(hacker_id=hacker_id,assignment_id=0))
 
 def load_assignment_mapper():
     if os.path.exists(ASSIGNMENT_MAPPER_FILE):
@@ -159,31 +159,6 @@ def save_assignment_files(assignment_submission: AssignmentSubmission, tar_bytes
     assignment_submission_directory=os.path.join(SUBMITTED_FILES_DIR,assignment_submission.hacker_id,str(assignment_submission.assignment_id),str(assignment_submission.submission_id))
     os.makedirs(assignment_submission_directory,exist_ok=True)
     temp_tar_path=os.path.join(assignment_submission_directory,"submitted_tar.tar.gz")
-    #task_id=1
-    assignment_file_names=[]
-    #print("assignment_submission::",assignment_submission)
-    #for assignment_file in assignment_submission.assignment_files:
-    #    assignment_b64_decoded=base64.b64decode(assignment_file)
-    #    #assignment_simple_str= assignment_b64_decoded.decode("ascii") #fails on hebrew
-    #    print("before printing assignment_b64_decoded undecoded::")
-    #    print(assignment_b64_decoded)
-    #    print("after printing assignment_b64_decoded undecoded::")
-    #    assignment_simple_str= assignment_b64_decoded.decode("utf-8") #works for hebrew but fails on printing result from some strange reason
-    #    #not working from https://stackoverflow.com/questions/64849264/decoding-a-b64-encoded-string-in-python-with-non-english-characters
-    #    #assignment_simple_str= assignment_b64_decoded.decode('latin-1')
-    #    #good link to read on how to properly encode on base64 from utf-8 in javascript
-    #    #https://stackoverflow.com/questions/30106476/using-javascripts-atob-to-decode-base64-doesnt-properly-decode-utf-8-strings
-    #    print("before printing assignment_simple_str decoded::")
-    #    #print(assignment_simple_str)
-    #    print("after printing assignment_simple_str decoded::")
-    #    assignment_file_name=f'task_{task_id}.py'
-    #    assignment_file_name_full_path=os.path.join(assignment_directory,f'task_{task_id}.py')
-    #    assignment_file_names.append(assignment_file_name)
-    #    #with open(assignment_file_name_full_path, "w") as f:
-    #    with open(assignment_file_name_full_path, "w", encoding="utf-8") as f:
-    #        f.write(assignment_simple_str)
-    #    task_id=task_id+1;
-    #return assignment_file_names
     with open(temp_tar_path, "wb") as out_file: 
         out_file.write(tar_bytes)
     with tarfile.open(temp_tar_path, "r:gz") as tar:

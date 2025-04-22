@@ -152,45 +152,88 @@
         }
 
     </style>
+    <!-- https://stackoverflow.com/questions/37770620/how-to-include-markdown-md-files-inside-html-files -->
+    <!-- Lightweight client-side loader that feature-detects and load polyfills only when necessary -->
+    <script src="https://cdn.jsdelivr.net/npm/@webcomponents/webcomponentsjs@2/webcomponents-loader.min.js"></script>
+    <!-- Load the element definition -->
+    <script type="module" src="https://cdn.jsdelivr.net/gh/zerodevx/zero-md@1/src/zero-md.min.js"></script>
     <script> 
+        assignment_files=[]
         assignment_id=$${{ASSIGNMENT_ID}}$$
+        current_selected_tasks=new Set()
+        number_of_tasks_in_assignment=$${{MUMBER_OF_TASKS_IN_ASSIGNMENT}}$$
         hacker_id="$${{HACKER_ID}}$$"
-        requestBody={assignment_id,hacker_id}
         window.onload = function(){
-            const form = document.getElementById('upload-form');
-
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-
-                const fileInput = document.getElementById('file');
-                const jsonInput = document.getElementById('json');
-
-                if (!fileInput.files.length) {
-                    alert('Please select a file.');
-                    return;
+            function increaseNumberOfTasks(addedTaskId){
+                console.log("entered increaseNumberOfTasks with addedTaskId::",addedTaskId)
+                current_selected_tasks.add(addedTaskId)
+                console.log("current current_selected_tasks::",current_selected_tasks)
+                
+            }
+            function checkIfCanSubmit(){
+                if(current_selected_tasks.size==number_of_tasks_in_assignment){
+                    console.log("finished selecting all files, enabling submission button")
+                    return true
+                }else{
+                    return false
                 }
+            }
+            document.querySelectorAll('input[task_id]:not([task_id=""])').forEach(inputElement=>{
+                inputElement.addEventListener("change", async function({target}){
+                    if (target.files && target.files.length) {
+                        try {
+                        console.log("task_id")
+                        console.log(target.getAttribute("task_id"))
+                        rawUploadedImageBase64=await convertFileToBase64(target.files[0])
+                        console.log("rawdata in base64::")
+                        console.log(rawUploadedImageBase64)
+                        const uploadedImageBase64 = rawUploadedImageBase64.replace(/data:.*;base64,/,""); 
+                        //do something with above data string 
+                        console.log("data in base64::")
+                        console.log(uploadedImageBase64)
+                        assignment_files[target.getAttribute("task_id")-1]=uploadedImageBase64
+                        increaseNumberOfTasks(target.getAttribute("task_id"))
+                        console.log(assignment_files)
+                        } catch(err) {
+                        //handle error
+                        }
+                    }
+                })
+            })         
 
-                const formData = new FormData();
-                formData.append('tar_file', fileInput.files[0]);
-                formData.append('json_data', JSON.stringify(requestBody));
-
-                try {
-                    const response = await fetch('/submit_assignment', {
-                    method: 'POST',
-                    body: formData
-                    });
-
-                    const result = await response.json();
-                    console.log(JSON.stringify(result, null, 2));
-                    window.location.replace("/last_submission_result");
-                } catch (err) {
-                    console.log('Error: ' + err.message);
+            function convertFileToBase64(file) {
+                return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                });
+            }
+            document.getElementById("submit_button").addEventListener("click", function(e){
+                body={"assignment_files":assignment_files,"assignment_id":assignment_id,"hacker_id":hacker_id}
+                console.log(body)
+                if(checkIfCanSubmit()){
+                    fetch('/submit_assignment', {
+                        method: 'POST',
+                        headers: {
+                        'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(body)
+                    })
+                    .then(response=>response.json())
+                    .then(data=>{ console.log(data); })
+                    .then(x=>{
+                        window.location.replace("/last_submission_result");
+                    })
+                }else{
+                    alert("cannot submit assignment until all task files are selected")
                 }
-            });
+            })
         }
     </script>
 </head>
 <body>
+
     <!-- Header Section -->
     <header>
         <h1>ZeroDay Bootcamp</h1>
@@ -209,15 +252,13 @@
 
     <section class="hero">
         <div class="product">
-            <form id="upload-form">
-                <div class="product-info">
-                    <h3>Assignment Submission (for $${{MUMBER_OF_TASKS_IN_ASSIGNMENT}}$$ tasks):</h3>
-                    <input type="file" class="cta-button" id="file" name="file" accept=".tar.gz, .tgz"><br><br>
-                </div>
-                <div class="product-info">
-                    <button type="submit" class="cta-button" >Submit Assignment Tasks</button>
-                </div>
-            </form>
+            <div class="product-info">
+                <h3>Assignment Task Submission:</h3>
+                $${{TASK_SUBMITION_SECTIONS}}$$
+            </div>
+            <div class="product-info">
+                <a role="link" id="submit_button" class="cta-button" >Submit Assignment Tasks</a>
+            </div>
         </div> 
     </section>
 
