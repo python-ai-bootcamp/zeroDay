@@ -1,4 +1,5 @@
-import os,json, periodicTriggerService, logging
+import os,json, logging, urllib.parse, mimetypes, periodicTriggerService
+from pathlib import Path
 from v2Apis import router as v2_router
 from datetime import datetime
 from systemEntities import AnalyticsEventType, Payment, print
@@ -9,7 +10,7 @@ from assignmentOrchestrator import assignment_description,next_assignment_submis
 from exportService import fetch_symmetric_key, download_data
 from fastapi import FastAPI, BackgroundTasks, Request, Response, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, FileResponse
 from configurationService import domain_name, protocol, isDevMod
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -24,7 +25,7 @@ for handler in logging.getLogger().handlers:
     ))    
 
 STATIC_FILES_LIBRARY="./resources/static"
-
+STATIC_SUBMITTED_FILES_LIBRARY = Path("./data/submitted_files")
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory=STATIC_FILES_LIBRARY), name="static")
@@ -100,6 +101,77 @@ class SessionAuthenticationMiddleware(BaseHTTPMiddleware):
     
 app.add_middleware(SessionAuthenticationMiddleware)    
 
+def escape(s: str) -> str:
+    return urllib.parse.quote(s)
+
+@app.get("/submitted_tasks_browser/{path:path}", response_class=HTMLResponse)
+@app.get("/submitted_tasks_browser", response_class=HTMLResponse)
+async def browse(request: Request, path: str = ""):
+    user=request.state.authenticated_user
+    if user and user["paid_status"]:
+        full_path = STATIC_SUBMITTED_FILES_LIBRARY / user["hacker_id"] / path
+        
+        path_list=list(path.split('/'))
+        print(path_list)
+        prefix=""
+        if 0 in range(len(path_list)):
+            if path_list[0]=='':
+                prefix="Assignment_"
+            else:
+                path_list[0]="assignment_"+path_list[0]
+                prefix="Submission_"
+        if 1 in range(len(path_list)):
+            path_list[1]="submission_"+path_list[1]
+            prefix="Task_"
+        if 2 in range(len(path_list)):
+            path_list[2]="task_"+path_list[2]
+        path_str="/".join(path_list)  
+
+
+
+        if not full_path.exists():
+            return HTMLResponse(content="<h1>ERROR:: file not found</h1>", status_code=404)
+
+        # preview or download of the files user clickcs on
+        if full_path.is_file():
+            mime, _ = mimetypes.guess_type(str(full_path))
+            if mime and mime.startswith("text/"):
+                try:
+                    content = full_path.read_text(encoding="utf-8")
+                except Exception:
+                    content = "ERROR:: can't read file, wtf!"
+                return HTMLResponse(f"""
+                    <h1>📄 {path_str.rsplit('/', 1)[0]}/{full_path.name}</h1>
+                    <pre style="background:#f4f4f4; padding:1em; overflow-x:auto;">{content}</pre>
+                    <p><a href="/submitted_tasks_browser/{escape('/'.join(path.split('/')[:-1]))}">⬅️ Back</a></p>
+                """)
+            else:
+                return FileResponse(full_path)
+
+        # directory file list
+        items = sorted(full_path.iterdir(), key=lambda x: (not x.is_dir(), x.name.lower()))
+        list_items = []
+        
+        if path:
+            parent = '/'.join(path.strip('/').split('/')[:-1])
+            list_items.append(f'<li><a href="/submitted_tasks_browser/{escape(parent)}">⬅️ .. (up)</a></li>')
+
+        for item in items:
+            item_path = f"{path}/{item.name}".strip("/")
+            display_name = f"{prefix}{item.name}/" if item.is_dir() else item.name
+            list_items.append(f'<li><a href="/submitted_tasks_browser/{escape(item_path)}">{display_name}</a></li>')  
+
+        return HTMLResponse(f"""
+            <h1>📁 /{path_str}</h1>
+            <ul>
+                {''.join(list_items)}
+            </ul>
+        """)
+    
+    else:
+        assignments_page_html=get_template("redirect_to_enlistment_page")
+        return HTMLResponse(content=assignments_page_html, status_code=200)
+    
 @app.get("/about")
 def serve_about(request: Request):
     about_page_html = get_template("about_page") 
@@ -302,7 +374,8 @@ def serve_last_submission_result(request: Request):
                 submission_id=submission_result["submission_id"]
                 submission_result_for_view=submission_result
                 del submission_result_for_view["assignment_file_names"]
-                submission_result_for_view["result"]["collected_results"]=list(map(lambda task_result:{**task_result,"submitted_task_file":f"{protocol}://{domain_name}/submitted_task_file?assignment_id={assignment_id}&submission_id={submission_id}&task_id={task_result['task_idx']}"},submission_result_for_view["result"]["collected_results"]))
+                #submission_result_for_view["result"]["collected_results"]=list(map(lambda task_result:{**task_result,"submitted_task_file":f"{protocol}://{domain_name}/submitted_task_file?assignment_id={assignment_id}&submission_id={submission_id}&task_id={task_result['task_idx']}"},submission_result_for_view["result"]["collected_results"]))
+                submission_result_for_view["result"]["collected_results"]=list(map(lambda task_result:{**task_result,"submitted_task_files":f"{protocol}://{domain_name}/submitted_tasks_browser/{assignment_id}/{submission_id}/{task_result['task_idx']}"},submission_result_for_view["result"]["collected_results"]))
                 submission_result_content=f"data={json.dumps(submission_result_for_view)}"
                 assignment_id=submission_result["assignment_id"]
                 last_submission_results_page_html=last_submission_results_page_html\
