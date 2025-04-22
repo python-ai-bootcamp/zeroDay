@@ -5,6 +5,25 @@ export default function SCP({ args }: { args: string[]}) {
 
     const [scpContent, setScpContent] = useState<string>(''); // state to hold scp content
     const fileInputRef = useRef<HTMLInputElement>(null);
+    
+    const handleDirectoryPick = async () => {
+      try {
+        const dirHandle = await window.showDirectoryPicker();
+        const files: File[] = [];
+    
+        for await (const [name, handle] of dirHandle.entries()) {
+          if (handle.kind === 'file') {
+            const file = await handle.getFile();
+            file.webkitRelativePath = name; // optional: mimic relative path
+            files.push(file);
+          }
+        }
+    
+        handleDirectoryUpload(files as any); // pass as FileList-like
+      } catch (err) {
+        console.error('User cancelled or error occurred:', err);
+      }
+    };
 
     const handleDirectoryUpload = async (files: FileList | null) => {
         if (!files) return;
@@ -49,14 +68,17 @@ export default function SCP({ args }: { args: string[]}) {
   }, [args]);
 
     return (
-      <input
+      <div>
+        <input
         type="file"
         ref={fileInputRef}
         style={{ display: 'none' }}
-        webkitdirectory
+        webkitdirectory="true"
         directory=""
         multiple
-        onChange={(e) => handleDirectoryUpload(e.target.files)}
+        onChange={(e) => handleDirectoryPick(e.target.files)}
       />
+    </div>
+
     );
 }
