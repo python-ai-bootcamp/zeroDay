@@ -1,7 +1,7 @@
 from systemEntities import AnalyticsEventType, print
 from configurationService import domain_name, protocol, isDevMod
 from assignmentOrchestrator import AssignmentSubmission, assignment_description, submit_assignment, max_submission_for_assignment, next_assignment_submission, user_testing_in_progress, last_assignment_submission_result
-from fastapi import APIRouter, Request, BackgroundTasks
+from fastapi import APIRouter, Request, BackgroundTasks, File, Form, UploadFile
 
 router = APIRouter(prefix="/v2", tags=["v2"])
 
@@ -12,7 +12,7 @@ def serve_get_user(request: Request):
 @router.get("/assignments/current_state")
 def serve_assignements_current_state(request: Request):
     user=request.state.authenticated_user
-    if(user):
+    if user:
         next_assignment_submission_status=next_assignment_submission(user["hacker_id"])
         next_assignment_submission_status["max_submission_id"]=max_submission_for_assignment(next_assignment_submission_status["assignment_id"])
         return next_assignment_submission_status
@@ -28,17 +28,22 @@ def serve_assignements_submissions_test_status(request: Request):
         return {"status": "DONE"}
 
 
-def create_submit_assignment_background_task(assignment_submission: AssignmentSubmission):
-    submit_assignment(assignment_submission)
+def create_submit_assignment_background_task(tar_bytes: bytes, json_data: dict):
+    submit_assignment(tar_bytes, json_data)
 
-@router.post("/assignments/submission")
-def post_assignments_submission(assignment_submission: AssignmentSubmission, background_tasks: BackgroundTasks, request: Request):
-    user=request.state.authenticated_user
+@router.post("/assignments/{assignment_id}/submission")
+def post_assignments_submission(assignment_id: int, background_tasks: BackgroundTasks, request: Request, tar_file: UploadFile = File(...)):   
     print("entered v2 submit assignment")
-    assignment_submission.hacker_id=user["hacker_id"]
-    background_tasks.add_task(create_submit_assignment_background_task, assignment_submission)
-    print("assignment_submission added as background task")
-    return {"status":"SUBMITTED"}
+    user=request.state.authenticated_user
+    if user:
+        hacker_id=user["hacker_id"]
+        assignment_submission={"hacker_id":hacker_id, "assignment_id": assignment_id}
+        tar_bytes = tar_file.file.read() 
+        background_tasks.add_task(create_submit_assignment_background_task, tar_bytes, assignment_submission)
+        print(f"assignment_submission ({assignment_submission}) added as background task")
+        return {"status":"SUBMITTED"}
+    else:
+        return {"status":"ERROR", "ERROR_message":"user not found"}
 
 @router.get("/assignments/submission/last_result")
 def serve_assignments_submission_last_result(assignment_submission: AssignmentSubmission, background_tasks: BackgroundTasks, request: Request):

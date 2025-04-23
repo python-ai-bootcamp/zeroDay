@@ -178,8 +178,8 @@ def max_submission_for_assignment(assignment_id:int):
     else:
         return DEFAULT_MAX_SUBMISSIONS
 @app.post("/submit")
-def submit_assignment(tar_bytes: bytes, json_data: str = Form(...)):
-    assignment_submission=AssignmentSubmission.model_validate(json.loads(json_data))
+def submit_assignment(tar_bytes: bytes, json_data: dict ):
+    assignment_submission=AssignmentSubmission.model_validate(json_data)
     assignment_mapper=load_assignment_mapper()
     if not str(assignment_submission.assignment_id) in assignment_mapper:
         return {"status":"ERROR","ERROR_message":f"missing assignment_id={assignment_submission.assignment_id} in assignment_mapper file"}

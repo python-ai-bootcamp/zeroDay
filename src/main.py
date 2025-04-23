@@ -39,6 +39,7 @@ templates_processors={
     "contact_page":                             lambda: open(os.path.join("resources","templates","contact.html"), "r").read(),
     "assignments_page":                         lambda: open(os.path.join("resources","templates","assignments.html"), "r").read(),
     "assignment_submission_page":               lambda: open(os.path.join("resources","templates","assignment_submission.html"), "r").read(),
+    "assignment_submission_v2test_page":        lambda: open(os.path.join("resources","templates","assignment_submission_v2test.html"), "r").read(),
     "last_submission_results_page":             lambda: open(os.path.join("resources","templates","last_submission_results.html"), "r").read(),
     "submitted_task_file_page":                 lambda: open(os.path.join("resources","templates","submitted_task_file.html"), "r").read(),
     "last_submission_results_no_results_page":  lambda: open(os.path.join("resources","templates","last_submission_results_no_results.html"), "r").read(),
@@ -351,6 +352,26 @@ def serve_assignment_submission(request: Request):
         assignment_submission_page_html=get_template("redirect_to_enlistment_page")
     return HTMLResponse(content=assignment_submission_page_html, status_code=200)
 
+@app.get("/assignment_submission_v2test")
+def serve_assignment_submission_v2test(request: Request):
+    user=request.state.authenticated_user 
+    assignment_submission_v2test_page_html = get_template("assignment_submission_v2test_page")
+    if user and user["paid_status"]:
+        next_assignment_id=next_assignment_submission(user["hacker_id"])["assignment_id"]
+        if user_testing_in_progress(user["hacker_id"]):
+            print(f'user {user["hacker_id"]} is locked for testing')
+            assignment_submission_v2test_page_html=get_template("redirect_to_last_submission_result_page")
+        else:           
+            print(f'user {user["hacker_id"]} is not locked for testing')
+            task_count=assignment_task_count(next_assignment_id)["task_count"]
+            assignment_submission_v2test_page_html=assignment_submission_v2test_page_html\
+            .replace("$${{HACKER_ID}}$$",user["hacker_id"])\
+            .replace("$${{ASSIGNMENT_ID}}$$",str(next_assignment_id))\
+            .replace("$${{MUMBER_OF_TASKS_IN_ASSIGNMENT}}$$",str(task_count))
+    else:
+        assignment_submission_v2test_page_html=get_template("redirect_to_enlistment_page")
+    return HTMLResponse(content=assignment_submission_v2test_page_html, status_code=200)
+
 @app.get("/last_submission_result")
 def serve_last_submission_result(request: Request):
     user=request.state.authenticated_user 
@@ -439,13 +460,14 @@ def download_data_endpoint():
     return download_data()
 
 
-def create_submit_assignment_background_task(tar_bytes: bytes, json_data: str = Form(...)):
+def create_submit_assignment_background_task(tar_bytes: bytes, json_data: dict):
     submit_assignment(tar_bytes, json_data)
 
 @app.post("/submit_assignment")
 def post_submit_assignment(background_tasks: BackgroundTasks, tar_file: UploadFile = File(...), json_data: str = Form(...)):
     print("entered submit assignment")
     tar_bytes = tar_file.file.read() 
+    json_data = json.loads(json_data)
     background_tasks.add_task(create_submit_assignment_background_task, tar_bytes, json_data)
     print("assignment_submission added as background task")
     return {"status":"SUBMITTED"}
