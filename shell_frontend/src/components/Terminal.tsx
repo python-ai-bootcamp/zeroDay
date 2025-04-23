@@ -1,37 +1,14 @@
 import React, { useState, useEffect} from 'react';
 import { useCommandExecutor } from '../hooks/useCommandExecutor'; // import command executor hook
-import { UserData } from '../types/types'; // import UserData type
-
+import { useUser } from '../hooks/userContext'; 
 
 const Terminal = () => {
   const initial_message = '🖥️ Welcome to Zero Day Terminal OS, \nplease enter `help` for a list of commands';
   const [command, setCommand] = useState('');
   const [history, setHistory] = useState<string[]>([initial_message]);
   const [hidePrompt, setHidePrompt] = useState(false); // state to control prompt visibility
-  const executeCommand = useCommandExecutor(setHistory, setHidePrompt, hidePrompt);
-
-  
-  const [userData, setUserData] = useState<UserData | null>(null);
-  
-  useEffect(() => {
-
-      const fetchUserData = async () => {
-        try {
-          const response = await fetch('http://127.0.0.1:8000/v2/user?hacker_id=5r4xxv'); // replace with your actual endpoint
-          if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-          }
-          const data = await response.json();
-          console.log(data); // Log the response data
-          setUserData(data);
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-        }
-      };
-
-      fetchUserData();
-    
-  }, []);
+  const user = useUser();
+  const executeCommand = useCommandExecutor(setHistory, setHidePrompt, hidePrompt, user);
 
   const handleCommand = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && command.trim()) {
@@ -56,7 +33,7 @@ const Terminal = () => {
       {/* Command prompt */}
       {!hidePrompt && ( 
         <div className="flex">
-        {userData ? <span>{(userData.name).replace(/ +/g,".")}@zeroDay$&nbsp;</span> : <span>root@zeroDay$&nbsp;</span>}
+        {user ? <span>{user.name_nospace}@zeroDay$&nbsp;</span> : <span>root@zeroDay$&nbsp;</span>}
         <input
           type="text"
           value={command}
