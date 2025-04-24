@@ -1,16 +1,17 @@
 import React, { useState, useRef, useEffect} from 'react';
 import JSZip from 'jszip';
-import { useUser } from '../../hooks/userContext'; 
+import { useApiUrl } from "../../hooks/baseUrlContext.tsx";
 
 export default function SCP({ args }: { args: string[]}) {
 
     const [scpContent, setScpContent] = useState<string>(''); // state to hold scp content
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const user = useUser();
-    
+    const current_status_url=useApiUrl()("/v2/assignments/current_state")
+    const submit_assignment_url_template=useApiUrl()("/assignments/$${{ASSIGNMENT_ID}}$$/submission")
     const handleDirectoryPick = async () => {
+      console.log("handleDirectoryPick:: entered")
       try {
-        const dirHandle = await window.showDirectoryPicker();
+        const dirHandle = await window.showDirectoryPicker();       
         const files: File[] = [];
     
         for await (const [name, handle] of dirHandle.entries()) {
@@ -20,7 +21,6 @@ export default function SCP({ args }: { args: string[]}) {
             files.push(file);
           }
         }
-    
         handleDirectoryUpload(files as any); // pass as FileList-like
       } catch (err) {
         console.error('User cancelled or error occurred:', err);
@@ -45,7 +45,11 @@ export default function SCP({ args }: { args: string[]}) {
         formData.append('file', blob, 'directory.zip');
     
         try {
-          const res = await fetch('http://localhost:8000/upload', {
+          const user_status_res= await fetch(current_status_url)
+            .then(res=>res.json())
+          const submit_assignment_url=submit_assignment_url_template.replace("$${{ASSIGNMENT_ID}}$$",user_status_res.assignment_id)
+          console.log("submitting file to following url::", submit_assignment_url)
+          const res = await fetch(submit_assignment_url, {
             method: 'POST',
             body: formData,
           });
