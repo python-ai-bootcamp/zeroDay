@@ -8,7 +8,7 @@ const Terminal = () => {
   const [history, setHistory] = useState<string[]>([initial_message]);
   const [hidePrompt, setHidePrompt] = useState(false); // state to control prompt visibility
   const user = useUser();
-  const executeCommand = useCommandExecutor(setHistory, setHidePrompt, hidePrompt, user);
+  const executeCommand = useCommandExecutor(setHistory, setHidePrompt, hidePrompt);
 
   const handleCommand = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && command.trim()) {

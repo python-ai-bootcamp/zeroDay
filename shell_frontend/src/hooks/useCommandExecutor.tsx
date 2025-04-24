@@ -1,12 +1,13 @@
 import React from 'react';
 import commandRegistry from '../commands/commandRegistry'; // import command registry
-import {UserData} from "../types/types.tsx"
+import { useUser } from '../hooks/userContext'; 
 
-export function useCommandExecutor(setHistory: React.Dispatch<React.SetStateAction<(string | JSX.Element)[]>>, setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>, hidePrompt: boolean, user:UserData|null) {
+export function useCommandExecutor(setHistory: React.Dispatch<React.SetStateAction<(string | JSX.Element)[]>>, setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>, hidePrompt: boolean) {
+  const user = useUser();
   const executeCommand = (input: string) => {
+    
     const [cmd, ...args] = input.trim().split(' '); // split command and args
     const commandExecutor = commandRegistry[cmd];
-    const userName=user?.name_nospace ?? false
     if (commandExecutor) {
       console.log('commandExecutor', commandExecutor)
       const result = commandExecutor(args, setHistory, setHidePrompt, hidePrompt)
@@ -14,10 +15,10 @@ export function useCommandExecutor(setHistory: React.Dispatch<React.SetStateActi
       
       if (typeof result === 'string' || React.isValidElement(result)) {
         console.log('result in condition', result)
-        setHistory(prev => [...prev, `${userName}@zeroDay$ ${input}`, result]); // show result
+        setHistory(prev => [...prev, `${user?.name_nospace}@zeroDay$ ${input}`, result]); // show result
       }
     } else {
-      setHistory(prev => [...prev, `${userName}@zeroDay$ ${input}`, `Command not found: ${cmd}`]); // show error
+      setHistory(prev => [...prev, `${user?.name_nospace}@zeroDay$ ${input}`, `Command not found: ${cmd}`]); // show error
     }
   };
 
