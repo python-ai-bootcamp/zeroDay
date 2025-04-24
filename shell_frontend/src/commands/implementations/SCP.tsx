@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect} from 'react';
 import JSZip from 'jszip';
+import { useUser } from '../../hooks/userContext'; 
 
 export default function SCP({ args }: { args: string[]}) {
 
     const [scpContent, setScpContent] = useState<string>(''); // state to hold scp content
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const user = useUser();
     
     const handleDirectoryPick = async () => {
       try {

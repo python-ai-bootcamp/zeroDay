@@ -1,15 +1,16 @@
 import React, { useState, useEffect} from 'react';
 import {AssignmentStatus} from '../types'; // import AssignmentStatus type
-
+import { useUser } from '../../hooks/userContext'; 
 
 export default function Status() {
-    const [status, setStatus] = useState<AssignmentStatus | null>(null); // state to hold status message
-
+  const user = useUser();
+  const [status, setStatus] = useState<AssignmentStatus | null>(null); // state to hold status message
+  
   useEffect(() => {
 
       const fetchStatus = async () => {
         try {
-          const response = await fetch('http://127.0.0.1:8000/v2/assignments/current_state?hacker_id=5r4xxv'); // replace with your actual endpoint
+          const response = await fetch(`http://127.0.0.1:8000/v2/assignments/current_state?hacker_id=${user["hacker_id"]}`); // replace with your actual endpoint
           if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
           }
