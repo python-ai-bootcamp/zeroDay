@@ -6,7 +6,7 @@ from pathlib import Path
 from threading import Lock, Semaphore, Thread
 from systemEntities import User, NotificationType, print
 from userService import get_user
-import tarfile
+import zipfile
 import sandboxService, mailService
 import json, os, sys, base64,functools, importlib.util, time, datetime
 
@@ -155,15 +155,15 @@ def previous_assignment_passed(assignment_submission: AssignmentSubmission, data
         else:
             return assignment_passed(hacker[str(assignment_submission.assignment_id-1)])
 
-def save_assignment_files(assignment_submission: AssignmentSubmission, tar_bytes:bytes):
+def save_assignment_files(assignment_submission: AssignmentSubmission, zip_bytes:bytes):
     assignment_submission_directory=os.path.join(SUBMITTED_FILES_DIR,assignment_submission.hacker_id,str(assignment_submission.assignment_id),str(assignment_submission.submission_id))
     os.makedirs(assignment_submission_directory,exist_ok=True)
-    temp_tar_path=os.path.join(assignment_submission_directory,"submitted_tar.tar.gz")
-    with open(temp_tar_path, "wb") as out_file: 
-        out_file.write(tar_bytes)
-    with tarfile.open(temp_tar_path, "r:gz") as tar:
-        tar.extractall(path=assignment_submission_directory)
-    os.remove(temp_tar_path)
+    temp_zip_path=os.path.join(assignment_submission_directory,"submitted_file.zip")
+    with open(temp_zip_path, "wb") as out_file: 
+        out_file.write(zip_bytes)
+    with zipfile.ZipFile(temp_zip_path, "r") as zip_ref:
+        zip_ref.extractall(path=assignment_submission_directory)
+    os.remove(temp_zip_path)
     assignment_submission_task_directories=[p.name for p in Path(assignment_submission_directory).iterdir() if p.is_dir()]
     return [{"task_directory":task_directory, "task_file":"main.py"} for task_directory in assignment_submission_task_directories]
 
@@ -178,7 +178,7 @@ def max_submission_for_assignment(assignment_id:int):
     else:
         return DEFAULT_MAX_SUBMISSIONS
 @app.post("/submit")
-def submit_assignment(tar_bytes: bytes, json_data: dict ):
+def submit_assignment(zip_bytes: bytes, json_data: dict ):
     assignment_submission=AssignmentSubmission.model_validate(json_data)
     assignment_mapper=load_assignment_mapper()
     if not str(assignment_submission.assignment_id) in assignment_mapper:
@@ -199,14 +199,14 @@ def submit_assignment(tar_bytes: bytes, json_data: dict ):
     if previous_assignment_passed(assignment_submission, data):
         assignment_submission.submission_id = 1 #in case no previous submission, then submission_id=1, will change to calculated value only if exisitng submition_id found
         if(not assignment_submission.hacker_id in data):
-            assignment_submission.assignment_file_names=save_assignment_files(assignment_submission, tar_bytes)
+            assignment_submission.assignment_file_names=save_assignment_files(assignment_submission, zip_bytes)
             assignment_submission.result = check_assignment_submission(assignment_submission)
             data[assignment_submission.hacker_id]={assignment_submission.assignment_id:[assignment_submission.model_dump()]}      
         else:
             if(str(assignment_submission.assignment_id) in data[assignment_submission.hacker_id]):
                 assignment_submission.submission_id = len(data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)])+1                
                 if(assignment_submission.submission_id<=max_submissions):
-                    assignment_submission.assignment_file_names=save_assignment_files(assignment_submission, tar_bytes)
+                    assignment_submission.assignment_file_names=save_assignment_files(assignment_submission, zip_bytes)
                     assignment_submission.result = check_assignment_submission(assignment_submission)
                     data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)].append(assignment_submission.model_dump())
                 else:
@@ -216,7 +216,7 @@ def submit_assignment(tar_bytes: bytes, json_data: dict ):
                     submision_processing_concurrency_semaphore.release()
                     return assignment_submission.model_dump()
             else:
-                assignment_submission.assignment_file_names=save_assignment_files(assignment_submission, tar_bytes)
+                assignment_submission.assignment_file_names=save_assignment_files(assignment_submission, zip_bytes)
                 assignment_submission.result = check_assignment_submission(assignment_submission)
                 data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)]=[assignment_submission.model_dump()]
         save_data(data)

@@ -27,19 +27,18 @@ def serve_assignements_submissions_test_status(request: Request):
     else:
         return {"status": "DONE"}
 
-
-def create_submit_assignment_background_task(tar_bytes: bytes, json_data: dict):
-    submit_assignment(tar_bytes, json_data)
+def create_submit_assignment_background_task(zip_bytes: bytes, json_data: dict):
+    submit_assignment(zip_bytes, json_data)
 
 @router.post("/assignments/{assignment_id}/submission")
-def post_assignments_submission(assignment_id: int, background_tasks: BackgroundTasks, request: Request, tar_file: UploadFile = File(...)):   
+def post_assignments_submission(assignment_id: int, background_tasks: BackgroundTasks, request: Request, zip_file: UploadFile = File(...)):   
     print("entered v2 submit assignment")
     user=request.state.authenticated_user
     if user:
         hacker_id=user["hacker_id"]
         assignment_submission={"hacker_id":hacker_id, "assignment_id": assignment_id}
-        tar_bytes = tar_file.file.read() 
-        background_tasks.add_task(create_submit_assignment_background_task, tar_bytes, assignment_submission)
+        zip_bytes = zip_file.file.read() 
+        background_tasks.add_task(create_submit_assignment_background_task, zip_bytes, assignment_submission)
         print(f"assignment_submission ({assignment_submission}) added as background task")
         return {"status":"SUBMITTED"}
     else:
