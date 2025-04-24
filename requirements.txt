@@ -11,3 +11,4 @@ brevo-python
 mailjet-rest
 weasyprint
 python-multipart
+openai
