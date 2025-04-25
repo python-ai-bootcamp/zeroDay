@@ -1,7 +1,11 @@
 {
     "1":{
         "description":"description_1.md",
-        "validators":["validate_assignment_1_task_3.py", "validate_assignment_1_task_3.py", "validate_assignment_1_task_3.py"]
+        "validators":[
+            "validator_example_04__noDocker__pureCode__llmServiceApi_basicLlmValidation.py", 
+            "validator_example_04__noDocker__pureCode__llmServiceApi_basicLlmValidation.py", 
+            "validator_example_04__noDocker__pureCode__llmServiceApi_basicLlmValidation.py"
+        ]
     },
     "2":{
         "description":"description_2.md",
