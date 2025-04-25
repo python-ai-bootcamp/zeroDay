@@ -1,6 +1,6 @@
 from enum import StrEnum
 import time, os, json, pathlib, re
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Tuple, Optional
 from collections import OrderedDict
 from pydantic import BaseModel
 from systemEntities import AnalyticsEventType, print
@@ -16,9 +16,11 @@ for enum_entry in AnalyticsEventType:
 class AnalyticsEvent():
     analytic_event_type: AnalyticsEventType
     epoch_time: int
-    def __init__(self, analytic_event_type:AnalyticsEventType):
+    extra_props: dict
+    def __init__(self, analytic_event_type:AnalyticsEventType, extra_props: Optional[dict] = None):
         self.analytic_event_type = analytic_event_type
         self.epoch_time = int(time.time_ns()/1000000)
+        self.extra_props = extra_props or {}
         #self.persist()
     def __str__(self):
         return f"analytic_event_type::'{self.analytic_event_type}', epoch_time::'{self.epoch_time}'"
@@ -52,7 +54,23 @@ class UserPaidAnalyticsEvent(AnalyticsEvent):
         self.advertise_code=advertise_code
         self.advertise_code_sub_category=advertise_code_sub_category
         super().__init__(AnalyticsEventType.USER_PAID)
-    
+
+class UserViewedAssignmentAnalyticsEvent(AnalyticsEvent):
+    assignment_id:int
+    hacker_id:str
+    def __init__(self,assignment_id:int, hacker_id:str):
+        self.assignment_id=assignment_id
+        self.hacker_id=hacker_id
+        super().__init__(AnalyticsEventType.USER_VIEWED_ASSIGNMENT)
+  
+class UserDownloadedAssignmentAnalyticsEvent(AnalyticsEvent):
+    assignment_id:int
+    hacker_id:str
+    def __init__(self,assignment_id:int, hacker_id:str):
+        self.assignment_id=assignment_id
+        self.hacker_id=hacker_id
+        super().__init__(AnalyticsEventType.USER_DOWNLOADED_ASSIGNMENT)
+        
 class UserSubmittedAssignmentAnalyticsEvent(AnalyticsEvent):
     assignment_id:int
     submisison_id:int

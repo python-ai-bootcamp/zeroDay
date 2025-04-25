@@ -148,7 +148,17 @@
     <script src="https://cdn.jsdelivr.net/npm/@webcomponents/webcomponentsjs@2/webcomponents-loader.min.js"></script>
     <!-- Load the element definition -->
     <script type="module" src="https://cdn.jsdelivr.net/gh/zerodevx/zero-md@1/src/zero-md.min.js"></script>
-
+    <script>
+        assignment_id=$${{CURRENT_ASSIGNMENT_ID}}$$
+        fetch(`/v2/analytics/event/USER_VIEWED_ASSIGNMENT`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({assignment_id: assignment_id})
+            })
+            .then(res => res.json())
+            .then(data => console.log(data))
+        
+    </script>
 </head>
 <body>
 

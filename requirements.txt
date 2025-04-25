@@ -11,4 +11,5 @@ brevo-python
 mailjet-rest
 weasyprint
 python-multipart
+jszip
 openai

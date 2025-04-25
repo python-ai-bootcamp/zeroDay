@@ -327,6 +327,7 @@ def serve_assignments(request: Request):
             .replace("$${{HACKER_ID}}$$",user["hacker_id"])\
             .replace("$${{ASSIGNMENT_DESCRIPTION_CONTENT}}$$",current_assignment_description)\
             .replace("$${{TITLE}}$$",assignment_title)\
+            .replace("$${{CURRENT_ASSIGNMENT_ID}}$$",str(current_assignment_id))\
             .replace("$${{BREACH_MAX_ATTEMPT_MESSAGE}}$$",max_allowed_submissions_breach_message)\
             .replace("$${{SUBMIT_ASSIGNMENT_BUTTON_VISIBILITY}}$$",submit_assignment_button_visibility)
     else:

@@ -1,3 +1,5 @@
+from typing import Any, Dict
+from analyticsService import insert_analytic_event, UserViewedAssignmentAnalyticsEvent, UserDownloadedAssignmentAnalyticsEvent
 from systemEntities import AnalyticsEventType, print
 from configurationService import domain_name, protocol, isDevMod
 from assignmentOrchestrator import AssignmentSubmission, assignment_description, submit_assignment, max_submission_for_assignment, next_assignment_submission, user_testing_in_progress, last_assignment_submission_result
@@ -67,3 +69,23 @@ def serve_assignments_description(request: Request):
         current_assignment_id=next_assignment["assignment_id"]
         current_assignment_description=assignment_description(current_assignment_id)
         return current_assignment_description
+
+@router.post("/analytics/event/{analytics_event_type}")
+def insert_analytics_event_by_api(analytics_event_type: str, request: Request, data: Dict[str, Any]):
+    user=request.state.authenticated_user
+    print(f"Handling {analytics_event_type} analytics event received via API")
+    if analytics_event_type in AnalyticsEventType.__members__:
+        match AnalyticsEventType[analytics_event_type]:
+            case AnalyticsEventType.USER_VIEWED_ASSIGNMENT:
+                data["hacker_id"]=user["hacker_id"]
+                insert_analytic_event(UserViewedAssignmentAnalyticsEvent(**data))
+            case AnalyticsEventType.USER_DOWNLOADED_ASSIGNMENT:
+                data["hacker_id"]=user["hacker_id"]
+                insert_analytic_event(UserDownloadedAssignmentAnalyticsEvent(**data))
+            case _:
+                return {"status": "ERROR", "ERROR_message":f"'{analytics_event_type}' event type is valid AnalyticsEventType but was still not implemented for API usage"}
+        return {"status": "SUBMITTED"}
+    else:
+        return {"status": "ERROR", "ERROR_message":f"'{analytics_event_type}' event type is not member of AnalyticsEventType"}
+
+#UserViewedAssignmentAnalyticsEvent, UserDownloadedAssignmentAnalyticsEvent
