@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, Form, UploadFile
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
@@ -6,9 +6,11 @@ from pathlib import Path
 from threading import Lock, Semaphore, Thread
 from systemEntities import User, NotificationType, print
 from userService import get_user
+from analyticsService import get_assignment_event_start_time
 import zipfile
 import sandboxService, mailService
-import json, os, sys, base64,functools, importlib.util, time, datetime
+import json, os, sys,functools, importlib.util, time, datetime
+
 
 app = FastAPI()
 
@@ -47,6 +49,7 @@ class AssignmentSubmission(BaseModel):
     submission_id: Optional[int] = None
     result: Optional[dict] = None
     assignment_file_names:  Optional[List[dict]] = None
+    assignment_time_to_submission: Optional[int] = None
 
 def load_data(assignment_submission: AssignmentSubmission =None):
     if os.path.exists(DATA_FILE_DIRECTORY):
@@ -179,7 +182,8 @@ def max_submission_for_assignment(assignment_id:int):
         return DEFAULT_MAX_SUBMISSIONS
 @app.post("/submit")
 def submit_assignment(zip_bytes: bytes, json_data: dict ):
-    assignment_submission=AssignmentSubmission.model_validate(json_data)
+    assignment_submission:AssignmentSubmission=AssignmentSubmission.model_validate(json_data)
+    assignment_submission.assignment_time_to_submission=int(time.time_ns()/1000000)-get_assignment_event_start_time(assignment_submission.hacker_id)
     assignment_mapper=load_assignment_mapper()
     if not str(assignment_submission.assignment_id) in assignment_mapper:
         return {"status":"ERROR","ERROR_message":f"missing assignment_id={assignment_submission.assignment_id} in assignment_mapper file"}
@@ -195,40 +199,38 @@ def submit_assignment(zip_bytes: bytes, json_data: dict ):
     if not (assignment_submission.hacker_id in lockRepository):
         lockRepository[assignment_submission.hacker_id]=Lock()
     lockRepository[assignment_submission.hacker_id].acquire()
-    data = load_data(assignment_submission)
-    if previous_assignment_passed(assignment_submission, data):
-        assignment_submission.submission_id = 1 #in case no previous submission, then submission_id=1, will change to calculated value only if exisitng submition_id found
-        if(not assignment_submission.hacker_id in data):
-            assignment_submission.assignment_file_names=save_assignment_files(assignment_submission, zip_bytes)
-            assignment_submission.result = check_assignment_submission(assignment_submission)
-            data[assignment_submission.hacker_id]={assignment_submission.assignment_id:[assignment_submission.model_dump()]}      
-        else:
-            if(str(assignment_submission.assignment_id) in data[assignment_submission.hacker_id]):
-                assignment_submission.submission_id = len(data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)])+1                
-                if(assignment_submission.submission_id<=max_submissions):
-                    assignment_submission.assignment_file_names=save_assignment_files(assignment_submission, zip_bytes)
-                    assignment_submission.result = check_assignment_submission(assignment_submission)
-                    data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)].append(assignment_submission.model_dump())
-                else:
-                    assignment_submission.result={"status":"ERROR","ERROR_message":f"cannot test assignment (assignment_id={str(assignment_submission.assignment_id)}) because submission attempts ({str(assignment_submission.submission_id)}) passed the allowed max_submissions (max_submissions={max_submissions})"}
-                    print(assignment_submission.result)
-                    lockRepository[assignment_submission.hacker_id].release()
-                    submision_processing_concurrency_semaphore.release()
-                    return assignment_submission.model_dump()
-            else:
+    try:
+        data = load_data(assignment_submission)
+        if previous_assignment_passed(assignment_submission, data):
+            assignment_submission.submission_id = 1 #in case no previous submission, then submission_id=1, will change to calculated value only if exisitng submition_id found
+            if(not assignment_submission.hacker_id in data):
                 assignment_submission.assignment_file_names=save_assignment_files(assignment_submission, zip_bytes)
                 assignment_submission.result = check_assignment_submission(assignment_submission)
-                data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)]=[assignment_submission.model_dump()]
-        save_data(data)
-    else:
-        assignment_submission.result={"status":"ERROR","ERROR_message":f"cannot test assignment (assignment_id={str(assignment_submission.assignment_id)}) until previous assignment (assignment_id={str(assignment_submission.assignment_id-1)}) passes successfully"}
-        lockRepository[assignment_submission.hacker_id].release()
-        submision_processing_concurrency_semaphore.release()
+                data[assignment_submission.hacker_id]={assignment_submission.assignment_id:[assignment_submission.model_dump()]}      
+            else:
+                if(str(assignment_submission.assignment_id) in data[assignment_submission.hacker_id]):
+                    assignment_submission.submission_id = len(data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)])+1                
+                    if(assignment_submission.submission_id<=max_submissions):
+                        assignment_submission.assignment_file_names=save_assignment_files(assignment_submission, zip_bytes)
+                        assignment_submission.result = check_assignment_submission(assignment_submission)
+                        data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)].append(assignment_submission.model_dump())
+                    else:
+                        assignment_submission.result={"status":"ERROR","ERROR_message":f"cannot test assignment (assignment_id={str(assignment_submission.assignment_id)}) because submission attempts ({str(assignment_submission.submission_id)}) passed the allowed max_submissions (max_submissions={max_submissions})"}
+                        print(assignment_submission.result)
+                        return assignment_submission.model_dump()
+                else:
+                    assignment_submission.assignment_file_names=save_assignment_files(assignment_submission, zip_bytes)
+                    assignment_submission.result = check_assignment_submission(assignment_submission)
+                    data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)]=[assignment_submission.model_dump()]
+            save_data(data)
+        else:
+            assignment_submission.result={"status":"ERROR","ERROR_message":f"cannot test assignment (assignment_id={str(assignment_submission.assignment_id)}) until previous assignment (assignment_id={str(assignment_submission.assignment_id-1)}) passes successfully"}
+            return assignment_submission.model_dump()
+        send_mail_after_assignment_submission(assignment_submission)
         return assignment_submission.model_dump()
-    lockRepository[assignment_submission.hacker_id].release()
-    submision_processing_concurrency_semaphore.release()
-    send_mail_after_assignment_submission(assignment_submission)
-    return assignment_submission.model_dump()
+    finally:
+        lockRepository[assignment_submission.hacker_id].release()
+        submision_processing_concurrency_semaphore.release()        
 
 def send_mail_after_assignment_submission(assignment_submission:AssignmentSubmission):
     user=User.model_validate(get_user(assignment_submission.hacker_id)["user"])

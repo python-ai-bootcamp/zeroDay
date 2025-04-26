@@ -4,10 +4,11 @@ from typing import Any, Dict, Tuple, Optional
 from collections import OrderedDict
 from pydantic import BaseModel
 from systemEntities import AnalyticsEventType, print
+from threading import Lock
 
 ANALYTICS_DATA_MEMOIZATION_MAX_ITEMS=10
 analytics_data_memoization_state=OrderedDict()
-
+_persist_lock = Lock()
 
 for enum_entry in AnalyticsEventType:
     #print(f"enum_entry.name::'{enum_entry.name}', enum_entry.value::'{enum_entry.value}'")
@@ -89,20 +90,26 @@ class UserPassedAssignmentAnalyticsEvent(AnalyticsEvent):
 
 persistance_queues:Dict[str,list[AnalyticsEvent]] = { k:[] for (k,v) in AnalyticsEventType.__members__.items()}
 
-def insert_analytic_event(event:AnalyticsEvent):
+def insert_analytic_event(event:AnalyticsEvent, syncMode:bool=True):
     persistance_queues[event.analytic_event_type.name].append(event)
+    if syncMode:
+        persist_analytics_events()
 
 def persist_analytics_events():
-    for (name,value) in AnalyticsEventType.__members__.items():
-        persistance_queue:list[AnalyticsEvent]=persistance_queues[name]            
-        if len(persistance_queue)>0:
-            print(f"analyticsService.persist_analytics_events:: persisting following queue '{name}' with {str(len(persistance_queue))} items")
-            from_time=persistance_queue[0].epoch_time
-            to_time=persistance_queue[-1].epoch_time
-            data_file=os.path.join(value,f"from_{str(from_time)}_to_{str(to_time)}.json")
-            with open(data_file, 'w') as f:
-                json.dump([x.serialize() for x in persistance_queue],f)
-            persistance_queue.clear()
+    _persist_lock.acquire()
+    try:
+        for (name,value) in AnalyticsEventType.__members__.items():
+            persistance_queue:list[AnalyticsEvent]=persistance_queues[name]            
+            if len(persistance_queue)>0:
+                print(f"analyticsService.persist_analytics_events:: persisting following queue '{name}' with {str(len(persistance_queue))} items")
+                from_time=persistance_queue[0].epoch_time
+                to_time=persistance_queue[-1].epoch_time
+                data_file=os.path.join(value,f"from_{str(from_time)}_to_{str(to_time)}.json")
+                with open(data_file, 'w') as f:
+                    json.dump([x.serialize() for x in persistance_queue],f)
+                persistance_queue.clear()
+    finally:
+        _persist_lock.release()
 
 def filter_relevant_time_ranges(file_times_list:list[Tuple[int, int]], range_query:Tuple[int, int])->list[Tuple[int, int]]:   
     return [time_range for time_range in file_times_list if range_query[0]<=time_range[0]<=range_query[1] or range_query[0]<=time_range[1]<=range_query[1]]
@@ -209,6 +216,7 @@ def get_group_by_fields(from_time:int, to_time:int, analytics_event_type: Analyt
     #print("group_by_fields::unique_field_names=",unique_field_names)
     return list(unique_field_names)
 
-#grouped_data,time_buckets=group_data(from_time=0, to_time=float('inf'), group_by_time_bucket_sec=30, group_by_field="advertise_code", analytics_event_type=AnalyticsEventType.CHALLENGE_TRAFFIC)   
-#plotly_traces=convert_group_data_to_plotly_traces(grouped_data, time_buckets)
-#print(json.dumps(plotly_traces))
+def get_assignment_event_start_time(hacker_id:str, analytics_event_type:AnalyticsEventType=AnalyticsEventType.USER_VIEWED_ASSIGNMENT):
+    data=fetch_analytics_data(0, 99999999999999, analytics_event_type)
+    data=filter_data_by_filter_field(data=data, filter_field_name="hacker_id", filter_field_value=hacker_id)
+    return data[0]["epoch_time"]

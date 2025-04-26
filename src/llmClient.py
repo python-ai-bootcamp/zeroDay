@@ -1,12 +1,4 @@
 from openai import OpenAI
-import inspect
-import sys
-
-
-
-if __name__ == "__main__":
-    print(inspect.getsource(sys.modules[__name__]))
-
 
 API_KEY_FILE="./resources/keys/private_keys/.openAI_api_key.txt"
 
@@ -16,9 +8,10 @@ with open(API_KEY_FILE,"r") as f:
 client = OpenAI(
   api_key=api_key
 )
+open_ai_client=OpenAI(api_key=api_key)
 
 def getClient():
-  return OpenAI(api_key=api_key)
+  return open_ai_client
 
 def basicPromptResponse(prompt:str):
    try:
@@ -31,5 +24,5 @@ def basicPromptResponse(prompt:str):
         ]
       )
       return completion.choices[0].message.content
-   except:
+   except Exception as e:
       print("unexpected response from client.chat.completions.create")
