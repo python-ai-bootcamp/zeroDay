@@ -1,7 +1,8 @@
 from systemEntities import AnalyticsEventType, print
 from configurationService import domain_name, protocol, isDevMod
 from assignmentOrchestrator import AssignmentSubmission, assignment_description, submit_assignment, max_submission_for_assignment, next_assignment_submission, user_testing_in_progress, last_assignment_submission_result
-from fastapi import APIRouter, Request, BackgroundTasks
+from fastapi import FastAPI, APIRouter, Request, BackgroundTasks, Query
+from fastapi import File, UploadFile
 
 router = APIRouter(prefix="/v2", tags=["v2"])
 
@@ -31,9 +32,27 @@ def serve_assignements_submissions_test_status(request: Request):
 def create_submit_assignment_background_task(assignment_submission: AssignmentSubmission):
     submit_assignment(assignment_submission)
 
+@router.post("/assignments/submission2")
+async def post_assignments_submission_file( request: Request, file: UploadFile = File(...)):
+    breakpoint()
+    user = request.state.authenticated_user
+    contents = await file.read()
+    breakpoint()
+    # You can save it temporarily, extract it, validate, or process as needed
+    with open(f"/tmp/{file.filename}", "wb") as f:
+        f.write(contents)
+
+    # Optionally: parse and build `AssignmentSubmission` manually
+    # submit_assignment(assignment_submission)
+
+    print(f"Received file {file.filename} from user {user['hacker_id']}")
+    return {"status": "SUBMITTED"}
+
+
 @router.post("/assignments/submission")
 def post_assignments_submission(assignment_submission: AssignmentSubmission, background_tasks: BackgroundTasks, request: Request):
     user=request.state.authenticated_user
+    breakpoint()
     print("entered v2 submit assignment")
     assignment_submission.hacker_id=user["hacker_id"]
     background_tasks.add_task(create_submit_assignment_background_task, assignment_submission)

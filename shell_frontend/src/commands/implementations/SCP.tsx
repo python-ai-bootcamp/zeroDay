@@ -43,7 +43,7 @@ export default function SCP({ args }: { args: string[]}) {
         formData.append('file', blob, 'directory.zip');
     
         try {
-          const res = await fetch('http://localhost:8000/upload', {
+          const res = await fetch('http://localhost:8000/v2/assignments/submission2?hacker_id=5r4xxv', {
             method: 'POST',
             body: formData,
           });
@@ -76,7 +76,7 @@ export default function SCP({ args }: { args: string[]}) {
         webkitdirectory="true"
         directory=""
         multiple
-        onChange={(e) => handleDirectoryPick(e.target.files)}
+        onChange={(e) => handleDirectoryUpload(e.target.files)}
       />
     </div>
 
