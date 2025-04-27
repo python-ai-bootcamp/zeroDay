@@ -5,7 +5,7 @@ from datetime import datetime
 from systemEntities import AnalyticsEventType, Payment, print
 from analyticsService import insert_analytic_event, get_group_by_fields,convert_group_data_to_plotly_traces, group_data, ChallengeTrafficAnalyticsEvent, NewUserAnalyticsEvent, UserPaidAnalyticsEvent, UserSubmittedAssignmentAnalyticsEvent, UserPassedAssignmentAnalyticsEvent
 from userService import User, submit_user, user_exists, get_user
-from paymentService import initiate_user_payement_procedure, get_payment_code_hashes
+from paymentService import initiate_user_payement_procedure, get_payment_code_hashes, get_amount_per_payment_code
 from assignmentOrchestrator import assignment_description,next_assignment_submission, assignment_task_count, AssignmentSubmission, submit_assignment, user_testing_in_progress, max_submission_for_assignment, last_assignment_submission_result, get_submitted_file
 from exportService import fetch_symmetric_key, download_data
 from fastapi import FastAPI, BackgroundTasks, Request, Response, File, Form, UploadFile
@@ -242,6 +242,10 @@ def serve_payment(request: Request):
 @app.get("/payment_code_hashes")
 def serve_payment_codes():
     return get_payment_code_hashes()
+
+@app.get("/amount_per_payment_code")
+def serve_amount_per_payment_code(payment_code:str = "regular"):
+    return get_amount_per_payment_code(payment_code)
     
 @app.get("/paymentRedirect")
 def serve_payment_redirect(background_tasks: BackgroundTasks, request: Request, ClientName:str, ClientLName:str, UserId:str, email:str, phone:str, paymentCode:str = "regular"):

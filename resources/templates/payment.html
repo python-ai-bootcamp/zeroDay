@@ -205,6 +205,42 @@
             userIdInput.addEventListener("input", validate);
             paymentCodeInput.addEventListener("input", validate);
             form.addEventListener("submit", validate);
+
+
+            let debounceTimeout = null;
+            const priceTag = document.getElementById('priceTag');
+
+            paymentCodeInput.addEventListener('input', () => {
+                clearTimeout(debounceTimeout); // Clear previous debounce timer
+
+                debounceTimeout = setTimeout(async () => {
+                    const currentCuponValue = paymentCodeInput.value.trim();
+
+                    if (currentCuponValue.length === 0) {
+                        priceTag.textContent = ""; // Clear price if input is empty
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`/amount_per_payment_code?payment_code=${encodeURIComponent(currentCuponValue)}`);
+                        if (response.ok) {
+                            const amountText = await response.text(); 
+                            const amount = parseInt(amountText);  
+
+                            if (!isNaN(amount)) {
+                                priceTag.textContent = amount;
+                            } else {
+                                priceTag.textContent = "Invalid amount";
+                            }
+                        } else {
+                            priceTag.textContent = "Invalid response";
+                        }
+                    } catch (error) {
+                        console.error("Error fetching price:", error);
+                        priceTag.textContent = "Server error";
+                    }
+                }, 1000); 
+            });
         }
     </script>
 </head>
@@ -240,8 +276,9 @@
                     <label for="phone">Phone Number:</label><br>
                     <input type="tel" id="phone" name="phone" pattern="05[0-9]{1}-*[0-9]{3}-*[0-9]{4}" oninvalid="this.setCustomValidity('phone number should be of following form 05x-xxx-xxxx');" oninput="this.setCustomValidity('');" required ><br>
                     <label for="paymentCode">Cupon Code:</label><br>
-                    <input type="text" id="paymentCode" name="paymentCode"><br>
-                    <input type="submit" value="GIVE US MONEY!" class="cta-button">
+                    <input type="text" id="paymentCode" name="paymentCode"><br><br>
+                    <input type="submit" value="Enlist" class="cta-button"><br><br>
+                    <label>Price:<label id="priceTag">100</label>&#8362;</label><br>
                 </form>
                 <p></p>
                 <!--a href="/paymentRedirection" class="cta-button" >GIVE US MONEY!</a-->
