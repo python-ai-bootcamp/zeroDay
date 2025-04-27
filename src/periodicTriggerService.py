@@ -26,7 +26,7 @@ def init_triggers():
         ev_loop.create_task(every(FLUSH_STDOUT_INTERVAL, flush_stdout_workaround))
         ev_loop.create_task(every(NEW_ASSIGNMENT_MAIL_INTERVAL, trigger_new_assignment_mail_if_needed))
         ev_loop.create_task(every(PERSIST_ANALYTICS_EVENTS, persist_analytics_events))
-    except:
-        print("test mode, no event loop necessary")
+    except Exception:
+        print("ERROR: something unexpected occured during a trigger task event loop creation")
 
 init_triggers()

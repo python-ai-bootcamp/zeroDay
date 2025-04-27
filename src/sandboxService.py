@@ -100,7 +100,7 @@ def execute_task_as_module_and_validate_programatically(task_file_name :str, kil
                     return {"status":"PASS"}
                 else:
                     return {**validatorJsonResponse, "status":"FAIL"}
-            except:
+            except Exception:
                 return {"status": "FAIL", "FAIL_message":"failed to parse validators last line as json"}
         else:
             return {"status":"FAIL","FAIL_message":"task failed because it printed to STDERR","FAIL_message_stdout":stdout,"FAIL_message_stderr":stderr}

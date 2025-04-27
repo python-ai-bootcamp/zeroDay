@@ -5,7 +5,7 @@ from datetime import datetime
 from systemEntities import AnalyticsEventType, Payment, print
 from analyticsService import insert_analytic_event, get_group_by_fields,convert_group_data_to_plotly_traces, group_data, ChallengeTrafficAnalyticsEvent, NewUserAnalyticsEvent, UserPaidAnalyticsEvent, UserSubmittedAssignmentAnalyticsEvent, UserPassedAssignmentAnalyticsEvent
 from userService import User, submit_user, user_exists, get_user
-from paymentService import initiate_user_payement_procedure
+from paymentService import initiate_user_payement_procedure, get_payment_code_hashes
 from assignmentOrchestrator import assignment_description,next_assignment_submission, assignment_task_count, AssignmentSubmission, submit_assignment, user_testing_in_progress, max_submission_for_assignment, last_assignment_submission_result, get_submitted_file
 from exportService import fetch_symmetric_key, download_data
 from fastapi import FastAPI, BackgroundTasks, Request, Response, File, Form, UploadFile
@@ -239,13 +239,17 @@ def serve_payment(request: Request):
         payment_page_html = get_template("redirect_to_enlistment_page")
     return HTMLResponse(content=payment_page_html, status_code=200)
 
+@app.get("/payment_code_hashes")
+def serve_payment_codes():
+    return get_payment_code_hashes()
+    
 @app.get("/paymentRedirect")
-def serve_payment_redirect(request: Request, hacker_id:str, ClientName:str, ClientLName:str, UserId:str, email:str, phone:str, background_tasks: BackgroundTasks):
+def serve_payment_redirect(background_tasks: BackgroundTasks, request: Request, ClientName:str, ClientLName:str, UserId:str, email:str, phone:str, paymentCode:str = "regular"):
     user=request.state.authenticated_user
     if(user):
         payment_page_html = get_template("payment_redirect_page")
         #user=User.model_validate(user)
-        payment=Payment.model_validate({"user":user,"ClientName":ClientName, "ClientLName":ClientLName, "UserId":UserId, "email":email, "phone":phone, "date":datetime.today().strftime('%Y/%m/%d'), "amount":50})
+        payment=Payment.model_validate({"user":user,"ClientName":ClientName, "ClientLName":ClientLName, "UserId":UserId, "email":email, "phone":phone, "date":datetime.today().strftime('%Y/%m/%d'), "paymentCode":paymentCode})
         initiate_user_payement_procedure(payment, background_tasks)
     else:
         payment_page_html = get_template("redirect_to_enlistment_page")
@@ -520,3 +524,4 @@ def serve_get_group_by_fields(from_time:int=0, to_time:int=99999999999999, analy
         return get_group_by_fields(from_time, to_time, AnalyticsEventType[analytics_event_type], None, None)
     else:
         return get_group_by_fields(from_time, to_time, AnalyticsEventType[analytics_event_type], filter_field_name, filter_field_value)
+

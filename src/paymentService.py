@@ -1,8 +1,9 @@
-import os,json
+import os, json, csv, hashlib
 from systemEntities import User, Payment, print
 from mailService import notification_producer
 from systemEntities import NotificationType
 from userService import set_user_as_paid
+from threading import Lock
 from fastapi import BackgroundTasks
 import time
 
@@ -24,8 +25,58 @@ PAYMENT_DATA_DIRECTORY = os.path.join("./data/", "payment_data")
 LAST_RECEIPT_INDEX_FILE = os.path.join(PAYMENT_DATA_DIRECTORY, "last_receipt_index.dat")
 PAYMENT_DATA_FILES_DIRECTORY = os.path.join(PAYMENT_DATA_DIRECTORY, "files")
 PAYMENT_DATA_RECEIPTS_DIRECTORY = os.path.join(PAYMENT_DATA_DIRECTORY, "receipts")
+PAYMENT_DATA_RECEIPTS_CSV_FILE = os.path.join(PAYMENT_DATA_RECEIPTS_DIRECTORY, "aggregated_payment_data.csv")
+PAYMENT_CODES = os.path.join( "./resources", "keys", "private_keys", "payment_codes.json")
 os.makedirs(PAYMENT_DATA_FILES_DIRECTORY,exist_ok=True)
 os.makedirs(PAYMENT_DATA_RECEIPTS_DIRECTORY,exist_ok=True)
+
+def hash_key(key: str) -> str:
+    # Create a SHA-256 hash object
+    sha256 = hashlib.sha256()
+    
+    # Update the hash object with the key encoded as bytes
+    sha256.update(key.encode('utf-8'))
+    
+    # Return the hexadecimal representation of the hash
+    return sha256.hexdigest()
+
+
+def get_payment_code_hashes()->list[str]:
+    with open(PAYMENT_CODES, "r") as f:
+        payment_codes:list[str]= list(json.load(f).keys())
+    return [hash_key(payment_code) for payment_code in payment_codes]
+
+def get_amount_per_payment_code(payment_code:str):
+    with open(PAYMENT_CODES, "r") as f:
+        payment_codes= json.load(f)
+        if payment_code in payment_codes:
+            return payment_codes[payment_code]
+        else:
+            return payment_codes["regular"]
+
+_persistency_lock=Lock()
+def load_csv():
+    data = []
+    if os.path.exists(PAYMENT_DATA_RECEIPTS_CSV_FILE):
+        with open(PAYMENT_DATA_RECEIPTS_CSV_FILE, mode='r', newline='', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                data.append(row)
+    return data
+
+def save_csv(data):
+    fieldnames = set()
+    for row in data:
+        fieldnames.update(row.keys())
+    fieldnames = sorted(fieldnames)
+    with open(PAYMENT_DATA_RECEIPTS_CSV_FILE, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in data:
+            writer.writerow(row)
+
+def append_row(data, new_row):
+    data.append(new_row)
 
 def get_receipt_index():
     if os.path.exists(LAST_RECEIPT_INDEX_FILE):
@@ -40,15 +91,15 @@ def get_receipt_index():
     return str(last_receipt_index+1).zfill(7)
 
 def initiate_user_payement_procedure(payment:Payment, background_tasks: BackgroundTasks):
-    print(f"initiate_user_payement_procedure:: received user payment with following credit api related payment:{payment.dict()}")
+    print(f"initiate_user_payement_procedure:: received user payment with following credit api related payment:{payment.model_dump()}")
     payment_succeeded=get_payment_status()
     if payment_succeeded:
         payment.receipt_index=get_receipt_index()
+        payment.amount=get_amount_per_payment_code(payment.paymentCode)
         set_user_as_paid(payment)
         persist_payment_data(payment)
         produce_reciept_mail(payment)
         background_tasks.add_task(persist_payment_data_in_admissible_formats, payment)
-        #persist_payment_data_in_admissible_formats(payment)
     else:
         print("initiate_user_payement_procedure:: unimplemented yet, payment unsuccessful, need to convey error in some way,redirection to error page or something")
 
@@ -58,11 +109,16 @@ def get_payment_status():
 
 def persist_payment_data(payment:Payment):
     with open(os.path.join(PAYMENT_DATA_FILES_DIRECTORY,f"{payment.receipt_index}.json"), "w", encoding="utf-8") as f:
-        json.dump(payment.dict(), f, indent=4, ensure_ascii=False)
+        json.dump(payment.model_dump(), f, indent=4, ensure_ascii=False)
 
 def produce_reciept_mail(payment:Payment):
     optional_template_fields=[(f"$${{{{{k}}}}}$$",v) for k,v in payment.model_dump().items()]
     notification_producer(user=payment.user,notification_type=NotificationType.PAYMENT_ACCEPTED,optional_template_fields=optional_template_fields)
+    paying_user_for_mail=payment.user.model_dump()
+    paying_user_for_mail["name"]=f"{payment.ClientName} {payment.ClientLName}"
+    paying_user_for_mail["email"]=payment.email
+    paying_user_for_mail=User.model_validate(paying_user_for_mail)
+    notification_producer(user=paying_user_for_mail,notification_type=NotificationType.PAYMENT_ACCEPTED,optional_template_fields=optional_template_fields)
 
 def persist_payment_data_in_admissible_formats(payment:Payment):
     with open(os.path.join("resources","mailTemplates",f"{NotificationType.PAYMENT_ACCEPTED}.body_html"), "r",encoding="utf-8") as f:
@@ -75,6 +131,7 @@ def persist_payment_data_in_admissible_formats(payment:Payment):
     
     with open(f"{receipt_file_name}.html", "w", encoding="utf-8") as f:
         f.write(receipt_html_template)
+        
     if 'HTML' in globals():
         print("detected correctly installed weasyprint dependency, issuing pdf receipt")
         start_time = time.time()
@@ -84,3 +141,16 @@ def persist_payment_data_in_admissible_formats(payment:Payment):
         print(f"Time taken to generate PDF: {elapsed_time:.4f} seconds")
     else:
         print("did not detect correctly installed weasyprint dependency, not issuing pdf receipt")
+    try:
+        _persistency_lock.acquire()
+        data = load_csv()
+        minimal_data_for_persist=payment.model_dump()
+        minimal_data_for_persist["application_user"]=minimal_data_for_persist["user"]["hacker_id"]
+        del minimal_data_for_persist["user"]
+        append_row(data, minimal_data_for_persist)
+        save_csv(data)
+    finally:
+        _persistency_lock.release()
+
+
+    

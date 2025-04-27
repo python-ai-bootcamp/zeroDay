@@ -139,9 +139,37 @@
 
     </style>
     <script>
-        window.onload = function () { 
-            const nameInput = document.querySelector("#UserId");
+        window.onload = async function () { 
+            let payment_code_hashes=[]
+            payment_code_hashes= await fetch('/payment_code_hashes')
+                .then(response => response.json())
+                .catch(error => {
+                    console.error('Error fetching payment_code_hashes:', error);
+                });
+            const userIdInput = document.querySelector("#UserId");
+            const paymentCodeInput = document.querySelector("#paymentCode");
             const form = document.querySelector("form");
+            async function hashKey(key) {
+                const encoder = new TextEncoder();  // Convert text to UTF-8
+                const data = encoder.encode(key);  // Create a Uint8Array from the string
+
+                // Hash the data
+                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                
+                // Convert the buffer to a hex string
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
+            }
+            async function is_valid_payment_code(payment_code){
+                console.log("validating following payment_code=", payment_code)
+                payment_code_hash=await hashKey(payment_code)          
+                console.log("payment_code_hash=", payment_code_hash)
+                if(payment_code=="" || payment_code_hashes.includes(payment_code_hash)){
+                    return true
+                }else{
+                    return false
+                }
+            }
             function is_israeli_id_number(id) {
                 id = String(id).trim();
                 if (id.length > 9 || isNaN(id)) return false;
@@ -151,16 +179,31 @@
                         return counter + (step > 9 ? step - 9 : step);
                     }) % 10 === 0;
             }
-            function validate(e) {
-                if (is_israeli_id_number(nameInput.value)) { //correct!
-                    nameInput.setCustomValidity(""); // empty means "no error"
+            async function validate(e) {
+                let shouldPreventSubmit = false;
+
+                if (is_israeli_id_number(userIdInput.value)) {
+                    userIdInput.setCustomValidity(""); 
+                } else {
+                    userIdInput.setCustomValidity("ID field is not valid!");
+                    shouldPreventSubmit = true;
                 }
-                else {
-                    nameInput.setCustomValidity("ID field is not valid!"); //show error text
-                    e.preventDefault(); //prevent form submit
+
+                const is_payment_code_valid = await is_valid_payment_code(paymentCodeInput.value);
+                if (is_payment_code_valid) {
+                    paymentCodeInput.setCustomValidity("");
+                } else {
+                    paymentCodeInput.setCustomValidity("Invalid Coupon Code");
+                    shouldPreventSubmit = true;
+                }
+
+                if (shouldPreventSubmit && e.type === "submit") {
+                    e.preventDefault();
                 }
             }
-            nameInput.addEventListener("input", validate);
+
+            userIdInput.addEventListener("input", validate);
+            paymentCodeInput.addEventListener("input", validate);
             form.addEventListener("submit", validate);
         }
     </script>
@@ -196,6 +239,8 @@
                     <input type="email" id="email" name="email" required ><br>
                     <label for="phone">Phone Number:</label><br>
                     <input type="tel" id="phone" name="phone" pattern="05[0-9]{1}-*[0-9]{3}-*[0-9]{4}" oninvalid="this.setCustomValidity('phone number should be of following form 05x-xxx-xxxx');" oninput="this.setCustomValidity('');" required ><br>
+                    <label for="paymentCode">Cupon Code:</label><br>
+                    <input type="text" id="paymentCode" name="paymentCode"><br>
                     <input type="submit" value="GIVE US MONEY!" class="cta-button">
                 </form>
                 <p></p>
