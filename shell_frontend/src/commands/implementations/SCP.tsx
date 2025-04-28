@@ -10,23 +10,29 @@ export default function SCP({ args }: { args: string[]}) {
     const submit_assignment_url_template=useApiUrl()("/v2/assignments/$${{ASSIGNMENT_ID}}$$/submission")
     
 
+    async function createZip(files: FileList) { // will return only the subdirectory under assignment folder and not the top folder itself
+        const zip = new JSZip();
+        for (const file of files) {
+            const relativePath = file.webkitRelativePath || file.name;
+            const pathParts = relativePath.split('/');
+            if (pathParts.length > 1) {
+                const subfolderPath = pathParts.slice(1).join('/');
+                const content = await file.arrayBuffer();
+                zip.file(subfolderPath, content);
+            }
+        }
+        const zipData = await zip.generateAsync({ type: "blob" });
+        return zipData;
+    }
+
     const handleDirectoryUpload = async (files: FileList | null) => {
         if (!files) return;
-        
-        const zip = new JSZip();
-        
-        // Validate and add files to zip
-        for (const file of Array.from(files)) {
-          // Add any validation here, e.g., file.type, name, size, etc.
-          zip.file(file.webkitRelativePath, file);
-        }
-    
-        const blob = await zip.generateAsync({ type: 'blob' });
-    
-        // Upload the zip to your backend
+
+        const blob = await createZip(files)
+
         const formData = new FormData();
         formData.append('zip_file', blob, 'directory.zip');
-    
+        
         try {
           const user_status_res= await fetch(current_status_url)
             .then(res=>res.json())
