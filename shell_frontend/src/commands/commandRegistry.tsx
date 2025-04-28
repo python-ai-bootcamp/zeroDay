@@ -2,8 +2,7 @@
 import { CommandExecutor } from './types';
 import Help from './implementations/Help';
 import Status from './implementations/Status'; // import Status component
-import GettingStarted from '../assets/getting_started.md?raw'; // import getting started markdown
-import WizardFromMd from '../components/WizardFromMd';
+import GettingStarted from './implementations/GettingStarted'
 import Lesson from './implementations/Lesson'; // import Lesson component
 import Assignment from './implementations/Assignment'; // import Assignment component
 import SCP from './implementations/SCP'; // import SCP component
@@ -13,9 +12,8 @@ const commandRegistry: Record<string, CommandExecutor> = {
   help: (_args, _setHistory) => {
     return <Help />;
   },
-  getting_started: (_args, _setHistory, _setHidePrompt, _hidePrompt) => {
-
-    return <WizardFromMd mdContent={GettingStarted} setHidePrompt={_setHidePrompt} />
+  getting_started: (_args, _setHistory, _setHidePrompt) => {
+    return <GettingStarted setHidePrompt={_setHidePrompt}/>;
   },
   clear: (_args, setHistory) => {
     setHistory([]); // clear history

@@ -29,20 +29,23 @@ export default function Assignment({ setHidePrompt }: { setHidePrompt: React.Dis
   }, []);
 
   useEffect(() => {
+    if (!status?.assignment_id) return;
     const loadAssignment = async () => {
-      if (!status?.assignment_id) return;
       try {
-        const assignmentMarkdown = await import(`../../assets/assignment_${status.assignment_id}.md?raw`);
-        setAssignmentContent(assignmentMarkdown.default);
+        const response = await fetch(`/static/assignment/${status.assignment_id}/assignment_${status.assignment_id}.md`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch assignment markdown. Status: ${response.status}`);
+        }
+        const markdownText = await response.text();
+        setAssignmentContent(markdownText);
       } catch (error) {
-        console.error(`Error loading assignment_${status.assignment_id}.md:`, error);
+        console.error(`Error loading assignment markdown:`, error);
       }
     };
     const downloadAssignmentZip = () => {
-        if (!status?.assignment_id) return;
         try{
             const link = document.createElement("a");
-            link.href = `/assignment_${status.assignment_id}.zip`;
+            link.href = `/static/assignment/${status.assignment_id}/assignment_${status.assignment_id}.zip`;
             link.download = `assignment_${status.assignment_id}.zip`;
             document.body.appendChild(link);
             link.click();

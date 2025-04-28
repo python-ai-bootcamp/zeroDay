@@ -1,9 +1,18 @@
 
 import { marked } from 'marked';
-import helpMarkdown from '../../assets/help.md?raw'; // <- THIS IS KEY
+import { useEffect, useState } from 'react';
 
 const Help = () => {
-  const html = marked.parse(helpMarkdown); // convert markdown to HTML
+  const [html, setHtml] = useState<string>('');
+  useEffect(() => {
+    const fetchHelpMarkdown = async () => {
+      const response = await fetch('/static/help/Help.md');
+      const markdownText = await response.text();
+      setHtml(marked.parse(markdownText, { async: false }));
+    };
+
+    fetchHelpMarkdown();
+  }, []);
 
   return (
     <div>

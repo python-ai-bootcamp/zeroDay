@@ -30,15 +30,17 @@ export default function Lesson({ setHidePrompt }: { setHidePrompt: React.Dispatc
   useEffect(() => {
     const loadLesson = async () => {
       if (!status?.assignment_id) return;
-
       try {
-        const lessonMarkdown = await import(`../../assets/lesson_${status.assignment_id}.md?raw`);
-        setLessonContent(lessonMarkdown.default);
+        const response = await fetch(`/static/lesson/${status.assignment_id}/lesson_${status.assignment_id}.md`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch lesson markdown. Status: ${response.status}`);
+        }
+        const markdownText = await response.text();
+        setLessonContent(markdownText);
       } catch (error) {
         console.error(`Error loading lesson_${status.assignment_id}.md:`, error);
       }
     };
-
     loadLesson();
   }, [status]);
 

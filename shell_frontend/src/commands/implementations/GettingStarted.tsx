@@ -1,0 +1,28 @@
+import React, { useState, useEffect} from 'react';
+import WizardFromMD from '../../components/WizardFromMd.tsx';
+
+export default function Lesson({ setHidePrompt }: { setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>}) {
+  const [gettingStartedContent, setGettingStartedContent] = useState<string>(''); // state to hold status message
+    useEffect(() => {
+      const loadLesson = async () => {
+        try {
+          const response = await fetch(`/static/gettingStarted/getting_started.md`);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch getting_started markdown. Status: ${response.status}`);
+          }
+          const markdownText = await response.text();
+          setGettingStartedContent(markdownText);
+        } catch (error) {
+          console.error(`Error loading getting_started.md:`, error);
+        }
+      };
+      loadLesson();
+    }, [gettingStartedContent]);
+    return(
+        <div>
+            {gettingStartedContent && (
+              <WizardFromMD mdContent={gettingStartedContent} setHidePrompt={setHidePrompt} />
+            )}
+        </div>
+    )
+}
