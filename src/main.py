@@ -1,4 +1,4 @@
-import os,json, logging, urllib.parse, mimetypes, periodicTriggerService
+import os, json, zoneinfo, logging, urllib.parse, mimetypes, periodicTriggerService
 from pathlib import Path
 from v2Apis import router as v2_router
 from datetime import datetime
@@ -14,6 +14,9 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, FileResponse
 from configurationService import domain_name, protocol, isDevMod
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.staticfiles import StaticFiles
+
+israel_tz = zoneinfo.ZoneInfo("Asia/Jerusalem")
+utc_tz = zoneinfo.ZoneInfo("UTC")
 
 class DotTimeFormatter(logging.Formatter):
     def format(self, record):
@@ -253,7 +256,9 @@ def serve_payment_redirect(background_tasks: BackgroundTasks, request: Request, 
     if(user):
         payment_page_html = get_template("payment_redirect_page")
         #user=User.model_validate(user)
-        payment=Payment.model_validate({"user":user,"ClientName":ClientName, "ClientLName":ClientLName, "UserId":UserId, "email":email, "phone":phone, "date":datetime.today().strftime('%Y/%m/%d'), "paymentCode":paymentCode})
+        now_israel = datetime.now(israel_tz)
+        now_utc = datetime.now(utc_tz)
+        payment=Payment.model_validate({"user":user,"ClientName":ClientName, "ClientLName":ClientLName, "UserId":UserId, "email":email, "phone":phone, "date":now_israel.strftime("%d/%m/%Y"), "time":now_israel.strftime("%H:%M:%S"),  "utc_date":now_utc.strftime("%d/%m/%Y"), "utc_time":now_utc.strftime("%H:%M:%S"), "paymentCode":paymentCode})
         initiate_user_payement_procedure(payment, background_tasks)
     else:
         payment_page_html = get_template("redirect_to_enlistment_page")

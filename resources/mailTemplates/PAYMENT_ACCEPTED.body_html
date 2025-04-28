@@ -197,6 +197,7 @@
                         <div class="total">
                             סה"כ לתשלום: $${{amount}}$$ ₪
                         </div>
+                        <div>אמצעי תשלום: סליקת אשראי</div>
                         <p> </p>
                         <br>
                         <div class="footer">
@@ -204,7 +205,9 @@
                             
                         <p> </p>
                             כתובת לפניות: <a href="mailto:support@zerodaybootcamp.xyz">support@zerodaybootcamp.xyz</a>
-                            <div> פרטי עוסק: טל שחר, מספר עוסק: 060963949, כתובת: בר יהודה 10 קרית אונו</div>
+                            <div> פרטי עוסק: טל שחר, מספר עוסק: 060963949</div>
+                            <div>כתובת: בר יהודה 10 קרית אונו, שם עסק: תכנות צעיר</div>
+                            <div> "העוסק פטור לפי סעיף 13 לחוק מע"מ."</div>
                         </div>
                     </div>
                 </div>

@@ -58,3 +58,6 @@ class Payment(BaseModel):
     amount: Optional[int] = None
     paymentCode: str
     date: str
+    time: str
+    utc_date: str
+    utc_time: str
