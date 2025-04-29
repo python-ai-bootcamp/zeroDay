@@ -29,12 +29,29 @@ const Terminal = () => {
     };
   }, []);
 
+  const handleKeyboardInterrupt = () =>{
+    setCommand(`${command}^C`);
+    setHistory((prev) => [...prev, `${user?.name_nospace ?? 'root'}@zeroDay$ ${command}^C`]);
+    setCommand('');
+  }
 
   const handleCommand = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && command.trim()) {
-      executeCommand(command);
-      //setHistory((prev) => [...prev, `root@zeroDay$ ${command}`]);
-      setCommand('');
+    if (e.ctrlKey && (e.key === 'c' || e.key === 'C')) {
+      e.preventDefault();
+      handleKeyboardInterrupt();
+      return;
+    }
+  
+    if (e.key === 'Enter') {
+      if (command.trim()) { //if the command is not empty, need to execute it
+        executeCommand(command);
+      }else{ //if command is empty, don't execute it, but add extra empyy prompt to history 
+        setHistory((prev) => [
+          ...prev,
+          `${user?.name_nospace ?? 'root'}@zeroDay$ ${command}`,
+        ]);
+      }
+      setCommand('');//on either case need clear the prompt after
     }
   };
 
