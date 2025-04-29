@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles/index.css'
+import AutoClipboard from './components/Clipboard.tsx'
 import Terminal from './components/Terminal.tsx'
 import { UserProvider } from './hooks/userContext';
 import { AuthKeyProvider } from './hooks/authKeyContext';
@@ -13,6 +14,7 @@ createRoot(document.getElementById('root')!).render(
     <AuthKeyProvider value="concurrency_user_2">
       <ApiUrlProvider baseUrl="http://127.0.0.1:8000">
         <UserProvider>
+          <AutoClipboard />
           <Terminal />
         </UserProvider>
       </ApiUrlProvider>
