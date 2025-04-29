@@ -6,6 +6,7 @@ import GettingStarted from './implementations/GettingStarted'
 import Lesson from './implementations/Lesson'; // import Lesson component
 import Assignment from './implementations/Assignment'; // import Assignment component
 import SCP from './implementations/SCP'; // import SCP component
+import History from './implementations/History'; // import SCP component
 
 
 const commandRegistry: Record<string, CommandExecutor> = {
@@ -35,8 +36,10 @@ const commandRegistry: Record<string, CommandExecutor> = {
   scp: (_args, _setHistory) => {
     console.log('scp command executed with args:', _args); // log scp command execution
     return <SCP args={_args} />; // return SCP component with args
-
-
+  },
+  history: (_args, _setHistory, _setHidePrompt, hidePrompt, _currentHistory) => {
+    console.log("history command received following array::\n",_currentHistory)
+    return <History args={_currentHistory} />; // print history
   }
 };
 

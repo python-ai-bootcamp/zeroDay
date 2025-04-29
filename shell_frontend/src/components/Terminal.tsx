@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect} from 'react';
 import { useCommandExecutor } from '../hooks/useCommandExecutor'; // import command executor hook
 import { useUser } from '../hooks/userContext'; 
 
+
 const Terminal = () => {
   const initial_message = '🖥️ Welcome to Zero Day Terminal OS, \nplease enter `help` for a list of commands';
   const [command, setCommand] = useState('');
@@ -10,7 +11,7 @@ const Terminal = () => {
   const user = useUser();
   const executeCommand = useCommandExecutor(setHistory, setHidePrompt, hidePrompt);
   const inputRef = useRef<HTMLInputElement>(null);
-
+  
   useEffect(() => {
     const handleDocumentClick = (e: Event) => {
       if (inputRef.current && document.activeElement !== inputRef.current) {

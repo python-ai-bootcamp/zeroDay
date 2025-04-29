@@ -48,6 +48,10 @@
       <td><strong>clear</strong></td>
       <td>🧽 Clear the terminal display</td>
     </tr>
+    <tr>
+      <td><strong>history</strong></td>
+      <td>📜 Show command history</td>
+    </tr>
   </tbody>
 </table>
 

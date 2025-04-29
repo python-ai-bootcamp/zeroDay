@@ -11,6 +11,7 @@ export type CommandExecutor = (
   setHistory: React.Dispatch<React.SetStateAction<(string | JSX.Element)[]>>,
   setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>,
   hidePrompt: boolean,
+  currentHistory: string[]
 ) => string | JSX.Element | void;
 
 export type AssignmentStatus = {
