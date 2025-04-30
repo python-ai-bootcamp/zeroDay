@@ -17,11 +17,14 @@ const Terminal = () => {
   const executeCommand = useCommandExecutor(setHistory, setHidePrompt, hidePrompt, terminalCommandHistory);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const triggerScroll = () => {
+  const triggerScroll = () => { // need to figure out how to send it to each command so it will execute it in appropriate times to give a smotther feeling to console commands
     setTimeout(() => {
       scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);  // Delay scroll by 0.1s to ensure content is rendered
   };
+  setInterval(() => {
+    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, 100); 
   useLayoutEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [history]);
