@@ -11,9 +11,11 @@ import History from './implementations/History'; // import SCP component
 
 const commandRegistry: Record<string, CommandExecutor> = {
   help: (_args, _setHistory) => {
+    _setHistory([]);
     return <Help />;
   },
   getting_started: (_args, _setHistory, _setHidePrompt) => {
+    _setHistory([]);
     return <GettingStarted setHidePrompt={_setHidePrompt}/>;
   },
   clear: (_args, setHistory) => {
@@ -28,9 +30,11 @@ const commandRegistry: Record<string, CommandExecutor> = {
     return <Status />; // return Status component
   },
   lesson: (_args, _setHistory, _setHidePrompt) => {
+    _setHistory([]);
     return <Lesson setHidePrompt={_setHidePrompt}/>; // placeholder for lesson command
   },
   assignment: (_args, _setHistory, _setHidePrompt) => {
+    _setHistory([]);
     return <Assignment setHidePrompt={_setHidePrompt}/>; // placeholder for lesson command
   },
   scp: (_args, _setHistory) => {
