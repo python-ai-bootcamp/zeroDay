@@ -18,7 +18,7 @@ const splitMarkdownIntoPages = (markdown: string): Page[] => {
   });
 };
 
-export default function WizardFromMD({ mdContent, setHidePrompt }: { mdContent: string, setHidePrompt: React.Dispatch<React.SetStateAction<boolean>> }) {
+export default function WizardFromMD({ mdContent, setHidePrompt, triggerScroll }: { mdContent: string; setHidePrompt: React.Dispatch<React.SetStateAction<boolean>> ; triggerScroll: () => void}) {
   const pages = splitMarkdownIntoPages(mdContent);
   const [currentPage, setCurrentPage] = useState(0);
   const [isComplete, setIsComplete] = useState(false); // Track completion status
@@ -32,6 +32,7 @@ export default function WizardFromMD({ mdContent, setHidePrompt }: { mdContent: 
         setIsComplete(true); // Set completion to true when the wizard is finished
         setHidePrompt(false); // Show prompt again after completion
       }
+      triggerScroll()
     };
 
     window.addEventListener("keydown", handleKey);
@@ -40,7 +41,10 @@ export default function WizardFromMD({ mdContent, setHidePrompt }: { mdContent: 
 
   const page = pages[currentPage];
 
-  if (isComplete) return null; // 🔥 Early return if complete
+  if (isComplete){
+    triggerScroll()
+    return null; // 🔥 Early return if complete
+  }
 
   return (
     <div className="w-full bg-black text-green-500 px-10 py-4 overflow-y-auto">

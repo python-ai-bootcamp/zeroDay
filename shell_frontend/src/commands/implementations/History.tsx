@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 
-const Help = ({ args }: { args: string[]}) => {
+const History = ({ args, triggerScroll }: { args: string[]; triggerScroll: () => void }) => {
   const [html, setHtml] = useState<string>('');
-  console.log("Help:: args=",args)
+  console.log("History:: args=",args)
   useEffect(() => {
     const displayHistory = async () => {
       //const historyHtml=args
@@ -18,7 +18,7 @@ const Help = ({ args }: { args: string[]}) => {
     };
     displayHistory();
   }, []);
-
+  triggerScroll()
   return (
     <div>
       <div dangerouslySetInnerHTML={{ __html: html }} />
@@ -26,4 +26,4 @@ const Help = ({ args }: { args: string[]}) => {
   );
 };
 
-export default Help;
+export default History;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect} from 'react';
 import WizardFromMD from '../../components/WizardFromMd.tsx';
 
-export default function Lesson({ setHidePrompt }: { setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>}) {
+export default function Lesson({ setHidePrompt , triggerScroll }: { setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>; triggerScroll: () => void}) {
   const [gettingStartedContent, setGettingStartedContent] = useState<string>(''); // state to hold status message
     useEffect(() => {
       const loadLesson = async () => {
@@ -21,7 +21,7 @@ export default function Lesson({ setHidePrompt }: { setHidePrompt: React.Dispatc
     return(
         <div>
             {gettingStartedContent && (
-              <WizardFromMD mdContent={gettingStartedContent} setHidePrompt={setHidePrompt} />
+              <WizardFromMD mdContent={gettingStartedContent} setHidePrompt={setHidePrompt} triggerScroll={triggerScroll}/>
             )}
         </div>
     )

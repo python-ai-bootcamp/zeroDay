@@ -4,7 +4,7 @@ import WizardFromMD from '../../components/WizardFromMd';
 import { useApiUrl } from "../../hooks/baseUrlContext.tsx";
 
 
-export default function Assignment({ setHidePrompt }: { setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>}) {
+export default function Assignment({ setHidePrompt , triggerScroll }: { setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>; triggerScroll: () => void}) {
   const [status, setStatus] = useState<AssignmentStatus | null>(null); 
   const [assignmentContent, setAssignmentContent] = useState<string>(''); 
   const url=useApiUrl()("/v2/assignments/current_state")
@@ -63,7 +63,7 @@ export default function Assignment({ setHidePrompt }: { setHidePrompt: React.Dis
     return(
         <div>
             {assignmentContent && (
-              <WizardFromMD mdContent={assignmentContent} setHidePrompt={setHidePrompt} />
+              <WizardFromMD mdContent={assignmentContent} setHidePrompt={setHidePrompt} triggerScroll={triggerScroll}/>
             )}
         </div>
     )

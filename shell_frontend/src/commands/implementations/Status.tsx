@@ -2,7 +2,7 @@ import React, { useState, useEffect} from 'react';
 import {AssignmentStatus} from '../types'; // import AssignmentStatus type
 import { useApiUrl } from "../../hooks/baseUrlContext.tsx";
 
-export default function Status() {
+export default function Status({triggerScroll}: { triggerScroll: () => void}) {
   const [status, setStatus] = useState<AssignmentStatus | null>(null); // state to hold status message
   const url=useApiUrl()("/v2/assignments/current_state")
   useEffect(() => {
@@ -16,6 +16,7 @@ export default function Status() {
           const data: AssignmentStatus = await response.json();
           console.log(data); // Log the response data
           setStatus(data);
+          triggerScroll();
         } catch (error) {
           console.error('Error fetching user data:', error);
         }

@@ -2,7 +2,7 @@
 import { marked } from 'marked';
 import { useEffect, useState } from 'react';
 
-const Help = () => {
+const Help = ({triggerScroll}: { triggerScroll: () => void}) => {
   const [html, setHtml] = useState<string>('');
   useEffect(() => {
     const fetchHelpMarkdown = async () => {
@@ -13,7 +13,7 @@ const Help = () => {
 
     fetchHelpMarkdown();
   }, []);
-
+  triggerScroll()
   return (
     <div>
       <div dangerouslySetInnerHTML={{ __html: html }} />

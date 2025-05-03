@@ -8,6 +8,7 @@ export interface CommandExecutorParams {
 
 export type CommandExecutor = (
   args: string[],
+  triggerScroll: () => void,
   setHistory: React.Dispatch<React.SetStateAction<(string | JSX.Element)[]>>,
   setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>,
   hidePrompt: boolean,

@@ -3,7 +3,7 @@ import {AssignmentStatus} from '../types'; // import AssignmentStatus type
 import WizardFromMD from '../../components/WizardFromMd';
 import { useApiUrl } from "../../hooks/baseUrlContext.tsx";
 
-export default function Lesson({ setHidePrompt }: { setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>}) {
+export default function Lesson({ setHidePrompt , triggerScroll }: { setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>; triggerScroll: () => void}) {
   const [status, setStatus] = useState<AssignmentStatus | null>(null); // state to hold status message
   const [lessonContent, setLessonContent] = useState<string>(''); // state to hold status message
   const url=useApiUrl()("/v2/assignments/current_state")
@@ -47,7 +47,7 @@ export default function Lesson({ setHidePrompt }: { setHidePrompt: React.Dispatc
     return(
         <div>
             {lessonContent && (
-              <WizardFromMD mdContent={lessonContent} setHidePrompt={setHidePrompt} />
+              <WizardFromMD mdContent={lessonContent} setHidePrompt={setHidePrompt} triggerScroll={triggerScroll}/>
             )}
         </div>
     )

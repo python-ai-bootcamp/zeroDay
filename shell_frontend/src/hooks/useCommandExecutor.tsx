@@ -2,13 +2,13 @@ import React from 'react';
 import commandRegistry from '../commands/commandRegistry'; // import command registry
 import { useUser } from '../hooks/userContext'; 
 
-export function useCommandExecutor(setHistory: React.Dispatch<React.SetStateAction<(string | JSX.Element)[]>>, setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>, hidePrompt: boolean, terminalCommandHistory: string[]) {
+export function useCommandExecutor(triggerScroll: () => void, setHistory: React.Dispatch<React.SetStateAction<(string | JSX.Element)[]>>, setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>, hidePrompt: boolean, terminalCommandHistory: string[]) {
   const user = useUser();
   const executeCommand = (input: string) => {
     const [cmd, ...args] = input.trim().split(' '); // split command and args
     const commandExecutor = commandRegistry[cmd];
     if (commandExecutor) {
-      const result = commandExecutor(args, setHistory, setHidePrompt, hidePrompt, terminalCommandHistory)
+      const result = commandExecutor(args, triggerScroll, setHistory, setHidePrompt, hidePrompt, terminalCommandHistory)
       console.log('result', result)
       
       if (typeof result === 'string' || React.isValidElement(result)) {

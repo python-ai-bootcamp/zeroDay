@@ -65,15 +65,15 @@ export default function SCP({ args }: { args: string[]}) {
     return (
       <div>
         <input
-        type="file"
-        ref={fileInputRef}
-        style={{ display: 'none' }}
-        webkitdirectory="true"
-        directory=""
-        multiple
-        onChange={(e) => handleDirectoryUpload(e.target.files)}
-      />
-    </div>
+          type="file"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          webkitdirectory="true"
+          directory=""
+          multiple
+          onChange={(e) => handleDirectoryUpload(e.target.files)}
+        />
+      </div>
 
     );
 }
