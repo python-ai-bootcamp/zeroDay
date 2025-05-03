@@ -89,6 +89,7 @@ const Terminal = () => {
     }
 
     if (e.key === 'Enter') {
+      console.log("command::",command)
       triggerScroll()
       if (command.trim()) { //if the command is not empty, need to execute it
         if (command.trim()!==""){
@@ -123,7 +124,7 @@ const Terminal = () => {
           ref={inputRef}
           type="text"
           value={command}
-          onChange={(e) => setCommand(e.target.value)}
+          onInput={(e) => setCommand((e.target as HTMLInputElement).value)}
           onKeyDown={handleCommand}
           className="bg-transparent border-none outline-none w-full text-green-500"
         />
