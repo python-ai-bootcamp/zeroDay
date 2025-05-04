@@ -16,6 +16,7 @@ export default function Lesson({ setHidePrompt , triggerScroll }: { setHidePromp
           console.error(`Error loading getting_started.md:`, error);
         }
       };
+      setHidePrompt(true);
       loadLesson();
     }, [gettingStartedContent]);
     return(

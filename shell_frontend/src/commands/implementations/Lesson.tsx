@@ -22,7 +22,7 @@ export default function Lesson({ setHidePrompt , triggerScroll }: { setHidePromp
           console.error('Error fetching user data:', error);
         }
       };
-
+      setHidePrompt(true);
       fetchStatus();
     
   }, []);

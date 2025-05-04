@@ -23,6 +23,5 @@ export function useCommandExecutor(triggerScroll: () => void, setHistory: React.
       }
     }
   };
-
   return executeCommand;
 }

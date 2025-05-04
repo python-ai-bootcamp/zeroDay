@@ -54,7 +54,7 @@ export default function Assignment({ setHidePrompt , triggerScroll }: { setHideP
             console.error(`Error downloading assignment_${status.assignment_id}.md:`, error);
           }
       };
-
+    setHidePrompt(true);
     loadAssignment();
     downloadAssignmentZip();
   }, [status]);

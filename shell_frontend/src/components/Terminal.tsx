@@ -19,6 +19,7 @@ const Terminal = () => {
   const triggerScroll = () => { // need to figure out how to send it to each command so it will execute it in appropriate times to give a smotther feeling to console commands
     setTimeout(() => {
       scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+      inputRef.current?.focus();
     }, 100);  // Delay scroll by 0.1s to ensure content is rendered
   };
   const possibleCommands:Record<string, string[]> = {"current":[]}
@@ -141,7 +142,8 @@ const Terminal = () => {
     }
   };
 
-
+  console.log("hidePromet=",hidePrompt)
+  
   return (
     <div className="w-full h-screen p-4 bg-black text-green-500 font-mono overflow-y-auto">
       {/* Command history */}
