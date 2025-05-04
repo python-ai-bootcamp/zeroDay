@@ -21,7 +21,7 @@ def serve_assignements_current_state(request: Request):
     else:
         return {"status":"ERROR", "ERROR_message":"user not found"}
     
-@router.get("assignments/submission/test-status")
+@router.get("/assignments/submission/test_status")
 def serve_assignements_submissions_test_status(request: Request):
     user=request.state.authenticated_user
     if user_testing_in_progress(user["hacker_id"]):

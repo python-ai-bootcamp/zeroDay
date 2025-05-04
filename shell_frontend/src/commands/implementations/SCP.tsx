@@ -2,13 +2,22 @@ import React, { useState, useRef, useEffect} from 'react';
 import JSZip from 'jszip';
 import { useApiUrl } from "../../hooks/baseUrlContext.tsx";
 
-export default function SCP({ args }: { args: string[]}) {
-
+export default function SCP({ args, setHidePrompt, triggerScroll }: { args: string[]; setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>; triggerScroll: ()=>void }) {
+    setHidePrompt(true);
     const [scpContent, setScpContent] = useState<string>(''); // state to hold scp content
+    const [packingProgressDisplay, setPackingProgressDisplay] = useState<number>(-1); // state to hold scp content
+    const [uploadProgressDisplay, setUploadProgressDisplay] = useState<number>(-1); // state to hold scp content
+    const [testingProgressDisplay, setTestingProgressDisplay] = useState<number>(-1); // state to hold scp content
     const fileInputRef = useRef<HTMLInputElement>(null);
     const current_status_url=useApiUrl()("/v2/assignments/current_state")
     const submit_assignment_url_template=useApiUrl()("/v2/assignments/$${{ASSIGNMENT_ID}}$$/submission")
-    
+    const test_status_url=useApiUrl()("/v2/assignments/submission/test_status")
+    const isPackingComplete = useRef<boolean>(false);
+    const isUploadComplete = useRef<boolean>(false);
+    const [isTestingComplete, setIsTestingComplete] = useState<boolean>(false);
+    const asyncWait = function wait(ms:number) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
 
     async function createZip(files: FileList) { // will return only the subdirectory under assignment folder and not the top folder itself
         const zip = new JSZip();
@@ -27,40 +36,110 @@ export default function SCP({ args }: { args: string[]}) {
 
     const handleDirectoryUpload = async (files: FileList | null) => {
         if (!files) return;
+        
+        const pollPacking = async (current: number) => {
+          setPackingProgressDisplay(current);
+          console.log(`pollPacking called with ${current}`);
+          await asyncWait(1000)
+          if (!(isPackingComplete.current)) {
+              setPackingProgressDisplay(current + 1);
+              await pollPacking(current + 1);
+          } else {
+              console.log("Packing completed!");
+              setHidePrompt(false);
+          }
+        };
+        pollPacking(0);
 
         const blob = await createZip(files)
+        isPackingComplete.current=true;
 
         const formData = new FormData();
         formData.append('zip_file', blob, 'directory.zip');
         
         try {
-          const user_status_res= await fetch(current_status_url)
-            .then(res=>res.json())
-          const submit_assignment_url=submit_assignment_url_template.replace("$${{ASSIGNMENT_ID}}$$",user_status_res.assignment_id)
-          console.log("submitting file to following url::", submit_assignment_url)
-          const res = await fetch(submit_assignment_url, {
-            method: 'POST',
-            body: formData,
-          });
+            const user_status_res= await fetch(current_status_url)
+              .then(res=>res.json())
+            const submit_assignment_url=submit_assignment_url_template.replace("$${{ASSIGNMENT_ID}}$$",user_status_res.assignment_id)
+            console.log("submitting file to following url::", submit_assignment_url)
+            const res = await fetch(submit_assignment_url, {
+                method: 'POST',
+                body: formData,
+            });
     
-          const result = await res.json();
-          console.log('Upload successful:', result);
-          setScpContent('Upload successful!');
+            const result = await res.json();
+            console.log('Upload successful:', result);
+            setScpContent('Upload successful!');
+            isUploadComplete.current=true
         } catch (error) {
-          console.error('Upload failed:', error);
-          setScpContent('Upload failed.');
+            console.error('Upload failed:', error);
+            setScpContent('Upload failed.');
         }
-      };
-    const triggerDirectoryPicker = () => {
-        if (fileInputRef.current) {
-          fileInputRef.current.click();
-        }
-      };
+    };
 
-  useEffect
-  (() => {
-    triggerDirectoryPicker()
-  }, [args]);
+    const isTestingCompleted = async function(){
+        const test_status_res=await fetch(test_status_url)
+          .then(res=>res.json())
+          .then(resBody=>resBody.status)
+        if (test_status_res!="IN_PROGRESS"){
+            setIsTestingComplete(true)
+            return true
+        }else{
+            return false
+        }        
+    }
+
+    const triggerDirectoryPicker = async () => {
+        
+        if (fileInputRef.current) {
+            fileInputRef.current.click();
+        }
+        const pollPackingNoUiModification = async (current: number) => {
+          console.log(`pollPackingNoUiModification called with ${current}`);
+          await asyncWait(1000)
+          if (!(isPackingComplete.current)) {
+              await pollPackingNoUiModification(current + 1);
+          } else {
+              console.log("Packing completed!");
+              setHidePrompt(false);
+          }
+        };
+        const pollUpload = async (current: number) => {
+            setUploadProgressDisplay(current);
+            console.log(`pollUpload called with ${current}`);
+            await asyncWait(75)
+            if (!(isUploadComplete.current)) {
+                setUploadProgressDisplay(current + 1);
+                await pollUpload(current + 1);
+            } else {
+                console.log("Packing completed!");
+                setHidePrompt(false);
+            }
+        };
+        const pollTesting = async (current: number) => {
+            setTestingProgressDisplay(current);
+            console.log(`pollTesting called with ${current}`);
+            const completed = await isTestingCompleted();            
+            await asyncWait(125)
+            if (!completed) {
+                setTestingProgressDisplay(current + 1);
+                await pollTesting(current + 1);
+            } else {
+                console.log("Packing completed!");
+                setHidePrompt(false);
+            }
+        };   
+        await pollPackingNoUiModification(0);
+        setHidePrompt(true);
+        await pollUpload(0);
+        setHidePrompt(true);
+        await pollTesting(0);
+        triggerScroll()
+    };
+
+    useEffect(() => {
+        triggerDirectoryPicker();
+    }, [args]);
 
     return (
       <div>
@@ -73,6 +152,9 @@ export default function SCP({ args }: { args: string[]}) {
           multiple
           onChange={(e) => handleDirectoryUpload(e.target.files)}
         />
+        {(packingProgressDisplay!=-1)?<div>Assignment Packing in Progress:: <pre style={{ display: 'inline' }}>{".".repeat(packingProgressDisplay).match(/.{1,120}/g)?.join("\n")}</pre>{(isPackingComplete.current)?<label> [ COMPLETE ]</label>:null}</div>:null}
+        {(uploadProgressDisplay!=-1)?<div>Assignment Upload in Progress::   <pre style={{ display: 'inline' }}>{".".repeat(uploadProgressDisplay).match(/.{1,120}/g)?.join("\n")}</pre>{(isUploadComplete.current)?<label> [ COMPLETE ]</label>:null}</div>:null}
+        {(testingProgressDisplay!=-1)?<div>Assignment Testing in Progress:: <pre style={{ display: 'inline' }}>{".".repeat(testingProgressDisplay).match(/.{1,120}/g)?.join("\n")}</pre>{(isTestingComplete)?<label> [ COMPLETE ]</label>:null}</div>:null}
       </div>
 
     );

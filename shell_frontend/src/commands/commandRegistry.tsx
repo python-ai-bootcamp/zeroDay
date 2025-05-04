@@ -33,9 +33,9 @@ const commandRegistry: Record<string, CommandExecutor> = {
   assignment: (_args, _triggerScroll, _setHistory, _setHidePrompt) => {
     return <Assignment setHidePrompt={_setHidePrompt} triggerScroll={_triggerScroll}/>; // placeholder for lesson command
   },
-  scp: (_args, _triggerScroll, _setHistory) => {
+  scp: (_args, _triggerScroll, _setHistory, _setHidePrompt) => {
     console.log('scp command executed with args:', _args); // log scp command execution
-    return <SCP args={_args} />; // return SCP component with args
+    return <SCP args={_args} setHidePrompt={_setHidePrompt} triggerScroll={_triggerScroll}/>; // return SCP component with args
   },
   history: (_args, _triggerScroll, _setHistory, _setHidePrompt, hidePrompt, _currentHistory) => {
     console.log("history command received following array::\n",_currentHistory)
