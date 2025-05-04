@@ -1,13 +1,15 @@
 import React, { useRef, useState, useEffect, useLayoutEffect } from 'react';
 import { useCommandExecutor } from '../hooks/useCommandExecutor'; // import command executor hook
 import { useUser } from '../hooks/userContext'; 
+import commandRegistry from '../commands/commandRegistry'; // import command registry
+
 
 let tempHistoryIndex: number | null = null;
 const Terminal = () => {
   const initial_message = '🖥️ Welcome to Zero Day Terminal OS, \nplease enter `help` for a list of commands';
   const [command, setCommand] = useState('');
   const [terminalCommandHistory, setTerminalCommandHistory]  = useState<string[]>([initial_message]);
-
+  const commands=Object.keys(commandRegistry);
   const [unsavedCommand, setUnsavedCommand] = useState<string | null>(null);
 
   const [history, setHistory] = useState<string[]>([initial_message]);
@@ -19,9 +21,11 @@ const Terminal = () => {
       scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);  // Delay scroll by 0.1s to ensure content is rendered
   };
-  const executeCommand = useCommandExecutor(triggerScroll, setHistory, setHidePrompt, hidePrompt, terminalCommandHistory);
+  const possibleCommands:Record<string, string[]> = {"current":[]}
+  const executeCommand = useCommandExecutor(triggerScroll, setHistory, setHidePrompt, hidePrompt, terminalCommandHistory, possibleCommands);
   const inputRef = useRef<HTMLInputElement>(null);
-
+  const tabTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tabCount = useRef(0);
   useEffect(() => {
     const handleDocumentClick = (e: Event) => {
       console.log("handleDocumentClick was called")
@@ -53,6 +57,38 @@ const Terminal = () => {
   }
 
   const handleCommand = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+    
+      tabCount.current += 1;
+    
+      if (tabCount.current === 1) {
+        tabTimeout.current = setTimeout(() => {
+          console.log('Single Tab detected (no double Tab)');
+          tabCount.current = 0;
+          tabTimeout.current = null;
+        }, 350);
+      } else if (tabCount.current === 2) {
+        console.log('🔥 Double Tab detected!');
+        if (tabTimeout.current) clearTimeout(tabTimeout.current);
+        tabCount.current = 0;
+        tabTimeout.current = null;
+    
+        console.log(`detected double tab with command='${command}'`)
+        possibleCommands.current=commands.filter(x=>x.startsWith(command));
+        console.log(`detected possibleCommands='${possibleCommands.current}'`)
+        if(possibleCommands.current.length==1){
+          setCommand(possibleCommands.current[0])
+        }else if(possibleCommands.current.length>=2){
+          console.log("need to implement possible commands presentation")
+          executeCommand(command)
+        }
+
+      }
+    
+      return;
+    }
+    
     if (e.ctrlKey && (e.key === 'c' || e.key === 'C')) {
       e.preventDefault();
       handleKeyboardInterrupt();
