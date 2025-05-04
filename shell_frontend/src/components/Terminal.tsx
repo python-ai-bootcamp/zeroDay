@@ -100,8 +100,13 @@ const Terminal = () => {
       e.preventDefault();
       if (terminalCommandHistory.length === 0) return;
       if (tempHistoryIndex === null) {
-        setUnsavedCommand(command);
-        tempHistoryIndex = terminalCommandHistory.length - 1;        
+        if(terminalCommandHistory.length===1){
+          console.log("upkey will do nothing because only welcome command is in terminalCommandHistory")
+          return;
+        }else{
+          setUnsavedCommand(command);
+          tempHistoryIndex = terminalCommandHistory.length - 1;
+        }
       } else {
         tempHistoryIndex = Math.max(tempHistoryIndex - 1, 1);
       }
