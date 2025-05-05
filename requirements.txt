@@ -12,3 +12,4 @@ mailjet-rest
 weasyprint
 python-multipart
 openai
+tzdata
