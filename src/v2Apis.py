@@ -1,5 +1,5 @@
 from typing import Any, Dict
-from analyticsService import insert_analytic_event, persist_analytics_events, UserViewedAssignmentAnalyticsEvent, UserDownloadedAssignmentAnalyticsEvent
+from analyticsService import clear_memoized_data, insert_analytic_event, persist_analytics_events, UserViewedAssignmentAnalyticsEvent, UserDownloadedAssignmentAnalyticsEvent
 from systemEntities import AnalyticsEventType, print
 from configurationService import domain_name, protocol, isDevMod
 from assignmentOrchestrator import AssignmentSubmission, assignment_description, submit_assignment, max_submission_for_assignment, next_assignment_submission, user_testing_in_progress, last_assignment_submission_result
@@ -72,6 +72,7 @@ def serve_assignments_description(request: Request):
 
 def create_persist_analytics_events_background_task():
     persist_analytics_events()
+    clear_memoized_data()
 
 @router.post("/analytics/event/{analytics_event_type}")
 def insert_analytics_event_by_api(analytics_event_type: str, background_tasks: BackgroundTasks, request: Request, data: Dict[str, Any]):

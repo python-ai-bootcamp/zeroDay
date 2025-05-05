@@ -22,7 +22,7 @@ export default function WizardFromMD({ mdContent, setHidePrompt, triggerScroll }
   const pages = splitMarkdownIntoPages(mdContent);
   const [currentPage, setCurrentPage] = useState(0);
   const [isComplete, setIsComplete] = useState(false); // Track completion status
-
+  
   useEffect(() => {
     const handleKey = () => {
       if (currentPage < pages.length - 1) {

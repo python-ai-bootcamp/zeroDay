@@ -25,6 +25,14 @@ evaluate if the following python code acheived the described task:
 """
     
     llm_text_response=basicPromptResponse(prompt)
-    llm_json_response=json.loads(llm_text_response)
-    return llm_json_response
+    try:
+        llm_json_response=json.loads(llm_text_response)
+        return llm_json_response
+    except Exception as e:
+        print("ERROR:: FAILED PARSING LLM JSON RESPONSE")
+        print("------------------------------------------------------------")
+        print(llm_text_response)
+        print("------------------------------------------------------------")
+        return {"status":"ERROR", "ERROR_message":"unable to parse llm response as json"}
+    
  

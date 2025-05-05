@@ -219,4 +219,10 @@ def get_group_by_fields(from_time:int, to_time:int, analytics_event_type: Analyt
 def get_assignment_event_start_time(hacker_id:str, analytics_event_type:AnalyticsEventType=AnalyticsEventType.USER_VIEWED_ASSIGNMENT):
     data=fetch_analytics_data(0, 99999999999999, analytics_event_type)
     data=filter_data_by_filter_field(data=data, filter_field_name="hacker_id", filter_field_value=hacker_id)
-    return data[0]["epoch_time"]
+    if len(data)>0:
+        return data[0]["epoch_time"]
+    else:
+        raise Exception(f"No Data Found For User {hacker_id} when querying events of type {analytics_event_type.name}")
+
+def clear_memoized_data():
+    analytics_data_memoization_state.clear()

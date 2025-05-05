@@ -7,7 +7,7 @@ from threading import Lock, Semaphore, Thread
 from systemEntities import User, NotificationType, print
 from userService import get_user
 from analyticsService import get_assignment_event_start_time
-import zipfile
+import zipfile, traceback
 import sandboxService, mailService
 import json, os, sys,functools, importlib.util, time, datetime
 
@@ -117,7 +117,15 @@ def import_module_dynamically_from_path(task_file_name):
 def execute_validator_on_task_file(validator_script:str, task_file_name:str, task_directory_name: str, assignment_submission: AssignmentSubmission):
     checked_task_status_validator = import_module_dynamically_from_path(validator_script)
     task_file_name_full_path=os.path.join(SUBMITTED_FILES_DIR,str(assignment_submission.hacker_id),str(assignment_submission.assignment_id),str(assignment_submission.submission_id),task_directory_name, task_file_name)
-    return checked_task_status_validator.execute_task(task_file_name_full_path, DEFAULT_VALIDATOR_TIMEOUT)
+    try:
+        return checked_task_status_validator.execute_task(task_file_name_full_path, DEFAULT_VALIDATOR_TIMEOUT)
+    except Exception as e:
+        print("ERROR: unhandled exception thrown from validator")
+        return {
+            "status":"ERROR", 
+            "ERROR_message":"unhandled exception thrown from validator", 
+            "ERROR_stacktrace":''.join(traceback.format_exception(type(e), e, e.__traceback__))
+        }
     #https://python.code-maven.com/python-capture-stdout-stderr-exit - this is a nice way to implement a validator with subprocess timeout based killing
 
 def check_assignment_submission(assignment_submission:AssignmentSubmission):  
@@ -183,7 +191,20 @@ def max_submission_for_assignment(assignment_id:int):
 @app.post("/submit")
 def submit_assignment(zip_bytes: bytes, json_data: dict ):
     assignment_submission:AssignmentSubmission=AssignmentSubmission.model_validate(json_data)
-    assignment_submission.assignment_time_to_submission=int(time.time_ns()/1000000)-get_assignment_event_start_time(assignment_submission.hacker_id)
+    try:
+        assignment_event_start_time=get_assignment_event_start_time(assignment_submission.hacker_id)
+    except Exception as e:
+        print({
+            "status":"ERROR", 
+            "ERROR_message":f"missing start time event for assignment_id={assignment_submission.assignment_id} for user={assignment_submission.hacker_id}", 
+            "ERROR_stacktrace":''.join(traceback.format_exception(type(e), e, e.__traceback__))
+        })
+        return {
+            "status":"ERROR", 
+            "ERROR_message":f"missing start time event for assignment_id={assignment_submission.assignment_id} for user={assignment_submission.hacker_id}", 
+            "ERROR_stacktrace":''.join(traceback.format_exception(type(e), e, e.__traceback__))
+        }
+    assignment_submission.assignment_time_to_submission=int(time.time_ns()/1000000)-assignment_event_start_time
     assignment_mapper=load_assignment_mapper()
     if not str(assignment_submission.assignment_id) in assignment_mapper:
         return {"status":"ERROR","ERROR_message":f"missing assignment_id={assignment_submission.assignment_id} in assignment_mapper file"}

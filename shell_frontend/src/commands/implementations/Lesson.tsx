@@ -6,18 +6,27 @@ import { useApiUrl } from "../../hooks/baseUrlContext.tsx";
 export default function Lesson({ setHidePrompt , triggerScroll }: { setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>; triggerScroll: () => void}) {
   const [status, setStatus] = useState<AssignmentStatus | null>(null); // state to hold status message
   const [lessonContent, setLessonContent] = useState<string>(''); // state to hold status message
-  const url=useApiUrl()("/v2/assignments/current_state")
+  const current_state_url=useApiUrl()("/v2/assignments/current_state")
+  const analytics_event_user_viewed_assignment_url=useApiUrl()("/v2/analytics/event/USER_VIEWED_ASSIGNMENT")
+  setHidePrompt(true);
   useEffect(() => {
 
       const fetchStatus = async () => {
         try {
-          const response = await fetch(url); // replace with your actual endpoint
+          const response = await fetch(current_state_url); // replace with your actual endpoint
           if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
           }
           const data: AssignmentStatus = await response.json();
           console.log(data); // Log the response data
-          setStatus(data);
+          setStatus(data);          
+          fetch(analytics_event_user_viewed_assignment_url, {
+            method: "post",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ assignment_id: data?.assignment_id })
+          })
+          .then(res => res.json())
+          .then(data => console.log(data))
         } catch (error) {
           console.error('Error fetching user data:', error);
         }
