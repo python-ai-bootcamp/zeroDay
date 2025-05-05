@@ -1,5 +1,5 @@
 from typing import Any, Dict
-from analyticsService import clear_memoized_data, insert_analytic_event, persist_analytics_events, UserViewedAssignmentAnalyticsEvent, UserDownloadedAssignmentAnalyticsEvent
+from analyticsService import get_assignment_event_start_time, clear_memoized_data, insert_analytic_event, persist_analytics_events, UserViewedAssignmentAnalyticsEvent, UserDownloadedAssignmentAnalyticsEvent
 from systemEntities import AnalyticsEventType, print
 from configurationService import domain_name, protocol, isDevMod
 from assignmentOrchestrator import AssignmentSubmission, assignment_description, submit_assignment, max_submission_for_assignment, next_assignment_submission, user_testing_in_progress, last_assignment_submission_result
@@ -93,3 +93,17 @@ def insert_analytics_event_by_api(analytics_event_type: str, background_tasks: B
         return {"status": "SUBMITTED"}
     else:
         return {"status": "ERROR", "ERROR_message":f"'{analytics_event_type}' event type is not member of AnalyticsEventType"}
+
+@router.get("/analytics/event/assignment_start_time")
+def fetch_assignment_event_start_time(request: Request, analytics_event_type:str="USER_VIEWED_ASSIGNMENT"):
+    user=request.state.authenticated_user
+    if user:
+        if analytics_event_type in AnalyticsEventType.__members__:
+            match AnalyticsEventType[analytics_event_type]:
+                case AnalyticsEventType.USER_VIEWED_ASSIGNMENT|AnalyticsEventType.USER_DOWNLOADED_ASSIGNMENT:
+                    assignment_id=next_assignment_submission(user["hacker_id"])["assignment_id"]
+                    return get_assignment_event_start_time(user["hacker_id"], assignment_id, AnalyticsEventType[analytics_event_type])
+                case _:
+                    return {"status":"ERROR", "ERROR_message":f"analytics_event_type='{analytics_event_type}' is valid AnalyticsEventType but was not supported for API usage"}
+        else:
+            return {"status": "ERROR", "ERROR_message":f"'{analytics_event_type}' event type is not member of AnalyticsEventType"}

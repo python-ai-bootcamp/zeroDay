@@ -191,19 +191,12 @@ def max_submission_for_assignment(assignment_id:int):
 @app.post("/submit")
 def submit_assignment(zip_bytes: bytes, json_data: dict ):
     assignment_submission:AssignmentSubmission=AssignmentSubmission.model_validate(json_data)
-    try:
-        assignment_event_start_time=get_assignment_event_start_time(assignment_submission.hacker_id)
-    except Exception as e:
-        print({
-            "status":"ERROR", 
-            "ERROR_message":f"missing start time event for assignment_id={assignment_submission.assignment_id} for user={assignment_submission.hacker_id}", 
-            "ERROR_stacktrace":''.join(traceback.format_exception(type(e), e, e.__traceback__))
-        })
-        return {
-            "status":"ERROR", 
-            "ERROR_message":f"missing start time event for assignment_id={assignment_submission.assignment_id} for user={assignment_submission.hacker_id}", 
-            "ERROR_stacktrace":''.join(traceback.format_exception(type(e), e, e.__traceback__))
-        }
+    assignment_event_start_time=get_assignment_event_start_time(assignment_submission.hacker_id, assignment_submission.assignment_id)
+    if(assignment_event_start_time["status"]=="OK"):
+        assignment_event_start_time=assignment_event_start_time["result"]
+    else:
+        print(assignment_event_start_time)
+        return assignment_event_start_time
     assignment_submission.assignment_time_to_submission=int(time.time_ns()/1000000)-assignment_event_start_time
     assignment_mapper=load_assignment_mapper()
     if not str(assignment_submission.assignment_id) in assignment_mapper:

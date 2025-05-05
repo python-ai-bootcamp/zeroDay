@@ -8,10 +8,12 @@ export default function SCP({ args, setHidePrompt, triggerScroll }: { args: stri
     const [packingProgressDisplay, setPackingProgressDisplay] = useState<number>(-1); // state to hold scp content
     const [uploadProgressDisplay, setUploadProgressDisplay] = useState<number>(-1); // state to hold scp content
     const [testingProgressDisplay, setTestingProgressDisplay] = useState<number>(-1); // state to hold scp content
+    const [canSubmit, setCanSubmit] = useState<string>(""); // state to hold scp content
     const fileInputRef = useRef<HTMLInputElement>(null);
     const current_status_url=useApiUrl()("/v2/assignments/current_state")
     const submit_assignment_url_template=useApiUrl()("/v2/assignments/$${{ASSIGNMENT_ID}}$$/submission")
     const test_status_url=useApiUrl()("/v2/assignments/submission/test_status")
+    const check_if_user_viewed_lesson_url=useApiUrl()("/v2/analytics/event/assignment_start_time")
     const isPackingComplete = useRef<boolean>(false);
     const isUploadComplete = useRef<boolean>(false);
     const [isTestingComplete, setIsTestingComplete] = useState<boolean>(false);
@@ -134,11 +136,28 @@ export default function SCP({ args, setHidePrompt, triggerScroll }: { args: stri
         await pollUpload(0);
         setHidePrompt(true);
         await pollTesting(0);
+        setHidePrompt(false);
         triggerScroll()
     };
 
+    const triggerBlockSubmission =  () => {
+      console.log("USER CANNOT SUBMIT BECAUSE HE DID NOT VIEW ASSIGNMENT YET")
+      setHidePrompt(false);
+      triggerScroll()
+    }
+
     useEffect(() => {
-        triggerDirectoryPicker();
+        fetch(check_if_user_viewed_lesson_url)
+          .then(res=>res.json())
+          .then(resBody=>{
+            if (resBody.status=="OK"){
+              setCanSubmit("Please Select Assignment Files For Upload...")
+              triggerDirectoryPicker();
+            }else{
+              setCanSubmit("User Can Not Submit Assignment Before Viewing Lesson.\nPlease execute 'lesson' command.\nOnce finished going over learning matirial, execute 'assignment' command.")
+              triggerBlockSubmission();
+            }
+          })
     }, [args]);
 
     return (
@@ -152,7 +171,7 @@ export default function SCP({ args, setHidePrompt, triggerScroll }: { args: stri
           multiple
           onChange={(e) => handleDirectoryUpload(e.target.files)}
         />
-        <div>Please Select Assignment Files For Upload...</div>
+        <div><pre>{canSubmit}</pre></div>
         {(packingProgressDisplay!=-1)?<div>Assignment Packing in Progress:: <pre style={{ display: 'inline' }}>{".".repeat(packingProgressDisplay).match(/.{1,120}/g)?.join("\n")}</pre>{(isPackingComplete.current)?<label> [ COMPLETE ]</label>:null}</div>:null}
         {(uploadProgressDisplay!=-1)?<div>Assignment Upload in Progress::   <pre style={{ display: 'inline' }}>{".".repeat(uploadProgressDisplay).match(/.{1,120}/g)?.join("\n")}</pre>{(isUploadComplete.current)?<label> [ COMPLETE ]</label>:null}</div>:null}
         {(testingProgressDisplay!=-1)?<div>Assignment Testing in Progress:: <pre style={{ display: 'inline' }}>{".".repeat(testingProgressDisplay).match(/.{1,120}/g)?.join("\n")}</pre>{(isTestingComplete)?<label> [ COMPLETE ]</label>:null}</div>:null}

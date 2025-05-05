@@ -164,7 +164,7 @@ def filter_data_by_filter_field(data:list[dict], filter_field_name: str, filter_
         print("filter_data_by_filter_field:: filter_field_value==None, returning unfiltered results")
         return data
     else:       
-        #print("filter_data_by_filter_field::data=",data)
+        print("filter_data_by_filter_field::data=",data)
         print("filter_data_by_filter_field::filter_field_name=",filter_field_name)
         print("filter_data_by_filter_field::filter_field_value=",filter_field_value)
         return [event for event in data if event[filter_field_name]==filter_field_value]
@@ -216,13 +216,18 @@ def get_group_by_fields(from_time:int, to_time:int, analytics_event_type: Analyt
     #print("group_by_fields::unique_field_names=",unique_field_names)
     return list(unique_field_names)
 
-def get_assignment_event_start_time(hacker_id:str, analytics_event_type:AnalyticsEventType=AnalyticsEventType.USER_VIEWED_ASSIGNMENT):
+def get_assignment_event_start_time(hacker_id:str, assignment_id:int, analytics_event_type:AnalyticsEventType=AnalyticsEventType.USER_VIEWED_ASSIGNMENT):
     data=fetch_analytics_data(0, 99999999999999, analytics_event_type)
     data=filter_data_by_filter_field(data=data, filter_field_name="hacker_id", filter_field_value=hacker_id)
+    print(f"data after filtering hacker_id={hacker_id}",data)
+    data=filter_data_by_filter_field(data=data, filter_field_name="assignment_id", filter_field_value=assignment_id)
+    print(f"data after filtering assignment_id={assignment_id}",data)
     if len(data)>0:
-        return data[0]["epoch_time"]
+        #return data[0]["epoch_time"]
+        return {"status":"OK", "result":data[0]["epoch_time"]}
     else:
-        raise Exception(f"No Data Found For User {hacker_id} when querying events of type {analytics_event_type.name}")
+        #raise Exception(f"No Data Found For User {hacker_id} when querying events of type {analytics_event_type.name}")
+        return {"status":"ERROR", "ERROR_message":f"No Data Found For User {hacker_id} when querying events of type {analytics_event_type.name}"}
 
 def clear_memoized_data():
     analytics_data_memoization_state.clear()
