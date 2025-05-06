@@ -1,8 +1,4 @@
 import React, { useState, useEffect} from 'react';
-//import ReactJson from 'react18-json-view';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-
 
 import {AssignmentStatus} from '../types'; // import AssignmentStatus type
 import { useApiUrl } from "../../hooks/baseUrlContext.tsx";
