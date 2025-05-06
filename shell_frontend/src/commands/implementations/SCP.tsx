@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect} from 'react';
 import JSZip from 'jszip';
 import { useApiUrl } from "../../hooks/baseUrlContext.tsx";
+import StatusAssignment from './StatusAssignment.tsx';
 
 export default function SCP({ args, setHidePrompt, triggerScroll }: { args: string[]; setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>; triggerScroll: ()=>void }) {
     setHidePrompt(true);
@@ -133,11 +134,13 @@ export default function SCP({ args, setHidePrompt, triggerScroll }: { args: stri
         };   
         await pollPackingNoUiModification(0);
         setHidePrompt(true);
+        triggerScroll();
         await pollUpload(0);
         setHidePrompt(true);
+        triggerScroll();
         await pollTesting(0);
         setHidePrompt(false);
-        triggerScroll()
+        triggerScroll();
     };
 
     const triggerBlockSubmission =  () => {
@@ -175,6 +178,7 @@ export default function SCP({ args, setHidePrompt, triggerScroll }: { args: stri
         {(packingProgressDisplay!=-1)?<div>Assignment Packing in Progress:: <pre style={{ display: 'inline' }}>{".".repeat(packingProgressDisplay).match(/.{1,120}/g)?.join("\n")}</pre>{(isPackingComplete.current)?<label> [ COMPLETE ]</label>:null}</div>:null}
         {(uploadProgressDisplay!=-1)?<div>Assignment Upload in Progress::   <pre style={{ display: 'inline' }}>{".".repeat(uploadProgressDisplay).match(/.{1,120}/g)?.join("\n")}</pre>{(isUploadComplete.current)?<label> [ COMPLETE ]</label>:null}</div>:null}
         {(testingProgressDisplay!=-1)?<div>Assignment Testing in Progress:: <pre style={{ display: 'inline' }}>{".".repeat(testingProgressDisplay).match(/.{1,120}/g)?.join("\n")}</pre>{(isTestingComplete)?<label> [ COMPLETE ]</label>:null}</div>:null}
+        {(isTestingComplete)?<StatusAssignment triggerScroll={triggerScroll}/>:null}
       </div>
 
     );
