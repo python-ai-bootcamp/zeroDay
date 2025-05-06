@@ -7,7 +7,8 @@ import GettingStarted from './implementations/GettingStarted'
 import Lesson from './implementations/Lesson'; // import Lesson component
 import Assignment from './implementations/Assignment'; // import Assignment component
 import SCP from './implementations/SCP'; // import SCP component
-import History from './implementations/History'; // import SCP component
+import History from './implementations/History';
+import GetSystemInfo from './implementations/GetSystemInfo.tsx'; 
 
 
 const commandRegistry: Record<string, CommandExecutor> = {
@@ -44,6 +45,10 @@ const commandRegistry: Record<string, CommandExecutor> = {
   history: (_args, _triggerScroll, _setHistory, _setHidePrompt, hidePrompt, _currentHistory) => {
     console.log("history command received following array::\n",_currentHistory)
     return <History args={_currentHistory} triggerScroll={_triggerScroll}/>; // print history
+  },
+  get_system_info: (_args, _triggerScroll, _setHistory, _setHidePrompt, hidePrompt, _currentHistory) => {
+    console.log("history command received following array::\n",_currentHistory)
+    return <GetSystemInfo setHidePrompt={_setHidePrompt} triggerScroll={_triggerScroll}/>; // print history
   }
 };
 
