@@ -38,12 +38,12 @@ const MatrixScreen = () => {
       }
     };
 
-    const interval = setInterval(draw, 50);
+    const interval = setInterval(draw, 40);
 
     const timer = setTimeout(() => {
       setVisible(false);
       clearInterval(interval);
-    }, 10000); // 10 seconds
+    }, 6500); // 10 seconds
 
     return () => {
       clearInterval(interval);
