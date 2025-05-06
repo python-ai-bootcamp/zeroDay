@@ -48,6 +48,16 @@ def post_assignments_submission(assignment_id: int, background_tasks: Background
 
 @router.get("/assignments/submission/last_result")
 def serve_assignments_submission_last_result(request: Request):
+    def format_duration(ms):
+        seconds = ms // 1000
+        minutes, sec = divmod(seconds, 60)
+        hours, min = divmod(minutes, 60)
+        days, hr = divmod(hours, 24)
+
+        if days > 0:
+            return f"{days}d {hr:02}:{min:02}:{sec:02}"
+        else:
+            return f"{hr:02}:{min:02}:{sec:02}"
     user=request.state.authenticated_user
     submission_result=last_assignment_submission_result(user["hacker_id"])
     if submission_result["status"] == "OK":
@@ -55,9 +65,9 @@ def serve_assignments_submission_last_result(request: Request):
         assignment_id=submission_result["assignment_id"]
         submission_id=submission_result["submission_id"]
         submission_result_for_view=submission_result
-        del submission_result_for_view["assignment_files"]
         del submission_result_for_view["assignment_file_names"]
-        submission_result_for_view["result"]["collected_results"]=list(map(lambda task_result:{**task_result,"submitted_task_file":f"{protocol}://{domain_name}/submitted_task_file?assignment_id={assignment_id}&submission_id={submission_id}&task_id={task_result['task_idx']}"},submission_result_for_view["result"]["collected_results"]))
+        submission_result_for_view["assignment_time_to_submission"]= format_duration(submission_result_for_view["assignment_time_to_submission"])
+        submission_result_for_view["result"]["collected_results"]=list(map(lambda task_result:{**task_result,"submitted_task_files":f"{protocol}://{domain_name}/submitted_tasks_browser/{assignment_id}/{submission_id}/{task_result['task_idx']}"},submission_result_for_view["result"]["collected_results"]))
         return submission_result_for_view
     else:
         return {"status":"ERROR", "ERROR_message":submission_result["ERROR_message"]}

@@ -2,6 +2,7 @@
 import { CommandExecutor } from './types';
 import Help from './implementations/Help';
 import Status from './implementations/Status'; // import Status component
+import StatusAssignment from './implementations/StatusAssignment'; // import Status component
 import GettingStarted from './implementations/GettingStarted'
 import Lesson from './implementations/Lesson'; // import Lesson component
 import Assignment from './implementations/Assignment'; // import Assignment component
@@ -26,6 +27,9 @@ const commandRegistry: Record<string, CommandExecutor> = {
   },
   status: (_args, _triggerScroll, _setHistory) => {
     return <Status triggerScroll={_triggerScroll}/>; // return Status component
+  },
+  status_assignment: (_args, _triggerScroll, _setHistory) => {
+    return <StatusAssignment triggerScroll={_triggerScroll}/>; // return Status component
   },
   lesson: (_args, _triggerScroll, _setHistory, _setHidePrompt) => {
     return <Lesson setHidePrompt={_setHidePrompt} triggerScroll={_triggerScroll}/>; // placeholder for lesson command
