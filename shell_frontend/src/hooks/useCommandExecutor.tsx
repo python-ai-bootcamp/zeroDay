@@ -2,7 +2,25 @@ import React from 'react';
 import commandRegistry from '../commands/commandRegistry'; // import command registry
 import { useUser } from '../hooks/userContext'; 
 
-export function useCommandExecutor(triggerScroll: () => void, setHistory: React.Dispatch<React.SetStateAction<(string | JSX.Element)[]>>, setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>, hidePrompt: boolean, terminalCommandHistory: string[], possibleCommands:Record<string, string[]>) {
+function findLongestCommonPrefix(arr: string[], str: string): string {
+  if (!arr.length) return str;
+  let prefix = arr[0];
+  for (let i = 1; i < arr.length; i++) {
+    const current = arr[i];
+    let j = 0;
+    while (j < prefix.length && j < current.length && prefix[j] === current[j]) {
+      j++;
+    }
+    prefix = prefix.slice(0, j);
+    if (prefix === "") break;
+  }
+  if (prefix.length > str.length && prefix.startsWith(str)) {
+    return prefix;
+  }
+  return str;
+}
+
+export function useCommandExecutor(triggerScroll: () => void, setHistory: React.Dispatch<React.SetStateAction<(string | JSX.Element)[]>>, setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>, hidePrompt: boolean, terminalCommandHistory: string[], possibleCommands:Record<string, string[]>, setCommand:React.Dispatch<React.SetStateAction<string>>) {
   const user = useUser();
   const executeCommand = (input: string) => {
     const [cmd, ...args] = input.trim().split(' '); // split command and args
@@ -17,7 +35,10 @@ export function useCommandExecutor(triggerScroll: () => void, setHistory: React.
       }
     } else {
       if (possibleCommands.current.length>0){
+        const longestCommonPrefix=findLongestCommonPrefix(possibleCommands.current, cmd)
+        console.log("useCommandExecutor:: longestCommonPrefix=",longestCommonPrefix)
         setHistory(prev => [...prev, `${user?.name_nospace}@zeroDay$ ${input}`, `Possible Commands: ${"\n"+possibleCommands.current.map(x=>`- ${x}`).join("\n")}`]); // show possible commands by partial command prefix
+        setCommand(longestCommonPrefix)
       }else{
         setHistory(prev => [...prev, `${user?.name_nospace}@zeroDay$ ${input}`, `Command not found: ${cmd}`]); // show error
       }

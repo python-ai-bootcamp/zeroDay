@@ -23,7 +23,7 @@ const Terminal = () => {
     }, 100);  // Delay scroll by 0.1s to ensure content is rendered
   };
   const possibleCommands:Record<string, string[]> = {"current":[]}
-  const executeCommand = useCommandExecutor(triggerScroll, setHistory, setHidePrompt, hidePrompt, terminalCommandHistory, possibleCommands);
+  const executeCommand = useCommandExecutor(triggerScroll, setHistory, setHidePrompt, hidePrompt, terminalCommandHistory, possibleCommands, setCommand);
   const inputRef = useRef<HTMLInputElement>(null);
   const tabTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tabCount = useRef(0);
@@ -81,12 +81,9 @@ const Terminal = () => {
         if(possibleCommands.current.length==1){
           setCommand(possibleCommands.current[0])
         }else if(possibleCommands.current.length>=2){
-          console.log("need to implement possible commands presentation")
           executeCommand(command)
         }
-
-      }
-    
+      }   
       return;
     }
     
