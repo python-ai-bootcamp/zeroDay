@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 const HackerSequence = () => {
   const [hackTextVisible, setHackTextVisible] = useState<boolean>(true); // Control visibility of sequence

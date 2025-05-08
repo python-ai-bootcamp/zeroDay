@@ -2,10 +2,14 @@ import React, { useState, useRef, useEffect} from 'react';
 import JSZip from 'jszip';
 import { useApiUrl } from "../../hooks/baseUrlContext.tsx";
 import StatusAssignment from './StatusAssignment.tsx';
-
+declare module 'react' {
+    interface InputHTMLAttributes<T> extends React.HTMLAttributes<T> {
+      webkitdirectory?: string;
+      directory?: string;
+    }
+  }
 export default function SCP({ args, setHidePrompt, triggerScroll }: { args: string[]; setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>; triggerScroll: ()=>void }) {
     setHidePrompt(true);
-    const [scpContent, setScpContent] = useState<string>(''); // state to hold scp content
     const [packingProgressDisplay, setPackingProgressDisplay] = useState<number>(-1); // state to hold scp content
     const [uploadProgressDisplay, setUploadProgressDisplay] = useState<number>(-1); // state to hold scp content
     const [testingProgressDisplay, setTestingProgressDisplay] = useState<number>(-1); // state to hold scp content
@@ -72,11 +76,9 @@ export default function SCP({ args, setHidePrompt, triggerScroll }: { args: stri
     
             const result = await res.json();
             console.log('Upload successful:', result);
-            setScpContent('Upload successful!');
             isUploadComplete.current=true
         } catch (error) {
             console.error('Upload failed:', error);
-            setScpContent('Upload failed.');
         }
     };
 

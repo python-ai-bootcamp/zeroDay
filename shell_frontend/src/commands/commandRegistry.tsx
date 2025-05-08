@@ -42,11 +42,11 @@ const commandRegistry: Record<string, CommandExecutor> = {
     console.log('scp command executed with args:', _args); // log scp command execution
     return <SCP args={_args} setHidePrompt={_setHidePrompt} triggerScroll={_triggerScroll}/>; // return SCP component with args
   },
-  history: (_args, _triggerScroll, _setHistory, _setHidePrompt, hidePrompt, _currentHistory) => {
+  history: (_args, _triggerScroll, _setHistory, _setHidePrompt, _currentHistory) => {
     console.log("history command received following array::\n",_currentHistory)
     return <History args={_currentHistory} triggerScroll={_triggerScroll}/>; // print history
   },
-  get_system_info: (_args, _triggerScroll, _setHistory, _setHidePrompt, hidePrompt, _currentHistory) => {
+  get_system_info: (_args, _triggerScroll, _setHistory, _setHidePrompt, _currentHistory) => {
     console.log("history command received following array::\n",_currentHistory)
     return <GetSystemInfo setHidePrompt={_setHidePrompt} triggerScroll={_triggerScroll}/>; // print history
   }

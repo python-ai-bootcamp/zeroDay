@@ -1,8 +1,21 @@
-import React, { useState, useEffect} from 'react';
-
+import { useState, useEffect} from 'react';
 import {AssignmentStatus} from '../types'; // import AssignmentStatus type
 import { useApiUrl } from "../../hooks/baseUrlContext.tsx";
-const JsonRenderer = ({ data, level = 0 }) => {
+
+type JSONValue =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: JSONValue }
+  | JSONValue[];
+
+type JsonRendererProps = {
+  data: JSONValue;
+  level?: number;
+};
+
+const JsonRenderer: React.FC<JsonRendererProps> = ({ data, level = 0 }) => {
   if (typeof data === 'object' && data !== null) {
     const isArray = Array.isArray(data);
     return (

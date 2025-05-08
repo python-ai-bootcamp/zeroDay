@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useLayoutEffect } from 'react';
+import React, { useRef, useState, useEffect, JSX} from 'react';
 import { useCommandExecutor } from '../hooks/useCommandExecutor'; // import command executor hook
 import { useUser } from '../hooks/userContext'; 
 import commandRegistry from '../commands/commandRegistry'; // import command registry
@@ -12,7 +12,7 @@ const Terminal = () => {
   const commands=Object.keys(commandRegistry);
   const [unsavedCommand, setUnsavedCommand] = useState<string | null>(null);
 
-  const [history, setHistory] = useState<string[]>([initial_message]);
+  const [history, setHistory] = useState<(string | JSX.Element)[]>([initial_message]);
   const [hidePrompt, setHidePrompt] = useState(false); // state to control prompt visibility
   const user = useUser();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -23,12 +23,12 @@ const Terminal = () => {
     }, 100);  // Delay scroll by 0.1s to ensure content is rendered
   };
   const possibleCommands:Record<string, string[]> = {"current":[]}
-  const executeCommand = useCommandExecutor(triggerScroll, setHistory, setHidePrompt, hidePrompt, terminalCommandHistory, possibleCommands, setCommand);
+  const executeCommand = useCommandExecutor(triggerScroll, setHistory, setHidePrompt, terminalCommandHistory, possibleCommands, setCommand);
   const inputRef = useRef<HTMLInputElement>(null);
   const tabTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tabCount = useRef(0);
   useEffect(() => {
-    const handleDocumentClick = (e: Event) => {
+    const handleDocumentClick = () => {
       console.log("handleDocumentClick was called")
       if (inputRef.current && document.activeElement !== inputRef.current) {
         inputRef.current.focus();

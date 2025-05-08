@@ -11,7 +11,6 @@ export type CommandExecutor = (
   triggerScroll: () => void,
   setHistory: React.Dispatch<React.SetStateAction<(string | JSX.Element)[]>>,
   setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>,
-  hidePrompt: boolean,
   terminalCommandHistory: string[]
 ) => string | JSX.Element | void;
 

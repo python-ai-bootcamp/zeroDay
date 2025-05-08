@@ -6,7 +6,6 @@ import Terminal from './components/Terminal.tsx'
 import { UserProvider } from './hooks/userContext';
 import { AuthKeyProvider, useHackerId } from './hooks/authKeyContext';
 import { ApiUrlProvider } from './hooks/baseUrlContext.tsx';
-import HackerSequence from './components/HackerSequence.tsx'
 import MatrixScreen from './components/MatrixScreen.tsx'
 
 const AppRouter = () => {
