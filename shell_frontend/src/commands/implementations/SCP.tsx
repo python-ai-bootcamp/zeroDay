@@ -9,7 +9,7 @@ declare module 'react' {
   }
 }
 export default function SCP({ args, setHidePrompt, triggerScroll }: { args: string[]; setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>; triggerScroll: ()=>void }) {
-    setHidePrompt(true);
+    //setHidePrompt(true);
     const [packingProgressDisplay, setPackingProgressDisplay] = useState<number>(-1); // state to hold scp content
     const [uploadProgressDisplay, setUploadProgressDisplay] = useState<number>(-1); // state to hold scp content
     const [testingProgressDisplay, setTestingProgressDisplay] = useState<number>(-1); // state to hold scp content
@@ -159,7 +159,7 @@ export default function SCP({ args, setHidePrompt, triggerScroll }: { args: stri
     const triggerBlockSubmission =  () => {
       console.log("USER CANNOT SUBMIT BECAUSE HE DID NOT VIEW ASSIGNMENT YET")
       setHidePrompt(false);
-      triggerScroll()
+      triggerScroll();
     }
 
     useEffect(() => {
@@ -171,14 +171,13 @@ export default function SCP({ args, setHidePrompt, triggerScroll }: { args: stri
                 .then(res=>res.json())
                 .then(res_body=>{
                   if(res_body.submission_id>res_body.max_submission_id){
-                    console.log(`Used exceeded max submissions allowed for this task (submission_attempts=${res_body.submission_id-1}, max_allowed=${res_body.max_submission_id})`)
+                    console.log(`User exceeded max submissions allowed for this task (submission_attempts=${res_body.submission_id-1}, max_allowed=${res_body.max_submission_id})`)
                     isUploadComplete.current=true
                     setIsTestingComplete(true)
                     maxNotBreached.current=false
                     setHidePrompt(false);
                     triggerScroll();
-                  }else{  
-                
+                  }else{
                     setCanSubmit("Please Select Assignment Files For Upload...")
                     triggerDirectoryPicker();
                   }                
@@ -187,6 +186,8 @@ export default function SCP({ args, setHidePrompt, triggerScroll }: { args: stri
               setCanSubmit("ERROR:: User Can Not Submit Assignment Before Viewing Lesson")
               setCantSubmitExplenation("Please execute 'lesson' command.\nOnce finished going over learning matirial, execute 'assignment' command.\nThen Try submitting using 'scp' command again.")
               triggerBlockSubmission();
+              setHidePrompt(false);
+              triggerScroll();
             }
           })
     }, [args]);
