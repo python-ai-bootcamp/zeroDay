@@ -30,8 +30,9 @@ export default function Status({triggerScroll}: { triggerScroll: () => void}) {
     {status && (
       <div>
         <p>Assignment ID: {status.assignment_id}</p>
-        <p>Submission ID: {status.submission_id}</p>
-        <p>Max Submission ID: {status.max_submission_id}</p>
+        <p>Next Submission ID: {status.submission_id}</p>
+        <p>Max Submissions Allowed: {status.max_submission_id}</p>
+        {(status.submission_id>status.max_submission_id)?(<p className="text-red-500">ERROR:: User breached max allowed submissions for assignment</p>):null}
       </div>
     )}
   </div>

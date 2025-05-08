@@ -68,9 +68,9 @@ const Terminal = () => {
           console.log('Single Tab detected (no double Tab)');
           tabCount.current = 0;
           tabTimeout.current = null;
-        }, 350);
+        }, 450);
       } else if (tabCount.current === 2) {
-        console.log('🔥 Double Tab detected!');
+        console.log('Double Tab detected!');
         if (tabTimeout.current) clearTimeout(tabTimeout.current);
         tabCount.current = 0;
         tabTimeout.current = null;
