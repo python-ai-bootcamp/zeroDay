@@ -65,6 +65,7 @@ templates_processors={
     "payment_redirect_page":                        lambda: f'<html><head><meta http-equiv="refresh" content="5; url={protocol}://{domain_name}/enlist"/></head><body><p>This Page Is Still Under Construction</p><p>User will be redirected back to enlistment page in 5 seconds</p></body></html>',
     "redirect_to_enlistment_page":                  lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/enlist"/></head><body></body></html>',
     "redirect_to_last_submission_result_page":      lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/last_submission_result"/></head><body></body></html>',
+    "redirect_to_shell_frontend":                   lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/static"/></head><body></body></html>',
 }
 
 processed_templates_for_prod_efficiency={}
@@ -321,6 +322,18 @@ def serve_contact(request: Request):
     return HTMLResponse(content=contact_page_html, status_code=200)
 
 @app.get("/assignments")
+def serve_assignments(request: Request):
+    user=request.state.authenticated_user
+    assignments_page_html = get_template("assignments_page")
+    if user and user["paid_status"]:
+        print("user is paid, redirecting to shell frontend ")
+        assignments_page_html=get_template("redirect_to_shell_frontend")
+    else:
+        print("unpaid/nonExisting user, redirecting to payment page ")
+        assignments_page_html=get_template("redirect_to_enlistment_page")
+    return HTMLResponse(content=assignments_page_html, status_code=200)
+
+@app.get("/assignments_legacy_static_page")
 def serve_assignments(request: Request):
     user=request.state.authenticated_user
     assignments_page_html = get_template("assignments_page")
