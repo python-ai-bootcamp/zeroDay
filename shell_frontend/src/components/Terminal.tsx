@@ -162,15 +162,15 @@ const Terminal = () => {
       {/* Command prompt */}
       {!hidePrompt && ( 
         <div className="flex">
-        {user ? <span>{user.name_nospace}@zeroDay$&nbsp;</span> : <span>root@zeroDay$&nbsp;</span>}
-        <input
+        {user ? <span>{user.name_nospace}@zeroDay$&nbsp;</span> : <div><div className="text-red-500">ERROR:: user is logged out of ZeroDay terminal.</div><div>In order to login, please reconnect with a valid link from last mail sent to you by "sender@zerodaybootcamp.xyz".</div></div>}
+        {user ? <input
           ref={inputRef}
           type="text"
           value={command}
           onInput={(e) => setCommand((e.target as HTMLInputElement).value)}
           onKeyDown={handleCommand}
           className="bg-transparent border-none outline-none w-full text-green-500"
-        />
+        />:null}
       </div>
       )}
       <div ref={scrollRef} />

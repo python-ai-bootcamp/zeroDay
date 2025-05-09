@@ -39,9 +39,11 @@ class StaticFilesWithIndex(StaticFiles):
 
 #app.mount("/static", StaticFiles(directory=STATIC_FILES_LIBRARY), name="static")
 app.mount("/static", StaticFilesWithIndex(directory=STATIC_FILES_LIBRARY, html=True), name="static") #modified to support /static as well as /static/
+app.mount("/terminal", StaticFilesWithIndex(directory=STATIC_FILES_LIBRARY, html=True), name="ternimal")
 
 # Add a route to handle /static
 @app.get("/static", include_in_schema=False)
+@app.get("/terminal", include_in_schema=False)
 
 async def serve_static_index():
     index_path = os.path.join(STATIC_FILES_LIBRARY, "index.html")
@@ -65,7 +67,7 @@ templates_processors={
     "payment_redirect_page":                        lambda: f'<html><head><meta http-equiv="refresh" content="5; url={protocol}://{domain_name}/enlist"/></head><body><p>This Page Is Still Under Construction</p><p>User will be redirected back to enlistment page in 5 seconds</p></body></html>',
     "redirect_to_enlistment_page":                  lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/enlist"/></head><body></body></html>',
     "redirect_to_last_submission_result_page":      lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/last_submission_result"/></head><body></body></html>',
-    "redirect_to_shell_frontend":                   lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/static"/></head><body></body></html>',
+    "redirect_to_shell_frontend":                   lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/terminal"/></head><body></body></html>',
 }
 
 processed_templates_for_prod_efficiency={}
