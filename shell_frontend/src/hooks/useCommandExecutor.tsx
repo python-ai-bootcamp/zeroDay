@@ -20,12 +20,12 @@ function findLongestCommonPrefix(arr: string[], str: string): string {
   return str;
 }
 
-export function useCommandExecutor(triggerScroll: () => void, setHistory: React.Dispatch<React.SetStateAction<(string | JSX.Element)[]>>, setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>, terminalCommandHistory: string[], possibleCommands:Record<string, string[]>, setCommand:React.Dispatch<React.SetStateAction<string>>) {
+export function useCommandExecutor(triggerScroll: () => void, setHistory: React.Dispatch<React.SetStateAction<(string | JSX.Element)[]>>, setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>, terminalCommandHistory: string[], possibleCommands:Record<string, string[]>, setCommand:React.Dispatch<React.SetStateAction<string>>,isTriggeredByEnterKey:Record<string, boolean>) {
   const user = useUser();
   const executeCommand = (input: string) => {
     const [cmd, ...args] = input.trim().split(' '); // split command and args
     const commandExecutor = commandRegistry[cmd];
-    if (commandExecutor) {
+    if (commandExecutor && isTriggeredByEnterKey.current) {
       const result = commandExecutor(args, triggerScroll, setHistory, setHidePrompt, terminalCommandHistory)
       console.log('result', result)
       
@@ -40,6 +40,7 @@ export function useCommandExecutor(triggerScroll: () => void, setHistory: React.
         setHistory(prev => [...prev, `${user?.name_nospace}@zeroDay$ ${input}`, `Possible Commands: ${"\n"+possibleCommands.current.map(x=>`- ${x}`).join("\n")}`]); // show possible commands by partial command prefix
         setCommand(longestCommonPrefix)
         triggerScroll()
+        return;
       }else{
         setHistory(prev => [...prev, `${user?.name_nospace}@zeroDay$ ${input}`, `Command not found: ${cmd}`]); // show error
       }

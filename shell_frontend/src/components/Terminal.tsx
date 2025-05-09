@@ -23,7 +23,8 @@ const Terminal = () => {
     }, 100);  // Delay scroll by 0.1s to ensure content is rendered
   };
   const possibleCommands:Record<string, string[]> = {"current":[]}
-  const executeCommand = useCommandExecutor(triggerScroll, setHistory, setHidePrompt, terminalCommandHistory, possibleCommands, setCommand);
+  const isTriggeredByEnterKey:Record<string, boolean> = {"current":true}
+  const executeCommand = useCommandExecutor(triggerScroll, setHistory, setHidePrompt, terminalCommandHistory, possibleCommands, setCommand, isTriggeredByEnterKey);
   const inputRef = useRef<HTMLInputElement>(null);
   const tabTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tabCount = useRef(0);
@@ -81,6 +82,7 @@ const Terminal = () => {
         if(possibleCommands.current.length==1){
           setCommand(possibleCommands.current[0])
         }else if(possibleCommands.current.length>=2){
+          isTriggeredByEnterKey.current=false
           executeCommand(command)
         }
       }   
@@ -134,6 +136,7 @@ const Terminal = () => {
         if (command.trim()!==""){
           setTerminalCommandHistory(prev => [...prev, command]);
         }
+        isTriggeredByEnterKey.current=true
         executeCommand(command);
       }else{ //if command is empty, don't execute it, but add extra empyy prompt to history 
         setHistory((prev) => [...prev, `${user?.name_nospace ?? 'root'}@zeroDay$ ${command}`,]);
