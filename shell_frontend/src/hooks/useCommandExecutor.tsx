@@ -39,6 +39,7 @@ export function useCommandExecutor(triggerScroll: () => void, setHistory: React.
         console.log("useCommandExecutor:: longestCommonPrefix=",longestCommonPrefix)
         setHistory(prev => [...prev, `${user?.name_nospace}@zeroDay$ ${input}`, `Possible Commands: ${"\n"+possibleCommands.current.map(x=>`- ${x}`).join("\n")}`]); // show possible commands by partial command prefix
         setCommand(longestCommonPrefix)
+        triggerScroll()
       }else{
         setHistory(prev => [...prev, `${user?.name_nospace}@zeroDay$ ${input}`, `Command not found: ${cmd}`]); // show error
       }
