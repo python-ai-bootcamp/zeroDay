@@ -30,8 +30,22 @@ for handler in logging.getLogger().handlers:
 STATIC_FILES_LIBRARY="./resources/static"
 STATIC_SUBMITTED_FILES_LIBRARY = Path("./data/submitted_files")
 app = FastAPI()
+class StaticFilesWithIndex(StaticFiles):
+    async def get_response(self, path: str, scope):
+        if path == "":
+            index_path = os.path.join(self.directory, "index.html")
+            return FileResponse(index_path)
+        return await super().get_response(path, scope)
 
-app.mount("/static", StaticFiles(directory=STATIC_FILES_LIBRARY), name="static")
+#app.mount("/static", StaticFiles(directory=STATIC_FILES_LIBRARY), name="static")
+app.mount("/static", StaticFilesWithIndex(directory=STATIC_FILES_LIBRARY, html=True), name="static") #modified to support /static as well as /static/
+
+# Add a route to handle /static
+@app.get("/static", include_in_schema=False)
+
+async def serve_static_index():
+    index_path = os.path.join(STATIC_FILES_LIBRARY, "index.html")
+    return FileResponse(index_path)
 
 templates_processors={
     "challenge_page":                               lambda: open(os.path.join("resources","templates","challenge.html"), "r").read().replace("$${{IS_DEV_MODE}}$$",isDevMod),
