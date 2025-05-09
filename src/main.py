@@ -200,7 +200,7 @@ def serve_about(request: Request):
     if user:
         if user["paid_status"]:
             about_page_html=about_page_html\
-                .replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')\
+                .replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Dive In</a>')\
                 .replace("$${{ENLISTMENT_PROCESS_SECTION}}$$",'<li>You have successfully passed the challenge and enlisted into our ZeroDayBootcamp program</li><li>You may now engage in our next challenges in the <a href="/assignments" style="color:#778881;">Assignments Page</a></li>')
         else:
             about_page_html=about_page_html\
@@ -230,7 +230,7 @@ def serve_home(request: Request):
         is_paid=user["paid_status"]
         if(is_paid):
             home_page_html=home_page_html\
-                .replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')\
+                .replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Dive In</a>')\
                 .replace("$${{RECRUITE_NAME}}$$",user["name"])\
                 .replace("$${{HOME_CONTENT}}$$",'<p style="padding-bottom:50px">Congratulation for enlisting the ZeroDayBootcamp project!</p><p style="padding-bottom:50px">You may now enter the assignment page to start learning</p><a href="/assignments" class="cta-button" >Enter Assignment Page</a>')
         else:
@@ -286,7 +286,7 @@ def serve_enlist(request: Request):
     if(user):
         if(user["paid_status"]):
             enlist_page_html=enlist_page_html\
-                .replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')\
+                .replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Dive In</a>')\
                 .replace("$${{ENLISTMENT_TITLE}}$$","Enlistment Completed")\
                 .replace("$${{BUTTON_HREF_ATTRIBUTE}}$$",'href="/assignments"')\
                 .replace("$${{BUTTON_CLASS}}$$","cta-button")\
@@ -316,7 +316,7 @@ def serve_contact(request: Request):
     user=request.state.authenticated_user
     contact_page_html = get_template("contact_page")
     if user and user["paid_status"]:
-        contact_page_html=contact_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Assignments</a>')
+        contact_page_html=contact_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'<a href="/assignments">Dive In</a>')
     else:
         contact_page_html=contact_page_html.replace("$${{ASSIGNMENT_PAGE_LINK}}$$",'')
     return HTMLResponse(content=contact_page_html, status_code=200)

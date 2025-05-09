@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 const MatrixScreen = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [visible, setVisible] = useState(true);
+  const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -18,7 +19,7 @@ const MatrixScreen = () => {
     const drops = Array(columns).fill(1);
 
     const characters = 'アァカサタナハマヤャラワンABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&*+-/<>';
-
+    
     const draw = () => {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -38,22 +39,43 @@ const MatrixScreen = () => {
       }
     };
 
-    const interval = setInterval(draw, 40);
+    const interval = setInterval(draw, 37);
 
-    const timer = setTimeout(() => {
-      setVisible(false);
+    const fadeTimer = setTimeout(() => {
+      setFadeOut(true);  // start fade out
+    }, 5000); // wait 6.5 sec
+
+    const removeTimer = setTimeout(() => {
+      setVisible(false);  // actually remove
       clearInterval(interval);
-    }, 6500); // 10 seconds
+    }, 11000); // 6.5 + 1.5 sec for fade
 
     return () => {
       clearInterval(interval);
-      clearTimeout(timer);
+      clearTimeout(fadeTimer);
+      clearTimeout(removeTimer);
     };
   }, []);
 
   if (!visible) return null;
 
-  return <canvas ref={canvasRef} style={{ display: 'block' }} />;
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        display: 'block',
+        position: 'fixed',  // ensure it covers everything
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        transition: 'opacity 6s ease',  // smooth fade over 1.5 sec
+        opacity: fadeOut ? 0 : 1,  // fade out when fadeOut is true
+        pointerEvents: 'none', // make sure it doesn't block clicks during fade
+        zIndex: 9999, // keep it on top
+      }}
+    />
+  );
 };
 
 export default MatrixScreen;
