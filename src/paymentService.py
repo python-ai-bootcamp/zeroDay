@@ -26,7 +26,7 @@ LAST_RECEIPT_INDEX_FILE = os.path.join(PAYMENT_DATA_DIRECTORY, "last_receipt_ind
 PAYMENT_DATA_FILES_DIRECTORY = os.path.join(PAYMENT_DATA_DIRECTORY, "files")
 PAYMENT_DATA_RECEIPTS_DIRECTORY = os.path.join(PAYMENT_DATA_DIRECTORY, "receipts")
 PAYMENT_DATA_RECEIPTS_CSV_FILE = os.path.join(PAYMENT_DATA_RECEIPTS_DIRECTORY, "aggregated_payment_data.csv")
-PAYMENT_CODES = os.path.join( "./resources", "keys", "private_keys", "payment_codes.json")
+PAYMENT_CODES = os.path.join( "./resources","uncommitted_configurations", "payment_codes.json")
 os.makedirs(PAYMENT_DATA_FILES_DIRECTORY,exist_ok=True)
 os.makedirs(PAYMENT_DATA_RECEIPTS_DIRECTORY,exist_ok=True)
 

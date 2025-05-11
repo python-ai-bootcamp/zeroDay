@@ -1,6 +1,7 @@
 from mailjet_rest import Client
 import traceback, json
 from systemEntities import print, Email
+from mailFilter import mailAddressFilter
 
 API_KEY_FILE="./resources/keys/private_keys/.malijet_api_key.json"
 
@@ -10,7 +11,7 @@ with open(API_KEY_FILE,"r") as f:
     api_secret=key_dict["secret"]
 
 SENDER ={"Name":"Mr. Python McPythony","Email":"Sender@zerodaybootcamp.xyz"} # should ALWAYS remain this address, if we switch it might get blocked
-SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS = ["python.ai.bootcamp@outlook.com", "tal.work.mail@gmail.com", "tal.shachar@tufin.com" ,"micha.vardy@tufin.com", "michavardy@tufin.com", "michavardy@gmail.com" ] # currently until we get out of the amazon SES snadbox we must only send this one!!!!!
+#SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS = ["python.ai.bootcamp@outlook.com", "tal.work.mail@gmail.com", "tal.shachar@tufin.com" ,"micha.vardy@tufin.com", "michavardy@tufin.com", "michavardy@gmail.com" ] # currently until we get out of the amazon SES snadbox we must only send this one!!!!!
 
 class FilteredEmailException(Exception):
     pass
@@ -22,8 +23,10 @@ mailjet = Client(auth=(api_key, api_secret), version='v3.1')
 
 def send_mail(email_to_send: Email):
     try:
-        if (any(email_to_send.to.email.replace(">","").replace("<","")==x for x in SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS)):
-            print(f"{email_to_send.to.email} is inside {SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS}, sending mail in sandbox mode")
+        #if (any(email_to_send.to.email.replace(">","").replace("<","")==x for x in SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS)):
+            #print(f"{email_to_send.to.email} is inside {SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS}, sending mail in sandbox mode")
+        if mailAddressFilter(email_to_send.to.email.replace(">","").replace("<","")):
+            print(f"{email_to_send.to.email} has successfully passed filters and will be sent")
             data = {
                 'Messages': [
                                 {
@@ -47,7 +50,8 @@ def send_mail(email_to_send: Email):
                 EmailProviderIssuesException(f"{email_to_send.to.email} was not sent because of status_code not 200 (result.status_code='{result.status_code}')")
 
         else:
-            raise FilteredEmailException(f"{email_to_send.to.email} is not inside {SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS}, not sending mail while in sandbox mode")
+            #raise FilteredEmailException(f"{email_to_send.to.email} is not inside {SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS}, not sending mail while in sandbox mode")
+            raise FilteredEmailException(f"{email_to_send.to.email} failed mailFilter test, not sending mail")
     except FilteredEmailException as e:
         print(e)
         #print(traceback.format_exc())

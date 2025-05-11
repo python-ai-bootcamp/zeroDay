@@ -6,3 +6,5 @@ data/*
 !data/.gitkeep 
 resources/keys/private_keys/*
 !/resources/keys/private_keys/.gitkeep 
+resources/uncommitted_configurations/*
+!/resources/uncommitted_configurations/.gitkeep 

@@ -216,11 +216,11 @@
 
                 debounceTimeout = setTimeout(async () => {
                     const currentCuponValue = paymentCodeInput.value.trim();
-
-                    if (currentCuponValue.length === 0) {
-                        priceTag.textContent = ""; // Clear price if input is empty
-                        return;
-                    }
+                    console.log("currentCuponValue=",currentCuponValue)
+                    //if (currentCuponValue.length === 0) {
+                    //    priceTag.textContent = ""; // Clear price if input is empty
+                    //    //return;
+                    //}
 
                     try {
                         const response = await fetch(`/amount_per_payment_code?payment_code=${encodeURIComponent(currentCuponValue)}`);
