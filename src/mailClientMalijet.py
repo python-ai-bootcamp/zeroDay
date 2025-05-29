@@ -47,7 +47,7 @@ def send_mail(email_to_send: Email):
             api_response = mailjet.send.create(data=data)
 
             if not api_response.status_code==200:
-                EmailProviderIssuesException(f"{email_to_send.to.email} was not sent because of status_code not 200 (result.status_code='{result.status_code}')")
+                EmailProviderIssuesException(f"{email_to_send.to.email} was not sent because of status_code not 200 (api_response.status_code='{api_response.status_code}')")
 
         else:
             #raise FilteredEmailException(f"{email_to_send.to.email} is not inside {SANDBOX_TEMP_ONLY_POSSIBLE_RECIPIENTS}, not sending mail while in sandbox mode")
