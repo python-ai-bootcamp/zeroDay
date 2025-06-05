@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mother.py Workflow</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .flowchart {
+            width: 100%;
+            height: auto;
+        }
+        .node {
+            fill: #fff;
+            stroke: #333;
+            stroke-width: 2;
+        }
+        .initial-node {
+            fill: #e3f2fd;
+        }
+        .judge-node {
+            fill: #fff3e0;
+        }
+        .arrow {
+            stroke: #666;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+        text {
+            font-size: 14px;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+        .group-label {
+            font-size: 16px;
+            font-weight: bold;
+            fill: #333;
+        }
+        .group-box {
+            fill: none;
+            stroke: #666;
+            stroke-width: 2;
+            stroke-dasharray: 5,5;
+        }
+        .arrow-label {
+            font-size: 14px;
+            font-weight: bold;
+            fill: white;
+        }
+        .arrow-label-bg {
+            fill: #1565C0;
+            stroke: #000;
+            stroke-width: 1;
+            rx: 6;
+            ry: 6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Mother.py Workflow</h1>
+        <svg class="flowchart" viewBox="0 0 1000 900">
+            <!-- Arrow marker definition -->
+            <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+                refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#666"/>
+                </marker>
+            </defs>
+
+            <!-- Initial Nodes Group -->
+            <rect class="group-box" x="75" y="75" width="250" height="200" rx="10"/>
+            <text class="group-label" x="85" y="55">Initial Processing</text>
+            
+            <g transform="translate(100, 100)">
+                <rect class="node initial-node" x="0" y="0" width="200" height="60" rx="10"/>
+                <text x="100" y="30">Extract Questions (Regex/LLM)</text>
+            </g>
+            <g transform="translate(100, 200)">
+                <rect class="node initial-node" x="0" y="0" width="200" height="60" rx="10"/>
+                <text x="100" y="30">Extract Answers (Regex/LLM)</text>
+            </g>
+
+            <!-- Submission Status Group -->
+            <rect class="group-box" x="375" y="75" width="250" height="200" rx="10"/>
+            <text class="group-label" x="385" y="55">Submission Status</text>
+            
+            <g transform="translate(400, 150)">
+                <rect class="node initial-node" x="0" y="0" width="200" height="60" rx="10"/>
+                <text x="100" y="30">Explain What's Missing</text>
+            </g>
+
+            <!-- Answer State Boxes -->
+            <rect class="group-box" x="375" y="350" width="250" height="150" rx="10"/>
+            <text class="group-label" x="385" y="330">isCorrect</text>
+            <g transform="translate(400, 375)">
+                <rect class="node explain-node" x="0" y="0" width="200" height="60" rx="10"/>
+                <text x="100" y="30">End</text>
+            </g>
+
+            <rect class="group-box" x="375" y="550" width="250" height="250" rx="10"/>
+            <text class="group-label" x="385" y="530">isPartiallyCorrect / isWrong</text>
+            <g transform="translate(400, 575)">
+                <rect class="node explain-node" x="0" y="0" width="200" height="60" rx="10"/>
+                <text x="100" y="30">Explain What's Wrong</text>
+            </g>
+            <g transform="translate(400, 650)">
+                <rect class="node explain-node" x="0" y="0" width="200" height="60" rx="10"/>
+                <text x="100" y="30">Explain How to Fix</text>
+            </g>
+            <g transform="translate(400, 725)">
+                <rect class="node explain-node" x="0" y="0" width="200" height="60" rx="10"/>
+                <text x="100" y="30">End</text>
+            </g>
+
+            <!-- Judge Nodes Group -->
+            <rect class="group-box" x="75" y="350" width="250" height="450" rx="10"/>
+            <text class="group-label" x="85" y="330">LLM as Judge</text>
+
+            <g transform="translate(100, 400)">
+                <rect class="node judge-node" x="0" y="0" width="200" height="60" rx="10"/>
+                <text x="100" y="30">Is Answer Correct?</text>
+            </g>
+            <g transform="translate(100, 500)">
+                <rect class="node judge-node" x="0" y="0" width="200" height="60" rx="10"/>
+                <text x="100" y="30">Answer Completeness (1-10)</text>
+            </g>
+            <g transform="translate(100, 600)">
+                <rect class="node judge-node" x="0" y="0" width="200" height="60" rx="10"/>
+                <text x="100" y="30">Output Believability (1-10)</text>
+            </g>
+            <g transform="translate(100, 700)">
+                <rect class="node judge-node" x="0" y="0" width="200" height="60" rx="10"/>
+                <text x="100" y="30">Coding Logic (1-10)</text>
+            </g>
+
+            <!-- Connecting Arrows -->
+            <!-- Initial to Judge -->
+            <path class="arrow" d="M200,275 L200,400"/>
+            <rect class="arrow-label-bg" x="170" y="325" width="120" height="25"/>
+            <text class="arrow-label" x="230" y="342">Submission Incomplete</text>
+
+            <!-- Initial to Submission Status -->
+            <path class="arrow" d="M300,175 L375,175"/>
+            <rect class="arrow-label-bg" x="320" y="155" width="120" height="25"/>
+            <text class="arrow-label" x="380" y="172">Missing Info</text>
+
+            <!-- Judge to State Boxes -->
+            <!-- Correct path -->
+            <path class="arrow" d="M300,430 L450,430 L450,425 L375,425"/>
+            <rect class="arrow-label-bg" x="485" y="205" width="60" height="25"/>
+            <text class="arrow-label" x="515" y="222">Correct</text>
+
+            <!-- Partially Correct path -->
+            <path class="arrow" d="M300,430 L450,430 L450,425 L375,425"/>
+            <rect class="arrow-label-bg" x="460" y="405" width="120" height="25"/>
+            <text class="arrow-label" x="520" y="422">Partially Correct</text>
+            <rect class="arrow-label-bg" x="485" y="435" width="60" height="25"/>
+            <text class="arrow-label" x="515" y="452">Wrong</text>
+        </svg>
+    </div>
+</body>
+</html>
