@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="langchain_core")
+
 from pathlib import Path
 from zipfile import ZipFile
 from io import BytesIO
@@ -56,7 +59,6 @@ class AnswerScoreStructure(BaseModel):
 class IncompleteExplinationStructure(BaseModel):
     index: int = Field(description="the index of the answer")
     explanation: str = Field(description="the explanation of why the answer is incomplete")
-
 
 class QuestionStructure(BaseModel):
     questions: list[str] = Field(description="A list of the main questions from the assignment")
@@ -128,6 +130,9 @@ class AgentState:
     incomplete_explinations: str = field(default_factory=str)
     incorrect_explinations: str = field(default_factory=str)
     cheating_explinations: str = field(default_factory=str)
+    is_cheating: bool = False
+    is_answer_correct: bool = False
+
 
 @dataclass
 class Artifact:
@@ -450,7 +455,7 @@ def answer_scores(state: AgentState) -> AgentState:
        - Does it avoid common/cliché solutions?
        - Is there evidence of independent thinking?
 
-    6. Likelihood of Cheating (1-10):
+    6. likeness_of_cheating (1-10):
        - 1: Clearly original work
        - 5: Some similarities to common solutions
        - 10: Strong evidence of copying
@@ -458,14 +463,12 @@ def answer_scores(state: AgentState) -> AgentState:
     Output Format: 
     Provide a JSON object with scores for each metric (1-10):
     ```json
-    {
         "creativity": int,      // Score for innovative approach
         "correctness": int,     // Score for accuracy
         "coverage": int,        // Score for thoroughness
         "performance": int,     // Score for efficiency
         "originality": int,     // Score for uniqueness
-        "likeness_of_cheating": int  // Score for originality
-    }
+        "likeness_of_cheating": int  // Score for originality    
     ```
 
     note regarding cheating:
@@ -549,10 +552,8 @@ def incomplete_explination(state: AgentState) -> AgentState:
     Output Format:
     Provide a JSON object with:
     ```json
-    {
         "index": int,      // The question index
         "explanation": str // A clear, professional explanation of why the answer is incomplete
-    }
     ```
 
     Guidelines for Explanation:
@@ -613,10 +614,8 @@ def incorrect_explination(state: AgentState) -> AgentState:
     Output Format:
     Provide a JSON object with:
     ```json
-    {
         "index": int,      // The question index
         "explanation": str // A clear, professional explanation of why the answer is incorrect
-    }
     ```
 
     Guidelines for Explanation:
@@ -682,10 +681,8 @@ def cheating_explination(state: AgentState) -> AgentState:
     Output Format:
     Provide a JSON object with:
     ```json
-    {
         "index": int,      // The question index
         "explanation": str // A clear, professional explanation of academic integrity concerns
-    }
     ```
 
     Guidelines for Explanation:
@@ -797,16 +794,16 @@ def run_agent_for_task(artifacts: Artifacts) -> AgentState:
     runnable = agent_graph.compile()
     return cast(AgentState, runnable.invoke(initial_state))
 
-def run_agent(artifacts: Artifacts) -> AgentState:
+def run_agent(artifacts: Artifacts) -> list[AgentState]:
     tasks = artifacts.get_tasks()
-    final_state = None
+    tasks_states = []
     for task_id in tasks:
         task_artifacts = Artifacts(artifacts.get({"task_id": task_id}, single=False))
         final_state = run_agent_for_task(task_artifacts)
-    if final_state is None:
-        raise ValueError("No tasks found to process")
-    return final_state
+        tasks_states.append(final_state)
+    return tasks_states
 
 if __name__ == "__main__":
     artifacts = get_test_data()
-    state = run_agent(artifacts)
+    validation_states = run_agent(artifacts)
+    breakpoint()
