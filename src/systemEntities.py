@@ -1,4 +1,4 @@
-from enum import StrEnum
+from enum import StrEnum, Enum
 from typing import Optional
 from pydantic import BaseModel, NameEmail, constr
 import os
@@ -61,3 +61,9 @@ class Payment(BaseModel):
     time: str
     utc_date: str
     utc_time: str
+
+class Models(StrEnum):
+    OPENAI_LANGCHAIN_DEFAULT   = ""
+    OPENAI_gpt_4               = "gpt-4"
+    OPENAI_gpt_4o              = "gpt-4o"
+

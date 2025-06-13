@@ -1,9 +1,22 @@
 from openai import OpenAI
+from langchain_openai import ChatOpenAI
+from .systemEntities import Models
+import os
 
 API_KEY_FILE="./resources/keys/private_keys/.openAI_api_key.txt"
-
 with open(API_KEY_FILE,"r") as f:
     api_key=f.read().strip()
+    os.environ["OPENAI_API_KEY"] = api_key
+
+def load_validator_model(model_name:Models):
+  match model_name:
+    case Models.OPENAI_LANGCHAIN_DEFAULT:
+      return ChatOpenAI()
+    case Models.OPENAI_gpt_4|Models.OPENAI_gpt_4o:
+      return ChatOpenAI(model=model_name.value) 
+    case _:
+        exit("unsupported model initialized")
+        
 
 client = OpenAI(
   api_key=api_key

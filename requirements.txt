@@ -13,3 +13,7 @@ weasyprint
 python-multipart
 openai
 tzdata
+pandas
+langgraph
+langchain-core
+langchain-openai

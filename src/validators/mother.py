@@ -10,18 +10,16 @@ import pandas as pd
 from typing import Annotated
 import json
 from typing_extensions import TypedDict
-
 from langgraph.graph import StateGraph, END
 from langgraph.pregel import Pregel
 from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage, AIMessage
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import chain
-from langchain_openai import ChatOpenAI
-from dotenv import load_dotenv
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.pydantic_v1 import BaseModel, Field
-load_dotenv()
-llm = ChatOpenAI()  # Use a suitable model
+from ..llmClient import load_validator_model
+from ..systemEntities import Models
+llm = load_validator_model(Models.OPENAI_LANGCHAIN_DEFAULT)
 
 @dataclass
 class Answer:
@@ -256,7 +254,9 @@ def extract_questions(state: AgentState) -> AgentState:
     """
     )
     output_parser = JsonOutputParser(pydantic_object=List[QuestionStructure])
-
+    assert prompt_template is not None, "prompt_template is None"
+    assert llm is not None, "llm is None"
+    assert output_parser is not None, "output_parser is None"
     chain = prompt_template | llm | output_parser
     try:
         keys = [key for key in json.loads(state.output_json).keys()]
@@ -807,3 +807,7 @@ if __name__ == "__main__":
     artifacts = get_test_data()
     validation_states = run_agent(artifacts)
     breakpoint()
+# temporary run command until integration with backend validator api 
+#   enter the project root (./zeroDay/)
+#   execut following way as module in a package:
+#       python -m src.validators.mother
