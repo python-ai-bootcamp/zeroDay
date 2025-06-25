@@ -1,4 +1,4 @@
-import warnings
+import warnings, os
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="langchain_core")
 
 from pathlib import Path
@@ -140,7 +140,14 @@ class Artifact:
     task_id: int | None      
     file_name: str
     content: str
-
+    def get_artifact_metadata(self):
+        return {
+            "artifact_type":self.artifact_type,
+            "file_type":self.file_type,
+            "assignment_id":self.assignment_id,
+            "task_id":self.task_id,
+            "file_name":self.file_name,
+        }
     def matches(self, query: dict[str, Any]) -> bool:
         return all(getattr(self, key) == value for key, value in query.items())
 
@@ -168,6 +175,7 @@ class Artifacts:
         return pd.DataFrame([art.__dict__ for art in self.artifacts])
 
 def get_file_attributes(file_name: str) -> tuple[Literal['script','asset','records'], int, int | None]:
+    print(f"get_file_attributes:: analyzing followin file_name:'{file_name}'")
     file_type_map = {".py":"script",".txt":"asset",".json":"records"}
     if Path(file_name).parts[0] == Path(file_name).parts[1]:
         file_name = "/".join(Path(file_name).parts[1:])
@@ -178,37 +186,70 @@ def get_file_attributes(file_name: str) -> tuple[Literal['script','asset','recor
         task_id=int(Path(file_name).parts[1])
     except:
         task_id=None
+    print(f"get_file_attributes:: file_type='{file_name}'")
+    print(f"get_file_attributes:: assignment_id='{assignment_id}'")
+    print(f"get_file_attributes:: task_id='{task_id}'")
     return file_type, assignment_id, task_id
 
-def get_artifacts(io: BytesIO, artifact_type:  Literal["assignment", "submission"]) -> list[Artifact]:
+def get_artifacts(data_location: BytesIO|str, artifact_type:  Literal["assignment", "submission"]) -> list[Artifact]:
+    print(f"get_artifacts:: received data_location_type={type(data_location)}")
     artifacts = []
-    with ZipFile(io) as zip_file:
-        # List all file names
-        file_names = zip_file.namelist()
-        file_names = [name for name in file_names if Path(name).suffix in [".py",".json",".txt"]]
-        for file_name in file_names:
-            file_type, assignment_id, task_id = get_file_attributes(file_name)
-            try:
-                artifacts.append(
-                    Artifact(
-                        artifact_type = artifact_type,
-                        file_type = file_type,
-                        assignment_id = assignment_id,
-                        task_id = task_id,   
-                        file_name = file_name,
-                        content=zip_file.read(file_name).decode('utf-8')
+    allowed_suffixes=[".py",".json",".txt"]
+    if isinstance(data_location, BytesIO):
+        with ZipFile(data_location) as zip_file:
+            # List all file names
+            file_names = zip_file.namelist()
+            file_names = [name for name in file_names if Path(name).suffix in allowed_suffixes]
+            for file_name in file_names:
+                file_type, assignment_id, task_id = get_file_attributes(file_name)
+                try:
+                    artifacts.append(
+                        Artifact(
+                            artifact_type = artifact_type,
+                            file_type = file_type,
+                            assignment_id = assignment_id,
+                            task_id = task_id,   
+                            file_name = file_name,
+                            content=zip_file.read(file_name).decode('utf-8')
+                        )
                     )
-                )
-            except Exception as e:
-                raise ExtractionError(f"Error extracting artifacts from {file_name}: {e}")
+                except Exception as e:
+                    raise ExtractionError(f"Error extracting artifacts from {file_name}: {e}")
+    elif isinstance(data_location, str):
+        for root, _, files in os.walk(data_location):
+            for file in files:
+                file_path = Path(root) / file
+                if file_path.suffix in allowed_suffixes:
+                    relative_path = os.path.relpath(file_path, data_location)
+                    file_type, assignment_id, task_id = get_file_attributes(str(relative_path))
+                    try:
+                        content = file_path.read_text(encoding="utf-8")
+                        artifacts.append(Artifact(
+                            artifact_type=artifact_type,
+                            file_type=file_type,
+                            assignment_id=assignment_id,
+                            task_id=task_id,
+                            file_name=str(relative_path).replace("\\", "/"),
+                            content=content
+                        ))
+                    except Exception as e:
+                        raise ExtractionError(f"Error extracting artifact from DIR {file_path}: {e}")
+
+    else:
+        raise TypeError(f"Unsupported data_location type: {type(data_location)}")
     return artifacts
 
 def get_test_data() -> Artifacts: # only  to be used for testing
-    artifacts = []
+    artifacts:list[Artifact] = []
     assignment = BytesIO(Path('resources/static/assignments/assignment_1.zip').read_bytes())
-    submission = BytesIO(Path('resources/_content/submissions/submission_1.zip').read_bytes())
-    artifacts.extend(get_artifacts(io=assignment, artifact_type="assignment"))
-    artifacts.extend(get_artifacts(io=submission, artifact_type="submission"))
+    ###submission = BytesIO(Path('resources/_content/submissions/submission_1.zip').read_bytes())
+    legit_opened_submission_path="./data/submitted_files/concurrency_user_2/2/3/" # for testing only
+    #artifacts.extend(get_artifacts(data_location=assignment, artifact_type="assignment"))
+    ###artifacts.extend(get_artifacts(data_location=submission, artifact_type="submission"))
+    artifacts.extend(get_artifacts(data_location=legit_opened_submission_path, artifact_type="submission"))
+
+    artifactsWithoutContent=[artifact.get_artifact_metadata() for artifact in artifacts]
+    print(json.dumps(artifactsWithoutContent))
     artifacts = Artifacts(artifacts)
     return artifacts
 
