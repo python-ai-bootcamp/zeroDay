@@ -17,8 +17,8 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import chain
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.pydantic_v1 import BaseModel, Field
-from ..llmClient import load_validator_model
-from ..systemEntities import Models
+from llmClient import load_validator_model
+from systemEntities import Models
 llm = load_validator_model(Models.OPENAI_LANGCHAIN_DEFAULT)
 
 @dataclass
@@ -849,11 +849,7 @@ if __name__ == "__main__":
     artifacts = get_test_data()
     validation_states = run_agent(artifacts)
     breakpoint()
-# temporary run command until integration with backend validator api 
-#   enter the project root (./zeroDay/)
-#   execut following way as module in a package:
-#       python -m src.validators.mother
-#   for putting submitted assignment files enter project root and execute
-#       enter project root partition and execute following
-#           mkdir -p ./data/submitted_files/concurrency_user_2/2/3
-#           cp -r ./src/validators/sample_valid_submission/* ./data/submitted_files/concurrency_user_2/2/3/
+
+def execute_task(task_file_name :str, kill_timeout: float):
+    print(f"task_file_name='{task_file_name}'")
+    return {"status":"PASS"}
