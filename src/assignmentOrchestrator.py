@@ -136,7 +136,8 @@ def check_assignment_submission(assignment_submission:AssignmentSubmission):
     for validator_script in validator_file_names:
         task_directory_name=str(validator_idx+1)
         #task_file_name=f"task_{str(validator_idx+1)}.py"
-        task_file_name=f"main.py"
+        #task_file_name=f"main.py"
+        task_file_name=f"a{str(assignment_submission.assignment_id)}_task{str(validator_idx+1)}.py"
         task_file_exists=os.path.isfile(os.path.join(SUBMITTED_FILES_DIR,str(assignment_submission.hacker_id),str(assignment_submission.assignment_id),str(assignment_submission.submission_id),task_directory_name,task_file_name))
         if task_file_exists:
             print(f"executing validator_script={validator_script}, on task_directory_name={task_directory_name} ,task_file_name={task_file_name}")

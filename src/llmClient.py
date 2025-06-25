@@ -1,6 +1,9 @@
 from openai import OpenAI
 from langchain_openai import ChatOpenAI
-from .systemEntities import Models
+try:
+    from systemEntities import Models
+except ImportError:
+    from .systemEntities import Models
 import os
 
 API_KEY_FILE="./resources/keys/private_keys/.openAI_api_key.txt"

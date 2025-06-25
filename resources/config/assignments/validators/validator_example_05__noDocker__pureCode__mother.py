@@ -245,8 +245,8 @@ def get_test_data(submitted_task_directory: str, assignment_id:int, task_id:int)
     artifacts:list[Artifact] = []
     assignment = BytesIO(Path(f'./resources/static/assignment/{str(assignment_id)}/assignment_{str(assignment_id)}.zip').read_bytes())
     #legit_opened_submission_path="./data/submitted_files/concurrency_user_2/2/3/" # for testing only
-    artifacts.extend(get_artifacts(data_location=submitted_task_directory, artifact_type="submission"), assignment_id, task_id)
-    artifacts.extend(get_artifacts(data_location=assignment, artifact_type="assignment"), assignment_id, task_id)
+    artifacts.extend(get_artifacts(data_location=submitted_task_directory, artifact_type="submission", assignment_id=assignment_id, task_id=task_id))
+    artifacts.extend(get_artifacts(data_location=assignment, artifact_type="assignment", assignment_id=assignment_id, task_id=task_id))
 
     artifactsWithoutContent=[artifact.get_artifact_metadata() for artifact in artifacts]
     print(json.dumps(artifactsWithoutContent))
@@ -852,8 +852,35 @@ if __name__ == "__main__":
 def execute_task(task_file_name :str, kill_timeout: float):
     print(f"execute_task:: task_file_name='{task_file_name}'")
     submitted_task_directory=os.path.dirname(task_file_name)
+    
+    print(f"execute_task:: submitted_task_directory='{submitted_task_directory}'")
     assignment_id=int(Path(submitted_task_directory).parts[3])
     task_id=int(Path(submitted_task_directory).parts[5])
+    
+    print(f"execute_task:: assignment_id='{assignment_id}'")
+    print(f"execute_task:: task_id='{task_id}'")
+
     artifacts = get_test_data(submitted_task_directory, assignment_id, task_id)
-    validation_states = run_agent(artifacts)
-    return {"status":"PASS"}
+    #validation_states = run_agent(artifacts)
+    validation_state = run_agent_for_task(artifacts)
+    #breakpoint()
+    print(f"execute_task:: validation_state.keys()                      ='{validation_state.keys()                    }'")
+    print(f"execute_task:: validation_state['agg_score']                ='{validation_state['agg_score']              }'")
+    print(f"execute_task:: validation_state['is_answer_correct']        ='{validation_state['is_answer_correct']      }'")
+    print(f"execute_task:: validation_state['incorrect_explinations']   ='{validation_state['incorrect_explinations'] }'")
+    print(f"execute_task:: validation_state['is_submission_complete']   ='{validation_state['is_submission_complete'] }'")
+    print(f"execute_task:: validation_state['incomplete_explinations']  ='{validation_state['incomplete_explinations']}'")
+    print(f"execute_task:: validation_state['is_cheating']              ='{validation_state['is_cheating']            }'")
+    print(f"execute_task:: validation_state['cheating_explinations']    ='{validation_state['cheating_explinations']  }'")
+    #dict_keys(['assignment_script', 'submission_script', 'output_json', 'answers', 'current_question_index', 'agg_score', 'is_submission_complete', 'incomplete_explinations', 'incorrect_explinations', 'cheating_explinations', 'is_cheating', 'is_answer_correct'])
+    validator_response = {
+        "agg_score": validation_state['agg_score'],
+        "status": "PASS" if validation_state['is_answer_correct'] else "FAIL",
+        "is_answer_correct": validation_state['is_answer_correct'],
+        "is_submission_complete": validation_state['is_submission_complete'],
+        "is_cheating": validation_state['is_cheating'],
+        **({"status_fail_explenation":  validation_state['incorrect_explinations']}  if not validation_state['is_answer_correct'] else {}),
+        **({"incomplete_explinations":  validation_state['incomplete_explinations']} if not validation_state['is_submission_complete'] else {}),
+        **({"cheating_explinations":    validation_state['cheating_explinations']}   if validation_state['is_cheating'] else {}),
+    }
+    return validator_response

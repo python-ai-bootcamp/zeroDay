@@ -136,7 +136,8 @@ export default function SCP({ args, setHidePrompt, triggerScroll }: { args: stri
             setTestingProgressDisplay(current);
             console.log(`pollTesting called with ${current}`);
             const completed = await isTestingCompleted();            
-            await asyncWait(125)
+            //await asyncWait(125)     
+            await asyncWait(1500)
             if (!completed) {
                 setTestingProgressDisplay(current + 1);
                 await pollTesting(current + 1);
