@@ -169,7 +169,7 @@ class Artifacts:
             return matches[0]
         return matches
     def get_tasks(self) -> list[int]:
-        return list(set([art.task_id for art in self.artifacts if art.task_id]))
+        return [art.task_id for art in self.artifacts if art.task_id and art.artifact_type=="submission"]
     @property
     def df(self) -> pd.DataFrame:
         return pd.DataFrame([art.__dict__ for art in self.artifacts])
@@ -180,18 +180,16 @@ def get_file_attributes(file_name: str, artifact_type:  Literal["assignment", "s
     match artifact_type:
         case "assignment":
             file_type = cast(Literal['script','asset','records'], file_type_map[Path(file_name).suffix])
-            assignment_id=int(Path(file_name).parts[0].split("_")[-1])
             task_id=int(Path(file_name).parts[1])
         case "submission":
             file_type = cast(Literal['script','asset','records'], file_type_map[Path(file_name).suffix])
-            assignment_id=int(Path(file_name).parts[3])
             task_id=int(Path(file_name).parts[5])
     #print(f"get_file_attributes:: file_type='{file_type}'")
     #print(f"get_file_attributes:: assignment_id='{assignment_id}'")
     #print(f"get_file_attributes:: task_id='{task_id}'")
-    return file_type, assignment_id, task_id
+    return file_type, task_id
 
-def get_artifacts(data_location: BytesIO|str, artifact_type:  Literal["assignment", "submission"]) -> list[Artifact]:
+def get_artifacts(data_location: BytesIO|str, artifact_type:  Literal["assignment", "submission"], assignment_id:int, task_id:int) -> list[Artifact]:
     #print(f"get_artifacts:: received data_location_type={type(data_location)}")
     artifacts = []
     allowed_suffixes=[".py",".json",".txt"]
@@ -201,20 +199,21 @@ def get_artifacts(data_location: BytesIO|str, artifact_type:  Literal["assignmen
             file_names = zip_file.namelist()
             file_names = [name for name in file_names if Path(name).suffix in allowed_suffixes]
             for file_name in file_names:
-                file_type, assignment_id, task_id = get_file_attributes(file_name, artifact_type)
-                try:
-                    artifacts.append(
-                        Artifact(
-                            artifact_type = artifact_type,
-                            file_type = file_type,
-                            assignment_id = assignment_id,
-                            task_id = task_id,   
-                            file_name = file_name,
-                            content=zip_file.read(file_name).decode('utf-8')
+                file_type, retrieved_task_id = get_file_attributes(file_name, artifact_type)
+                if(retrieved_task_id==task_id):
+                    try:
+                        artifacts.append(
+                            Artifact(
+                                artifact_type = artifact_type,
+                                file_type = file_type,
+                                assignment_id = assignment_id,
+                                task_id = task_id,   
+                                file_name = file_name,
+                                content=zip_file.read(file_name).decode('utf-8')
+                            )
                         )
-                    )
-                except Exception as e:
-                    raise ExtractionError(f"Error extracting artifacts from {file_name}: {e}")
+                    except Exception as e:
+                        raise ExtractionError(f"Error extracting artifacts from {file_name}: {e}")
     elif isinstance(data_location, str):
         for root, _, files in os.walk(data_location):
             for file in files:
@@ -224,7 +223,7 @@ def get_artifacts(data_location: BytesIO|str, artifact_type:  Literal["assignmen
                     print(f"get_artifacts:: file_path='{file_path}'")
                     relative_path = os.path.relpath(file_path, data_location)
                     print(f"relative_path:: relative_path='{relative_path}'")
-                    file_type, assignment_id, task_id = get_file_attributes(str(file_path).replace("\\", "/"),artifact_type)
+                    file_type, retrieved_task_id = get_file_attributes(str(file_path).replace("\\", "/"),artifact_type)
                     try:
                         content = file_path.read_text(encoding="utf-8")
                         artifacts.append(Artifact(
@@ -242,12 +241,12 @@ def get_artifacts(data_location: BytesIO|str, artifact_type:  Literal["assignmen
         raise TypeError(f"Unsupported data_location type: {type(data_location)}")
     return artifacts
 
-def get_test_data() -> Artifacts: # only  to be used for testing
+def get_test_data(submitted_task_directory: str, assignment_id:int, task_id:int) -> Artifacts: # only  to be used for testing
     artifacts:list[Artifact] = []
-    assignment = BytesIO(Path('./resources/static/assignment/1/assignment_1.zip').read_bytes())
-    legit_opened_submission_path="./data/submitted_files/concurrency_user_2/2/3/" # for testing only
-    artifacts.extend(get_artifacts(data_location=assignment, artifact_type="assignment"))
-    artifacts.extend(get_artifacts(data_location=legit_opened_submission_path, artifact_type="submission"))
+    assignment = BytesIO(Path(f'./resources/static/assignment/{str(assignment_id)}/assignment_{str(assignment_id)}.zip').read_bytes())
+    #legit_opened_submission_path="./data/submitted_files/concurrency_user_2/2/3/" # for testing only
+    artifacts.extend(get_artifacts(data_location=submitted_task_directory, artifact_type="submission"), assignment_id, task_id)
+    artifacts.extend(get_artifacts(data_location=assignment, artifact_type="assignment"), assignment_id, task_id)
 
     artifactsWithoutContent=[artifact.get_artifact_metadata() for artifact in artifacts]
     print(json.dumps(artifactsWithoutContent))
@@ -851,5 +850,10 @@ if __name__ == "__main__":
     breakpoint()
 
 def execute_task(task_file_name :str, kill_timeout: float):
-    print(f"task_file_name='{task_file_name}'")
+    print(f"execute_task:: task_file_name='{task_file_name}'")
+    submitted_task_directory=os.path.dirname(task_file_name)
+    assignment_id=int(Path(submitted_task_directory).parts[3])
+    task_id=int(Path(submitted_task_directory).parts[5])
+    artifacts = get_test_data(submitted_task_directory, assignment_id, task_id)
+    validation_states = run_agent(artifacts)
     return {"status":"PASS"}
