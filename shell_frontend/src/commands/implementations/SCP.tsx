@@ -9,7 +9,7 @@ declare module 'react' {
   }
 }
 export default function SCP({ args, setHidePrompt, triggerScroll }: { args: string[]; setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>; triggerScroll: ()=>void }) {
-    setHidePrompt(true);
+    //setHidePrompt(true);
     const [packingProgressDisplay, setPackingProgressDisplay] = useState<number>(-1); // state to hold scp content
     const [uploadProgressDisplay, setUploadProgressDisplay] = useState<number>(-1); // state to hold scp content
     const [testingProgressDisplay, setTestingProgressDisplay] = useState<number>(-1); // state to hold scp content
