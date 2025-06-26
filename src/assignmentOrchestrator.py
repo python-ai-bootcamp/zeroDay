@@ -177,7 +177,8 @@ def save_assignment_files(assignment_submission: AssignmentSubmission, zip_bytes
         zip_ref.extractall(path=assignment_submission_directory)
     os.remove(temp_zip_path)
     assignment_submission_task_directories=[p.name for p in Path(assignment_submission_directory).iterdir() if p.is_dir()]
-    return [{"task_directory":task_directory, "task_file":"main.py"} for task_directory in assignment_submission_task_directories]
+    #task_file_name=f"a{str(assignment_submission.assignment_id)}_task{str(validator_idx+1)}.py"
+    return [{"task_directory":task_directory, "task_file":f"a{str(assignment_submission.assignment_id)}_task{assignment_submission_task_directories}.py"} for task_directory in assignment_submission_task_directories]
 
 def max_submission_for_assignment(assignment_id:int):
     assignment_mapper=load_assignment_mapper()
