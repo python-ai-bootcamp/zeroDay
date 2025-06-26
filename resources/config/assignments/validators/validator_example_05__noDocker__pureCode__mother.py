@@ -1,6 +1,6 @@
 import warnings, os
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="langchain_core")
-
+from systemEntities import print
 from pathlib import Path
 from zipfile import ZipFile
 from io import BytesIO
@@ -175,7 +175,7 @@ class Artifacts:
         return pd.DataFrame([art.__dict__ for art in self.artifacts])
 
 def get_file_attributes(file_name: str, artifact_type:  Literal["assignment", "submission"]) -> tuple[Literal['script','asset','records'], int, int | None]:
-    #print(f"get_file_attributes:: analyzing followin file_name:'{file_name}'")
+    #print(f"mother::get_file_attributes:: analyzing followin file_name:'{file_name}'")
     file_type_map = {".py":"script",".txt":"asset",".json":"records"}
     match artifact_type:
         case "assignment":
@@ -184,13 +184,13 @@ def get_file_attributes(file_name: str, artifact_type:  Literal["assignment", "s
         case "submission":
             file_type = cast(Literal['script','asset','records'], file_type_map[Path(file_name).suffix])
             task_id=int(Path(file_name).parts[5])
-    #print(f"get_file_attributes:: file_type='{file_type}'")
-    #print(f"get_file_attributes:: assignment_id='{assignment_id}'")
-    #print(f"get_file_attributes:: task_id='{task_id}'")
+    #print(f"mother::get_file_attributes:: file_type='{file_type}'")
+    #print(f"mother::get_file_attributes:: assignment_id='{assignment_id}'")
+    #print(f"mother::get_file_attributes:: task_id='{task_id}'")
     return file_type, task_id
 
 def get_artifacts(data_location: BytesIO|str, artifact_type:  Literal["assignment", "submission"], assignment_id:int, task_id:int) -> list[Artifact]:
-    #print(f"get_artifacts:: received data_location_type={type(data_location)}")
+    #print(f"mother::get_artifacts:: received data_location_type={type(data_location)}")
     artifacts = []
     allowed_suffixes=[".py",".json",".txt"]
     if isinstance(data_location, BytesIO):
@@ -219,10 +219,10 @@ def get_artifacts(data_location: BytesIO|str, artifact_type:  Literal["assignmen
             for file in files:
                 file_path = Path(root) / file
                 if file_path.suffix in allowed_suffixes:
-                    print(f"get_artifacts:: data_location='{data_location}'")
-                    print(f"get_artifacts:: file_path='{file_path}'")
+                    #print(f"mother::get_artifacts:: data_location='{data_location}'")
+                    #print(f"mother::get_artifacts:: file_path='{file_path}'")
                     relative_path = os.path.relpath(file_path, data_location)
-                    print(f"relative_path:: relative_path='{relative_path}'")
+                    #print(f"mother::relative_path:: relative_path='{relative_path}'")
                     file_type, retrieved_task_id = get_file_attributes(str(file_path).replace("\\", "/"),artifact_type)
                     try:
                         content = file_path.read_text(encoding="utf-8")
@@ -249,7 +249,7 @@ def get_test_data(submitted_task_directory: str, assignment_id:int, task_id:int)
     artifacts.extend(get_artifacts(data_location=assignment, artifact_type="assignment", assignment_id=assignment_id, task_id=task_id))
 
     artifactsWithoutContent=[artifact.get_artifact_metadata() for artifact in artifacts]
-    print(json.dumps(artifactsWithoutContent))
+    print(f"mother::get_test_data:: '{json.dumps(artifactsWithoutContent)}'")
     artifacts = Artifacts(artifacts)
     return artifacts
 
@@ -835,43 +835,29 @@ def run_agent_for_task(artifacts: Artifacts) -> AgentState:
     runnable = agent_graph.compile()
     return cast(AgentState, runnable.invoke(initial_state))
 
-def run_agent(artifacts: Artifacts) -> list[AgentState]:
-    tasks = artifacts.get_tasks()
-    tasks_states = []
-    for task_id in tasks:
-        task_artifacts = Artifacts(artifacts.get({"task_id": task_id}, single=False))
-        final_state = run_agent_for_task(task_artifacts)
-        tasks_states.append(final_state)
-    return tasks_states
-
-if __name__ == "__main__":
-    artifacts = get_test_data()
-    validation_states = run_agent(artifacts)
-    breakpoint()
-
 def execute_task(task_file_name :str, kill_timeout: float):
-    print(f"execute_task:: task_file_name='{task_file_name}'")
+    #print(f"mother::execute_task:: task_file_name='{task_file_name}'")
     submitted_task_directory=os.path.dirname(task_file_name)
     
-    print(f"execute_task:: submitted_task_directory='{submitted_task_directory}'")
+    print(f"mother::execute_task:: submitted_task_directory='{submitted_task_directory}'")
     assignment_id=int(Path(submitted_task_directory).parts[3])
     task_id=int(Path(submitted_task_directory).parts[5])
     
-    print(f"execute_task:: assignment_id='{assignment_id}'")
-    print(f"execute_task:: task_id='{task_id}'")
+    print(f"mother::execute_task:: assignment_id='{assignment_id}'")
+    print(f"mother::execute_task:: task_id='{task_id}'")
 
     artifacts = get_test_data(submitted_task_directory, assignment_id, task_id)
-    #validation_states = run_agent(artifacts)
+
     validation_state = run_agent_for_task(artifacts)
     #breakpoint()
-    print(f"execute_task:: validation_state.keys()                      ='{validation_state.keys()                    }'")
-    print(f"execute_task:: validation_state['agg_score']                ='{validation_state['agg_score']              }'")
-    print(f"execute_task:: validation_state['is_answer_correct']        ='{validation_state['is_answer_correct']      }'")
-    print(f"execute_task:: validation_state['incorrect_explinations']   ='{validation_state['incorrect_explinations'] }'")
-    print(f"execute_task:: validation_state['is_submission_complete']   ='{validation_state['is_submission_complete'] }'")
-    print(f"execute_task:: validation_state['incomplete_explinations']  ='{validation_state['incomplete_explinations']}'")
-    print(f"execute_task:: validation_state['is_cheating']              ='{validation_state['is_cheating']            }'")
-    print(f"execute_task:: validation_state['cheating_explinations']    ='{validation_state['cheating_explinations']  }'")
+    #print(f"execute_task:: validation_state.keys()                      ='{validation_state.keys()                    }'")
+    #print(f"execute_task:: validation_state['agg_score']                ='{validation_state['agg_score']              }'")
+    #print(f"execute_task:: validation_state['is_answer_correct']        ='{validation_state['is_answer_correct']      }'")
+    #print(f"execute_task:: validation_state['incorrect_explinations']   ='{validation_state['incorrect_explinations'] }'")
+    #print(f"execute_task:: validation_state['is_submission_complete']   ='{validation_state['is_submission_complete'] }'")
+    #print(f"execute_task:: validation_state['incomplete_explinations']  ='{validation_state['incomplete_explinations']}'")
+    #print(f"execute_task:: validation_state['is_cheating']              ='{validation_state['is_cheating']            }'")
+    #print(f"execute_task:: validation_state['cheating_explinations']    ='{validation_state['cheating_explinations']  }'")
     #dict_keys(['assignment_script', 'submission_script', 'output_json', 'answers', 'current_question_index', 'agg_score', 'is_submission_complete', 'incomplete_explinations', 'incorrect_explinations', 'cheating_explinations', 'is_cheating', 'is_answer_correct'])
     validator_response = {
         "agg_score": validation_state['agg_score'],

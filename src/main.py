@@ -94,7 +94,7 @@ app.include_router(v2_router)
 class SessionAuthenticationMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         hacker_id=request.query_params.get("hacker_id")
-        print(f"got following value for hacker_id url parameter:'{hacker_id}'")
+        #print(f"main::SessionAuthenticationMiddleware:: got following value for hacker_id url parameter:'{hacker_id}'")
         if hacker_id:
             user=get_user(hacker_id) 
             if user["status"]=="OK":

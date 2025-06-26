@@ -35,7 +35,7 @@ DEFAULT_MAX_SUBMISSIONS=3
 MAX_SUBMISION_PROCESSING=2
 lockRepository={}
 submision_processing_concurrency_semaphore=Semaphore(MAX_SUBMISION_PROCESSING)
-print("locking submision_processing_concurrency_semaphore until sandboxService finishes initializing")
+print("assignmentOrchestrator:: locking submision_processing_concurrency_semaphore until sandboxService finishes initializing")
 for sem_idx in range(MAX_SUBMISION_PROCESSING):
     submision_processing_concurrency_semaphore.acquire()
 sandbox_init_thread=Thread(target=sandboxService.startDockerContainer, args=(submision_processing_concurrency_semaphore,MAX_SUBMISION_PROCESSING))
@@ -115,9 +115,11 @@ def import_module_dynamically_from_path(task_file_name):
     return dynamically_loaded_modules_repository[task_file_name]
 
 def execute_validator_on_task_file(validator_script:str, task_file_name:str, task_directory_name: str, assignment_submission: AssignmentSubmission):
+    #print(f"assignmentOrchestrator::execute_validator_on_task_file:: entered method")
     checked_task_status_validator = import_module_dynamically_from_path(validator_script)
     task_file_name_full_path=os.path.join(SUBMITTED_FILES_DIR,str(assignment_submission.hacker_id),str(assignment_submission.assignment_id),str(assignment_submission.submission_id),task_directory_name, task_file_name)
     try:
+        #print(f"assignmentOrchestrator::execute_validator_on_task_file:: before executing validator execute_task() method")
         return checked_task_status_validator.execute_task(task_file_name_full_path, DEFAULT_VALIDATOR_TIMEOUT)
     except Exception as e:
         print("ERROR: unhandled exception thrown from validator")
@@ -129,6 +131,7 @@ def execute_validator_on_task_file(validator_script:str, task_file_name:str, tas
     #https://python.code-maven.com/python-capture-stdout-stderr-exit - this is a nice way to implement a validator with subprocess timeout based killing
 
 def check_assignment_submission(assignment_submission:AssignmentSubmission):  
+    #print(f"assignmentOrchestrator::check_assignment_submission:: entered method")
     assignment_mapper=load_assignment_mapper()
     validator_file_names=list(map(lambda validator_file_name: os.path.join(ASSIGNMENT_VALIDATOR_DIR,validator_file_name),assignment_mapper[str(assignment_submission.assignment_id)]["validators"]))
     validator_idx=0
@@ -140,7 +143,7 @@ def check_assignment_submission(assignment_submission:AssignmentSubmission):
         task_file_name=f"a{str(assignment_submission.assignment_id)}_task{str(validator_idx+1)}.py"
         task_file_exists=os.path.isfile(os.path.join(SUBMITTED_FILES_DIR,str(assignment_submission.hacker_id),str(assignment_submission.assignment_id),str(assignment_submission.submission_id),task_directory_name,task_file_name))
         if task_file_exists:
-            print(f"executing validator_script={validator_script}, on task_directory_name={task_directory_name} ,task_file_name={task_file_name}")
+            print(f"assignmentOrchestrator::check_assignment_submission:: executing validator_script={validator_script}, on task_directory_name={task_directory_name} ,task_file_name={task_file_name}")
             collected_results.append({"task_idx":validator_idx+1,**execute_validator_on_task_file(validator_script=validator_script, task_directory_name=task_directory_name, task_file_name=task_file_name, assignment_submission=assignment_submission)})
         else:
             collected_results.append({"task_idx":validator_idx+1,"status":"ERROR","ERROR_message":f"missing task file ({task_file_name}) in assignment directory ({task_directory_name})"})
@@ -177,8 +180,10 @@ def save_assignment_files(assignment_submission: AssignmentSubmission, zip_bytes
         zip_ref.extractall(path=assignment_submission_directory)
     os.remove(temp_zip_path)
     assignment_submission_task_directories=[p.name for p in Path(assignment_submission_directory).iterdir() if p.is_dir()]
-    #task_file_name=f"a{str(assignment_submission.assignment_id)}_task{str(validator_idx+1)}.py"
-    return [{"task_directory":task_directory, "task_file":f"a{str(assignment_submission.assignment_id)}_task{assignment_submission_task_directories}.py"} for task_directory in assignment_submission_task_directories]
+    return [{
+        "task_directory": task_directory,
+        "task_file": f"a{assignment_submission.assignment_id}_task{str(idx)}.py"
+    } for idx, task_directory in enumerate(assignment_submission_task_directories, start=1)]
 
 def max_submission_for_assignment(assignment_id:int):
     assignment_mapper=load_assignment_mapper()
@@ -192,12 +197,13 @@ def max_submission_for_assignment(assignment_id:int):
         return DEFAULT_MAX_SUBMISSIONS
 @app.post("/submit")
 def submit_assignment(zip_bytes: bytes, json_data: dict ):
+    #print(f"assignmentOrchestrator::submit_assignment:: entered method")
     assignment_submission:AssignmentSubmission=AssignmentSubmission.model_validate(json_data)
     assignment_event_start_time=get_assignment_event_start_time(assignment_submission.hacker_id, assignment_submission.assignment_id)
     if(assignment_event_start_time["status"]=="OK"):
         assignment_event_start_time=assignment_event_start_time["result"]
     else:
-        print(assignment_event_start_time)
+        print(f"assignmentOrchestrator::submit_assignment:: assignment_event_start_time='{assignment_event_start_time}'")
         return assignment_event_start_time
     assignment_submission.assignment_time_to_submission=int(time.time_ns()/1000000)-assignment_event_start_time
     assignment_mapper=load_assignment_mapper()
@@ -211,7 +217,9 @@ def submit_assignment(zip_bytes: bytes, json_data: dict ):
             if number_of_validators==0:
                 return {"status":"ERROR","ERROR_message":f"no validators mapped for assignment_id={assignment_submission.assignment_id} in assignment_mapper file"}
     max_submissions=max_submission_for_assignment(assignment_submission.assignment_id)
+    #print(f"assignmentOrchestrator::submit_assignment:: before aquiring submision_processing_concurrency_semaphore status is {submision_processing_concurrency_semaphore._value} / {MAX_SUBMISION_PROCESSING}")
     submision_processing_concurrency_semaphore.acquire()
+    #print(f"assignmentOrchestrator::submit_assignment:: after aquiring submision_processing_concurrency_semaphore status is {submision_processing_concurrency_semaphore._value} / {MAX_SUBMISION_PROCESSING}")
     if not (assignment_submission.hacker_id in lockRepository):
         lockRepository[assignment_submission.hacker_id]=Lock()
     lockRepository[assignment_submission.hacker_id].acquire()
@@ -232,7 +240,7 @@ def submit_assignment(zip_bytes: bytes, json_data: dict ):
                         data[assignment_submission.hacker_id][str(assignment_submission.assignment_id)].append(assignment_submission.model_dump())
                     else:
                         assignment_submission.result={"status":"ERROR","ERROR_message":f"cannot test assignment (assignment_id={str(assignment_submission.assignment_id)}) because submission attempts ({str(assignment_submission.submission_id)}) passed the allowed max_submissions (max_submissions={max_submissions})"}
-                        print(assignment_submission.result)
+                        #print(f"assignmentOrchestrator::submit_assignment:: results for assignment_submission = \n{assignment_submission.result}")
                         return assignment_submission.model_dump()
                 else:
                     assignment_submission.assignment_file_names=save_assignment_files(assignment_submission, zip_bytes)
@@ -262,10 +270,10 @@ def send_mail_after_assignment_submission(assignment_submission:AssignmentSubmis
             mailService.notification_producer(user=user,notification_type=NotificationType.ASSIGNMENT_SUBMISSION_RESULT_FAILING_WITHOUT_ANOTHER_ATTEMPT)
 
 def send_new_assignment_mail_for_user(hacker_id):
-    #print(f"send_new_assignment_mail_for_user for hacker_id='{hacker_id}'")
-    #print(f"loading user with hacker_id='{hacker_id}'")
+    #print(f"assignmentOrchestrator::send_new_assignment_mail_for_user:: entered method for hacker_id='{hacker_id}'")
+    #print(f"assignmentOrchestrator::send_new_assignment_mail_for_user:: loading user with hacker_id='{hacker_id}'")
     fetched_user_result=get_user(hacker_id)
-    #print(f"fetched_user_result for hacker_id='{hacker_id} is fetched_user_result='{fetched_user_result}'")
+    #print(f"assignmentOrchestrator::send_new_assignment_mail_for_user:: fetched_user_result for hacker_id='{hacker_id} is fetched_user_result='{fetched_user_result}'")
     if fetched_user_result["status"] == "OK":
         user=User.model_validate(fetched_user_result["user"])
         mailService.notification_producer(user=user,notification_type=NotificationType.NEW_ASSIGNMENT_ARRIVED)
@@ -286,7 +294,7 @@ def trigger_new_assignment_mail_if_needed():
     if new_assignment_added():
         latest_assignment_id=last_available_assignment_id()
         all_user_data=load_data()
-        #print("all_user_data:: ",all_user_data)
+        #print("assignmentOrchestrator::all_user_data:: ",all_user_data)
         for hacker_id in all_user_data:
             hacker_data=all_user_data[hacker_id]
             user_last_assignment_key=last_assignment_key(hacker_data)

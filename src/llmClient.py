@@ -12,6 +12,7 @@ with open(API_KEY_FILE,"r") as f:
     os.environ["OPENAI_API_KEY"] = api_key
 
 def load_validator_model(model_name:Models):
+  #print(f"llmClient::load_validator_model:: entered method")
   match model_name:
     case Models.OPENAI_LANGCHAIN_DEFAULT:
       return ChatOpenAI()
