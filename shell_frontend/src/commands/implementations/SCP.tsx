@@ -153,32 +153,44 @@ export default function SCP({ args, setHidePrompt, triggerScroll }: { args: stri
 
     useEffect(() => {
         fetch(check_if_user_viewed_lesson_url)
-          .then(res=>res.json())
-          .then(resBody=>{
-            if (resBody.status=="OK"){
-              fetch(current_status_url)
-                .then(res=>res.json())
-                .then(res_body=>{
-                  if(res_body.submission_id>res_body.max_submission_id){
-                    console.log(`User exceeded max submissions allowed for this task (submission_attempts=${res_body.submission_id-1}, max_allowed=${res_body.max_submission_id})`)
-                    isUploadComplete.current=true
-                    setIsTestingComplete(true)
-                    maxNotBreached.current=false
+            .then(res=>res.json())
+            .then(resBody=>{
+                if (resBody.status=="OK"){
+                    fetch(current_status_url)
+                        .then(res=>res.json())
+                        .then(res_body=>{
+                            if(res_body.submission_id>res_body.max_submission_id){
+                                console.log(`User exceeded max submissions allowed for this task (submission_attempts=${res_body.submission_id-1}, max_allowed=${res_body.max_submission_id})`)
+                                isUploadComplete.current=true
+                                setIsTestingComplete(true)
+                                maxNotBreached.current=false
+                                setHidePrompt(false);
+                                triggerScroll();
+                            }else{
+                                fetch(test_status_url)
+                                  .then(res=>res.json())
+                                  .then(resBody=>{
+                                      if(resBody.status=="IN_PROGRESS"){
+                                          setCanSubmit("ERROR:: User can not submit assignment while a previous submission is currently under test")
+                                          setCantSubmitExplenation("Please wait until previous submission testing procedure has completed and then try to submit again")
+                                          triggerBlockSubmission();
+                                          setHidePrompt(false);
+                                          triggerScroll();
+                                      }else{                            
+                                        setCanSubmit("Please Select Assignment Files For Upload...")
+                                        triggerDirectoryPicker();
+                                      }
+                                  })
+                            }                
+                        })
+                }else{
+                    setCanSubmit("ERROR:: User Can Not Submit Assignment Before Viewing Lesson")
+                    setCantSubmitExplenation("Please execute 'lesson' command.\nOnce finished going over learning matirial, execute 'assignment' command.\nThen Try submitting using 'scp' command again.")
+                    triggerBlockSubmission();
                     setHidePrompt(false);
                     triggerScroll();
-                  }else{
-                    setCanSubmit("Please Select Assignment Files For Upload...")
-                    triggerDirectoryPicker();
-                  }                
-                })
-            }else{
-              setCanSubmit("ERROR:: User Can Not Submit Assignment Before Viewing Lesson")
-              setCantSubmitExplenation("Please execute 'lesson' command.\nOnce finished going over learning matirial, execute 'assignment' command.\nThen Try submitting using 'scp' command again.")
-              triggerBlockSubmission();
-              setHidePrompt(false);
-              triggerScroll();
-            }
-          })
+                }
+            })
     }, [args]);
 
     return (
