@@ -9,7 +9,9 @@ declare module 'react' {
   }
 }
 export default function SCP({ args, setHidePrompt, triggerScroll }: { args: string[]; setHidePrompt: React.Dispatch<React.SetStateAction<boolean>>; triggerScroll: ()=>void }) {
-    //setHidePrompt(true);
+    useEffect(() => {
+        setHidePrompt(true); // ✅ Now runs after render
+    }, []);
     const [packingProgressDisplay, setPackingProgressDisplay] = useState<number>(-1); // state to hold scp content
     const [uploadProgressDisplay, setUploadProgressDisplay] = useState<number>(-1); // state to hold scp content
     const [testingProgressDisplay, setTestingProgressDisplay] = useState<number>(-1); // state to hold scp content
@@ -54,8 +56,7 @@ export default function SCP({ args, setHidePrompt, triggerScroll }: { args: stri
               setPackingProgressDisplay(current + 1);
               await pollPacking(current + 1);
           } else {
-              console.log("Packing completed!");
-              setHidePrompt(false);
+              console.log("Pack Polling completed!");
           }
         };
         pollPacking(0);
@@ -69,14 +70,6 @@ export default function SCP({ args, setHidePrompt, triggerScroll }: { args: stri
         try {
             const user_status_res= await fetch(current_status_url)
               .then(res=>res.json())
-            //if(user_status_res.submission_id>user_status_res.max_submission_id){
-            //  console.log(`Used exceeded max submissions allowed for this task (submission_attempts=${user_status_res.submission_id-1}, max_allowed=${user_status_res.max_submission_id})`)
-            //  isUploadComplete.current=true
-            //  setIsTestingComplete(true)
-            //  maxNotBreached.current=false
-            //  setHidePrompt(false);
-            //  triggerScroll();
-            //}else{
               const submit_assignment_url=submit_assignment_url_template.replace("$${{ASSIGNMENT_ID}}$$",user_status_res.assignment_id)
               console.log("submitting file to following url::", submit_assignment_url)
               const res = await fetch(submit_assignment_url, {
@@ -117,7 +110,6 @@ export default function SCP({ args, setHidePrompt, triggerScroll }: { args: stri
               await pollPackingNoUiModification(current + 1);
           } else {
               console.log("Packing completed!");
-              setHidePrompt(false);
           }
         };
         const pollUpload = async (current: number) => {
@@ -128,8 +120,7 @@ export default function SCP({ args, setHidePrompt, triggerScroll }: { args: stri
                 setUploadProgressDisplay(current + 1);
                 await pollUpload(current + 1);
             } else {
-                console.log("Packing completed!");
-                setHidePrompt(false);
+                console.log("Upload completed!");
             }
         };
         const pollTesting = async (current: number) => {
@@ -142,15 +133,12 @@ export default function SCP({ args, setHidePrompt, triggerScroll }: { args: stri
                 setTestingProgressDisplay(current + 1);
                 await pollTesting(current + 1);
             } else {
-                console.log("Packing completed!");
-                setHidePrompt(false);
+                console.log("Testing completed!");
             }
         };   
         await pollPackingNoUiModification(0);
-        setHidePrompt(true);
         triggerScroll();
         await pollUpload(0);
-        setHidePrompt(true);
         triggerScroll();
         await pollTesting(0);
         setHidePrompt(false);
