@@ -8,7 +8,7 @@ sys.path.append(str(Path.cwd()))
 
 def task_1() -> None:
     """
-    This task retrieves system information and saves it to a file, `system_info.txt`.
+    This task retrieves system information and saves it to a file, `a1_task1.json`.
     
     The task will format the system information into a string in the following format:
     
@@ -34,7 +34,7 @@ def task_1() -> None:
     user - micha.vardy
     terminal - vscode
     
-    The formatted information will be saved to a file called `system_info.txt`.
+    The formatted information will be saved to a file called `a1_task1.json`.
     """
 
     # Retrieve system information
@@ -56,7 +56,7 @@ def task_1() -> None:
     """
 
     # Write the information to a file
-    Path("assignment_1/1/a1_task1.json").write_text(json.dumps({"system_info": info}), encoding="utf-8", errors="ignore")
+    Path("system_info.json").write_text(json.dumps({"system_info": info}), encoding="utf-8", errors="ignore")
 
 if __name__ == "__main__":
     task_1()
