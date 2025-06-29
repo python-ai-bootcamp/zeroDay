@@ -8,7 +8,7 @@ sys.path.append(str(Path.cwd()))
 
 def task_1() -> None:
     """
-    This task retrieves system information and saves it to a file, `system_info.txt`.
+    This task retrieves system information and saves it to a file, `a1_task1.json`.
     
     The task will format the system information into a string in the following format:
     
