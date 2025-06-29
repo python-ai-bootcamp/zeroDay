@@ -19,7 +19,7 @@ from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.pydantic_v1 import BaseModel, Field
 from llmClient import load_validator_model
 from systemEntities import Models
-llm = load_validator_model(Models.OPENAI_LANGCHAIN_DEFAULT)
+llm = load_validator_model(Models.OPENAI_gpt_4o)
 
 @dataclass
 class Answer:
@@ -403,12 +403,29 @@ def extract_answer(state: AgentState) -> AgentState:
 def check_is_answer_correct(state: AgentState) -> AgentState:
     prompt_template = PromptTemplate.from_template(
     """
-    given the following answer and the assignment script, determine if the answer is correct or not
-    - assignment script: {assignment_script}
-    - question: {question}
-    - answer: {answer}
-    - output: {output}
+    given the following 'answer' taken out of a full 'submission script' and the 'question' taken out of 'assignment script', determine if the answer inside submission script is correct or not
+    adhere to the following guidelines:
+        1. do not be too harsh when evaluating the students submission.
+        2. students might work on macOS linux or windows. no need to support all os types in answer. if answer is correct for at least one of the os, it will pass.
+        3. take into account that the 'answer' should be evaluated as if it was executed from inside the 'submission script'
+        4. do NOT judge if answer is correct based on the type of os it executes on, if its correct on one of them it will pass.
 
+    - assignment script: 
+    {assignment_script}
+    ----- end of assignment script -----
+    - question taken out of above assignment script: 
+    {question}
+    ----- end of question -----
+    - submission script: 
+    {submission_script}
+    ----- end of submission script -----
+    - answer taken out of above submission script: 
+    {answer}
+    ----- end of answer -----
+    - output: 
+    {output}
+    ----- end of output -----
+    
     Output Format: Please provide a JSON object adhering strictly to the following `AnswerCorrectStructure` schema. Ensure all fields are populated correctly and the `answer` and `extracted_json_key` are direct, identical extractions from the `Output JSON`.
     ```json
         "is_correct": bool, // Whether the answer is correct or not
@@ -434,6 +451,7 @@ def check_is_answer_correct(state: AgentState) -> AgentState:
         try:
             answer_correct = chain.invoke({
                 "assignment_script": state.assignment_script,
+                "submission_script": state.submission_script,
                 "question": answer.question,
                 "answer": answer.answer,
                 "output": answer.output
@@ -865,7 +883,7 @@ def execute_task(task_file_name :str, kill_timeout: float):
         "is_answer_correct": validation_state['is_answer_correct'],
         "is_submission_complete": validation_state['is_submission_complete'],
         "is_cheating": validation_state['is_cheating'],
-        **({"status_fail_explenation":  validation_state['incorrect_explinations']}  if not validation_state['is_answer_correct'] else {}),
+        **({"incorrect_explinations":  validation_state['incorrect_explinations']}  if not validation_state['is_answer_correct'] else {}),
         **({"incomplete_explinations":  validation_state['incomplete_explinations']} if not validation_state['is_submission_complete'] else {}),
         **({"cheating_explinations":    validation_state['cheating_explinations']}   if validation_state['is_cheating'] else {}),
     }

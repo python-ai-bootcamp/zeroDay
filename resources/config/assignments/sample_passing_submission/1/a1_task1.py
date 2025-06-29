@@ -12,7 +12,7 @@ def task_1() -> None:
     
     The task will format the system information into a string in the following format:
     
-    System Info:
+    SYSTEM INFO:
     hostname - <hostname>
     ip_address - <ip_address>
     shell - <shell>
@@ -34,26 +34,24 @@ def task_1() -> None:
     user - micha.vardy
     terminal - vscode
     
-    The formatted information will be saved to a file called `a1_task1.json`.
+    The formatted information will be saved as the value for they key 'system_info' in a json file called `a1_task1.json`.
     """
 
     # Retrieve system information
     hostname = socket.gethostname()
     ip_address = socket.gethostbyname(hostname)
     shell = Path(os.environ.get("SHELL")).stem
-    user = os.environ.get('USERNAME')
+    user = os.environ.get('USERNAME') or os.environ.get('USER')
     terminal = os.environ.get("TERM_PROGRAM")
     
     
     # TODO: fill in the info string with the following information and format it correctly:
-    info = f"""
-    SYSTEM INFO:
-    hostname - {hostname}
-    ip_address - {ip_address}
-    shell - {shell}
-    user - {user}
-    terminal - {terminal}
-    """
+    info = f"""SYSTEM INFO:
+hostname - {hostname}
+ip_address - {ip_address}
+shell - {shell}
+user - {user}
+terminal - {terminal}"""
 
     # Write the information to a file
     Path("a1_task1.json").write_text(json.dumps({"system_info": info}), encoding="utf-8", errors="ignore")

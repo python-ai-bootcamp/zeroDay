@@ -48,11 +48,19 @@ const JsonRenderer: React.FC<JsonRendererProps> = ({ data, level = 0 }) => {
         </a>
       );
     } else {
-      return (
-        <pre style={{ color: typeof data === 'string' ? 'brown' : 'gray', whiteSpace: 'pre-wrap' }}>
-          '{String(data)}'
-        </pre>
-      ); 
+      if (String(data).length>50) {
+        return (
+          <pre style={{ color: typeof data === 'string' ? 'brown' : 'gray', whiteSpace: 'pre-wrap' }}>
+            '{String(data)}'
+          </pre>
+        ); 
+      }else{
+        return (
+          <span style={{ color: typeof data === 'string' ? 'brown' : 'gray' }}>
+            '{String(data)}'
+          </span>
+        ); 
+      }
     }
   } else {
     return (
