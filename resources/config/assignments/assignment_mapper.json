@@ -2,9 +2,9 @@
     "1":{
         "description":"description_1.md",
         "validators":[
-            "validator_example_05__noDocker__pureCode__mother.py", 
-            "validator_example_05__noDocker__pureCode__mother.py", 
-            "validator_example_05__noDocker__pureCode__mother.py"
+            "validator_example_05__noDocker__pureCode__mother_testable.py", 
+            "validator_example_05__noDocker__pureCode__mother_testable.py", 
+            "validator_example_05__noDocker__pureCode__mother_testable.py"
         ]
     },
     "2":{
