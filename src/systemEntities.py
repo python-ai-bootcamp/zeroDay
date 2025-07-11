@@ -63,7 +63,10 @@ class Payment(BaseModel):
     utc_time: str
 
 class Models(StrEnum):
-    OPENAI_LANGCHAIN_DEFAULT   = ""
-    OPENAI_gpt_4               = "gpt-4"
-    OPENAI_gpt_4o              = "gpt-4o"
+    OPENAI_LANGCHAIN_DEFAULT    = ""
+    OPENAI_gpt_4                = "gpt-4"
+    OPENAI_gpt_4o               = "gpt-4o"
+    OPENAI_o3_mini              = "o3-mini"
+    OPENAI_o3                   = "o3"
+
 
