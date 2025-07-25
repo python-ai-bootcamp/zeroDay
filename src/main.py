@@ -4,8 +4,8 @@ from v2Apis import router as v2_router
 from datetime import datetime
 from systemEntities import AnalyticsEventType, Payment, print
 from analyticsService import insert_analytic_event, get_group_by_fields,convert_group_data_to_plotly_traces, group_data, ChallengeTrafficAnalyticsEvent, NewUserAnalyticsEvent, UserPaidAnalyticsEvent, UserSubmittedAssignmentAnalyticsEvent, UserPassedAssignmentAnalyticsEvent
-from userService import User, submit_user, user_exists, get_user
-from paymentService import initiate_user_payement_procedure, get_payment_code_hashes, get_amount_per_payment_code
+from userService import User, submit_user, user_exists, get_user, is_user_paid
+from paymentService import payment_notification_flow, get_hacker_id_from_candidate,initiate_user_payement_procedure, persist_payment_candidate_data,enrich_payment_candidate_data, get_payment_code_hashes, get_amount_per_payment_code
 from assignmentOrchestrator import assignment_description,next_assignment_submission, assignment_task_count, AssignmentSubmission, submit_assignment, user_testing_in_progress, max_submission_for_assignment, last_assignment_submission_result, get_submitted_file
 from exportService import fetch_symmetric_key, download_data
 from fastapi import FastAPI, BackgroundTasks, Request, Response, File, Form, UploadFile
@@ -54,6 +54,7 @@ templates_processors={
     "about_page":                                   lambda: open(os.path.join("resources","templates","about.html"), "r").read(),
     "home_page":                                    lambda: open(os.path.join("resources","templates","home.html"), "r").read(),
     "payment_page":                                 lambda: open(os.path.join("resources","templates","payment.html"), "r").read(),
+    "payment_iframe_page":                          lambda: open(os.path.join("resources","templates","payment_iframe.html"), "r").read(),
     "enlist_page":                                  lambda: open(os.path.join("resources","templates","enlist.html"), "r").read(),
     "contact_page":                                 lambda: open(os.path.join("resources","templates","contact.html"), "r").read(),
     "assignments_page":                             lambda: open(os.path.join("resources","templates","assignments.html"), "r").read(),
@@ -64,7 +65,9 @@ templates_processors={
     "submitted_task_file_page":                     lambda: open(os.path.join("resources","templates","submitted_task_file.html"), "r").read(),
     "last_submission_results_no_results_page":      lambda: open(os.path.join("resources","templates","last_submission_results_no_results.html"), "r").read(),
     "analytics_page":                               lambda: open(os.path.join("resources","templates","analytics.html"), "r").read(),
+    "payment_redirect_success_page":                lambda: open(os.path.join("resources","templates","payment_redirect_success.html"), "r").read(),
     "payment_redirect_page":                        lambda: f'<html><head><meta http-equiv="refresh" content="5; url={protocol}://{domain_name}/enlist"/></head><body><p>This Page Is Still Under Construction</p><p>User will be redirected back to enlistment page in 5 seconds</p></body></html>',
+    "payment_redirect_failure_page":                lambda: f'<html><head><meta http-equiv="refresh" content="5; url={protocol}://{domain_name}/enlist"/></head><body><p>Payment Failure Temporary Page</p><p>This Page Is Still Under Construction</p><p>User will be redirected back to enlistment page in 5 seconds</p></body></html>',
     "redirect_to_enlistment_page":                  lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/enlist"/></head><body></body></html>',
     "redirect_to_last_submission_result_page":      lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/last_submission_result"/></head><body></body></html>',
     "redirect_to_shell_frontend":                   lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/terminal"/></head><body></body></html>',
@@ -259,6 +262,20 @@ def serve_payment(request: Request):
         payment_page_html = get_template("redirect_to_enlistment_page")
     return HTMLResponse(content=payment_page_html, status_code=200)
 
+@app.get("/payment_iframe")
+def serve_payment(request: Request):
+    user=request.state.authenticated_user
+    payment_iframe_page_html = get_template("payment_iframe_page")
+    if(user):
+        payment_iframe_page_html = payment_iframe_page_html\
+            .replace("$${{ASSIGNMENT_PAGE_LINK}}$$","")\
+            .replace("$${{HACKER_ID}}$$",user["hacker_id"])\
+            .replace("$${{DOMAIN}}$$",domain_name)\
+            .replace("$${{PROTOCOL}}$$",protocol)
+    else:
+        payment_iframe_page_html = get_template("redirect_to_enlistment_page")
+    return HTMLResponse(content=payment_iframe_page_html, status_code=200)
+
 @app.get("/payment_code_hashes")
 def serve_payment_codes():
     return get_payment_code_hashes()
@@ -279,7 +296,69 @@ def serve_payment_redirect(background_tasks: BackgroundTasks, request: Request, 
         initiate_user_payement_procedure(payment, background_tasks)
     else:
         payment_page_html = get_template("redirect_to_enlistment_page")
+    return HTMLResponse(content=payment_page_html, status_code=200)    
+
+@app.get("/payment_redirect_success")
+def serve_payment_redirect_success(background_tasks: BackgroundTasks, request: Request, payment_candidate_uuid: str):
+    rest_of_parameters=payment_candidate_uuid.split("&")[1:]
+    payment_candidate_uuid=payment_candidate_uuid.split("&")[0]
+    print(f"main::payment_redirect_success:: {payment_candidate_uuid=}")
+    print(f"main::payment_redirect_success:: {rest_of_parameters=}")
+    credit_card_params_of_interest=['myid','transaction_id','payment_method','sum','currency','auth_number','Tempref']
+    extracted_credit_card_params={
+        k: v
+        for item in rest_of_parameters
+        if '=' in item           # only keep strings like "key=value"
+        for k, v in [item.split('=', 1)]  # split into key and value
+        if k in credit_card_params_of_interest
+    }
+    print(f"main::payment_redirect_success:: {extracted_credit_card_params=}")
+    enrich_payment_candidate_data(payment_candidate_uuid,additional_payment_data=extracted_credit_card_params)
+    hacker_id=get_hacker_id_from_candidate(payment_candidate_uuid)
+    payment_page_html = get_template("payment_redirect_success_page")\
+                .replace("$${{DOMAIN}}$$",domain_name)\
+                .replace("$${{PROTOCOL}}$$",protocol)\
+                .replace("$${{HACKER_ID}}$$",hacker_id)
+    return HTMLResponse(content=payment_page_html, status_code=200)    
+
+@app.get("/payment_redirect_failure")
+def serve_payment_redirect_failure(background_tasks: BackgroundTasks, request: Request, payment_candidate_uuid: str ):
+    user=request.state.authenticated_user
+    if(user):
+        payment_page_html = get_template("payment_redirect_failure_page")
+        print(f"main::payment_redirect_failure:: {payment_candidate_uuid=}")
+        #user=User.model_validate(user)
+        #now_israel = datetime.now(israel_tz)
+        #now_utc = datetime.now(utc_tz)
+        #payment=Payment.model_validate({"user":user,"ClientName":ClientName, "ClientLName":ClientLName, "UserId":UserId, "email":email, "phone":phone, "date":now_israel.strftime("%d/%m/%Y"), "time":now_israel.strftime("%H:%M:%S"),  "utc_date":now_utc.strftime("%d/%m/%Y"), "utc_time":now_utc.strftime("%H:%M:%S"), "paymentCode":paymentCode})
+        #initiate_user_payement_procedure(payment, background_tasks)
+    else:
+        payment_page_html = get_template("redirect_to_enlistment_page")
     return HTMLResponse(content=payment_page_html, status_code=200)
+
+@app.post("/payment_notify")
+def serve_payment_notify(background_tasks: BackgroundTasks, request: Request, payment_candidate_uuid: str ):   
+    print(f"main::payment_notify:: {payment_candidate_uuid=}")
+    payment_notification_flow(payment_candidate_uuid, background_tasks)
+    return PlainTextResponse(content="OK", status_code=200)
+
+@app.post("/payment_candidate")
+def serve_payment_candidate(request: Request, ClientName:str=Form(...), ClientLName:str=Form(...), UserId:str=Form(...), email:str=Form(...), phone:str=Form(...), payment_candidate_uuid:str=Form(...), paymentCode:str = Form("regular")):
+    print("main::serve_payment_candidate:: entered")
+    user=request.state.authenticated_user
+    if(user):
+        payment_page_html = get_template("payment_redirect_page")
+        now_israel = datetime.now(israel_tz)
+        now_utc = datetime.now(utc_tz)
+        payment=Payment.model_validate({"payment_candidate_uuid":payment_candidate_uuid, "user":user,"ClientName":ClientName, "ClientLName":ClientLName, "UserId":UserId, "email":email, "phone":phone, "date":now_israel.strftime("%d/%m/%Y"), "time":now_israel.strftime("%H:%M:%S"),  "utc_date":now_utc.strftime("%d/%m/%Y"), "utc_time":now_utc.strftime("%H:%M:%S"), "paymentCode":paymentCode})
+        persist_payment_candidate_data(payment)
+    else:
+        payment_page_html = get_template("redirect_to_enlistment_page")
+    return HTMLResponse(content=payment_page_html, status_code=200)
+
+@app.get("/paid_status")
+def serve_paid_status(hacker_id:str):
+    return {"paid_status":is_user_paid(hacker_id)}
 
 @app.get("/enlist")
 def serve_enlist(request: Request):

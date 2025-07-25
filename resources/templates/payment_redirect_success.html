@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <style>
+        body {
+            background-color: black;
+            color: #39ff14;
+            font-family: monospace;
+            padding: 2em;
+            font-size: 1.2em;
+        }
+        .line {
+            white-space: pre;
+            margin: 0.5em 0;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .blink {
+            animation: blink 1s step-start infinite;
+        }
+        a {
+            color: #39ff14;
+            text-decoration: underline;
+            font-size: 1.4em;
+        }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", async function () {
+            const messages = [
+                { text: "Running Background Checks", dots: 7, blink: false },
+                { text: "Authorizing Finance", dots: 10, blink: false },
+                { text: "Transferring Funds", dots: 12, blink: false },
+                { text: "Waiting For Transfer Funds Approval", dots: 0, blink: false },
+                { type: "waitForApproval", url: "/paid_status?hacker_id=$${{HACKER_ID}}$$", pollInterval: 1000 },
+                { text: "Funds approved !!!", dots: 0, blink: true },
+                { text: " ", dots: 0, blink: false },
+                { type: "delay", duration: 2000 },
+                { type: "stopPreviousBlinks" },
+                { text: "Initializing terminal for user", dots: 8, blink: false },
+                { text: "Setting up user credentials", dots: 8, blink: false },
+                { text: "Connecting Large Language Model", dots: 4, blink: false },
+                { text: "Generating Python Lessions", dots: 6, blink: false },
+                { text: "Enabling Remote Access", dots: 4, blink: false },
+                { text: " ", dots: 0, blink: false },
+                { text: "User Access Is Ready !!!", dots: 0, blink: true },
+                { text: " ", dots: 0, blink: false },
+                { type: "link", link_text:"Dive In", link_url:"assignments" },
+                { type: "delay", duration: 2000 },
+                { type: "stopPreviousBlinks" },
+            ];
+
+            const container = document.body;
+            const dotDelay = 85;
+            const extraDelayAfterDots = 750;
+            const blinkingLines = [];
+
+            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+            for (const msg of messages) {
+                if (msg.type === "delay") {
+                    await sleep(msg.duration);
+
+                } else if (msg.type === "waitForApproval") {
+                    const line = document.createElement("div");
+                    line.className = "line";
+                    line.textContent = ".";
+                    container.appendChild(line);
+                    await sleep(500);
+                    line.textContent += ".";
+                    let paid_status = false;
+                    await sleep(500);
+                    while (!paid_status) {
+                        try {
+                            const res = await fetch(msg.url);
+                            const data = await res.json();
+                            if (data.paid_status === true) {
+                                paid_status = true;
+                            }
+                            line.textContent += ".";
+                        } catch (e) {
+                            line.textContent = "Error checking approval. Retrying...";
+                        }
+                        if (!paid_status) await sleep(msg.pollInterval || 1000);
+                    }
+                    await sleep(500);
+
+                } else if (msg.type === "link") {
+                    const line = document.createElement("div");
+                    line.className = "line";
+                    const link = document.createElement("a");
+                    link.href = msg.link_url;
+                    link.target = "_blank";
+                    link.textContent = msg.link_text;
+                    line.appendChild(link);
+                    container.appendChild(line);
+                    await sleep(extraDelayAfterDots);
+
+                } else if (msg.type === "stopPreviousBlinks") {
+                    for (const el of blinkingLines) {
+                        el.classList.remove("blink");
+                    }
+                    blinkingLines.length = 0;
+
+                } else {
+                    const line = document.createElement("div");
+                    line.className = "line";
+                    if (msg.blink) {
+                        line.classList.add("blink");
+                        blinkingLines.push(line);
+                    }
+                    line.textContent = msg.text;
+                    container.appendChild(line);
+
+                    if (msg.dots > 0) {
+                        let dotsStr = "";
+                        for (let i = 0; i < msg.dots; i++) {
+                            await sleep(dotDelay);
+                            dotsStr += ".";
+                            line.textContent = msg.text + dotsStr;
+                        }
+                    }
+                    await sleep(extraDelayAfterDots);
+                }
+            }
+
+            await sleep(500000);
+            window.top.location.href = "$${{PROTOCOL}}$$://$${{DOMAIN}}$$/enlist";
+        });
+    </script>
+</head>
+<body>
+</body>
+</html>

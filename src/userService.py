@@ -60,5 +60,5 @@ def set_user_as_paid(payment:Payment):
         mailService.notification_producer(user=user,notification_type=NotificationType.NEW_USER_FIRST_ASSIGNMENT_AFTER_ENLISTMENT)
         save_data(data)
 
-def is_usr_paied(hacker_id: str):
-    return get_user["usr"]["paid_status"]
+def is_user_paid(hacker_id: str):
+    return get_user(hacker_id)["user"]["paid_status"]

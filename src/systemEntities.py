@@ -56,6 +56,7 @@ class Payment(BaseModel):
     email:str
     phone:str
     amount: Optional[int] = None
+    payment_candidate_uuid: Optional[str] = None
     paymentCode: str
     date: str
     time: str
