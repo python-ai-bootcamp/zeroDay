@@ -288,7 +288,7 @@
                 tranzilaData.append('currency',"1")
                 tranzilaData.append('success_url_address',  `$${{PROTOCOL}}$$://$${{DOMAIN}}$$/payment_redirect_success?payment_candidate_uuid=${uuidInput.value}`)
                 tranzilaData.append('fail_url_address',     `$${{PROTOCOL}}$$://$${{DOMAIN}}$$/payment_redirect_failure?payment_candidate_uuid=${uuidInput.value}`)
-                tranzilaData.append('notify_url_address',   `https://www.zerodaybootcamp.xyz/payment_notify?payment_candidate_uuid=${uuidInput.value}`)
+                tranzilaData.append('notify_url_address',   `$${{PROTOCOL}}$$://$${{DOMAIN}}$$/payment_notify?payment_candidate_uuid=${uuidInput.value}`)
                 //tranzilaData.append('cred_type',"1")
                 console.log('updated tranzilaData.sum to be ',priceTag)
                 const iframeForm = document.createElement("form");
