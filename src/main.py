@@ -65,7 +65,7 @@ templates_processors={
     "last_submission_results_no_results_page":      lambda: open(os.path.join("resources","templates","last_submission_results_no_results.html"), "r").read(),
     "analytics_page":                               lambda: open(os.path.join("resources","templates","analytics.html"), "r").read(),
     "payment_redirect_success_page":                lambda: open(os.path.join("resources","templates","payment_redirect_success.html"), "r").read(),
-    "payment_redirect_failure_page":                lambda: f'<html><head><meta http-equiv="refresh" content="5; url={protocol}://{domain_name}/enlist"/></head><body><p>Payment Failure Temporary Page</p><p>This Page Is Still Under Construction</p><p>User will be redirected back to enlistment page in 5 seconds</p></body></html>',
+    "payment_redirect_failure_page":                lambda: open(os.path.join("resources","templates","payment_redirect_failure.html"), "r").read(),
     "redirect_to_enlistment_page":                  lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/enlist"/></head><body></body></html>',
     "redirect_to_last_submission_result_page":      lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/last_submission_result"/></head><body></body></html>',
     "redirect_to_shell_frontend":                   lambda: f'<html><head><meta http-equiv="refresh" content="0; url={protocol}://{domain_name}/terminal"/></head><body></body></html>',
@@ -295,13 +295,25 @@ def serve_payment_redirect_success(background_tasks: BackgroundTasks, request: R
 
 @app.get("/payment_redirect_failure")
 def serve_payment_redirect_failure(background_tasks: BackgroundTasks, request: Request, payment_candidate_uuid: str ):
-    user=request.state.authenticated_user
-    if(user):
-        payment_page_html = get_template("payment_redirect_failure_page")
-        print(f"main::payment_redirect_failure:: {payment_candidate_uuid=}")
-    else:
-        payment_page_html = get_template("redirect_to_enlistment_page")
-    return HTMLResponse(content=payment_page_html, status_code=200)
+    rest_of_parameters=payment_candidate_uuid.split("&")[1:]
+    payment_candidate_uuid=payment_candidate_uuid.split("&")[0]
+    print(f"main::payment_redirect_failure:: {payment_candidate_uuid=}")
+    print(f"main::payment_redirect_failure:: {rest_of_parameters=}")
+    credit_card_params_of_interest=['myid','transaction_id','payment_method','sum','currency','auth_number','Tempref']
+    extracted_credit_card_params={
+        k: v
+        for item in rest_of_parameters
+        if '=' in item           # only keep strings like "key=value"
+        for k, v in [item.split('=', 1)]  # split into key and value
+        if k in credit_card_params_of_interest
+    }
+    print(f"main::payment_redirect_failure:: {extracted_credit_card_params=}")
+    enrich_payment_candidate_data(payment_candidate_uuid,additional_payment_data=extracted_credit_card_params)
+    hacker_id=get_hacker_id_from_candidate(payment_candidate_uuid)
+    payment_page_html = get_template("payment_redirect_failure_page")\
+                .replace("$${{DOMAIN}}$$",domain_name)\
+                .replace("$${{PROTOCOL}}$$",protocol)
+    return HTMLResponse(content=payment_page_html, status_code=200)    
 
 @app.post("/payment_notify")
 def serve_payment_notify(background_tasks: BackgroundTasks, request: Request, payment_candidate_uuid: str ):   
