@@ -49,7 +49,6 @@
         }
 
         .hero {
-            background-image: url('https://via.placeholder.com/1920x800/333333/ffffff');
             background-size: cover;
             background-position: center;
             color: #ffffff;
@@ -177,18 +176,23 @@
 .close-button:focus {
     color: #fff;
 }
+.selected-method {
+        background-color: #ff8500; /* light green */
+        border: 2px solid #ff6600;
+}
     </style>
     <script>
         window.onload = async function () {
             let payment_code_hashes = [];
-    
+            let optional_payment_methods = ["creditCard","google_pay", "bit_pay"]
+            let selected_payment_method = "creditCard"
             try {
                 const response = await fetch('/payment_code_hashes');
                 payment_code_hashes = await response.json();
             } catch (error) {
                 console.error('Error fetching payment_code_hashes:', error);
             }
-    
+            const buttons = document.querySelectorAll(".payment-btn");
             const userIdInput = document.querySelector("#UserId");
             const paymentCodeInput = document.querySelector("#paymentCode");
             const form = document.querySelector("form");
@@ -244,7 +248,7 @@
                     paymentCodeInput.setCustomValidity("Invalid Coupon Code");
                     shouldPreventSubmit = true;
                 }
-    
+                
                 if (shouldPreventSubmit && e.type === "submit") {
                     e.preventDefault();
                 }
@@ -289,6 +293,10 @@
                 tranzilaData.append('success_url_address',  `$${{PROTOCOL}}$$://$${{DOMAIN}}$$/payment_redirect_success?payment_candidate_uuid=${uuidInput.value}`)
                 tranzilaData.append('fail_url_address',     `$${{PROTOCOL}}$$://$${{DOMAIN}}$$/payment_redirect_failure?payment_candidate_uuid=${uuidInput.value}`)
                 tranzilaData.append('notify_url_address',   `$${{PROTOCOL}}$$://$${{DOMAIN}}$$/payment_notify?payment_candidate_uuid=${uuidInput.value}`)
+                if(selected_payment_method!="creditCard"){
+                    tranzilaData.append(selected_payment_method,"1")
+                }
+
                 //tranzilaData.append('cred_type',"1")
                 console.log('updated tranzilaData.sum to be ',priceTag)
                 const iframeForm = document.createElement("form");
@@ -350,6 +358,17 @@
                     tranzilaFrame.src = "";
                 }
             });
+            buttons.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    buttons.forEach(b => b.classList.remove("selected-method"));
+                    btn.classList.add("selected-method");
+                    selected_payment_method = btn.dataset.method;
+                    document.getElementById("paymentMethod").value = selected_payment_method;
+                });
+                if (btn.dataset.method=="creditCard" ){
+                    btn.classList.add("selected-method");
+                }
+            });
         };
     </script>
     
@@ -375,6 +394,19 @@
             <div class="product-info">
                 <form action="https://direct.tranzila.com/jira/iframenew.php" target="tranzila" method="POST">
                     <input type="hidden" name="hacker_id" value="$${{HACKER_ID}}$$" />
+                    <label>Select Preferred Payment Method:</label><br>
+                    <div id="payment-method-buttons" style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px;">
+                        <button type="button" class="payment-btn" data-method="creditCard" style="border-radius: 12px; padding: 6px; cursor: pointer;">
+                            <img src="/static/images/credit_card_logo.png" alt="Credit Card" style="width: 40px;"><br>
+                        </button>
+                        <button type="button" class="payment-btn" data-method="google_pay" style="border-radius: 12px; padding: 6px; cursor: pointer;">
+                            <img src="/static/images/gpay_logo.webp" alt="Google Pay" style="width: 40px;"><br>
+                        </button>
+                        <button type="button" class="payment-btn" data-method="bit_pay" style="border-radius: 12px; padding: 6px; cursor: pointer;">
+                            <img src="/static/images/Bit_logo.svg.png" alt="Bit" style="width: 40px;"><br>
+                        </button>
+                    </div>
+                    <input type="hidden" id="paymentMethod" name="paymentMethod" value="creditCard" />
                     <label for="ClientName">First name:</label><br>
                     <input type="text" id="ClientName" name="ClientName" required ><br>
                     <label for="ClientLName">Last name:</label><br>
