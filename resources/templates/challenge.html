@@ -4,17 +4,43 @@
   <meta charset="UTF-8" />
   <title>ZeroDay</title>
   <link rel="icon" href="/static/favicon.svg" type="image/x-icon" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
   <style>
-    body {
+        html, body {
       background-color: black;
       color: #00FF00;
       font-family: 'VT323', monospace;
-      font-size: 18px;
+      font-size: 22px; /* lock to pixel size */
       margin: 0;
-      padding: 20px;
+      padding: 0; /* remove padding from body, move it inside terminal */
+      overflow: hidden; /* prevent body from scrolling */
       line-height: 1.5;
+      -webkit-text-size-adjust: none; /* iOS fix */
+      text-size-adjust: none;         /* general fix */
     }
+
+    input {
+      background-color: black;
+      color: #00FF00;
+      border: none;
+      /*border-bottom: 1px solid #00FF00;*/
+      font-family: 'VT323', monospace;
+      font-size: 22px;
+      width: auto;
+      margin-top: 5px;
+      outline: none;
+      display: inline-block;
+      -webkit-text-size-adjust: none;
+      text-size-adjust: none;
+    }
+
+    @media (min-width: 1200px) {
+      html, body, input {
+        font-size: 24px;
+      }
+    }
+    
     .terminal-line {
       margin: 5px 0;
       white-space: pre-wrap;
@@ -27,33 +53,36 @@
     .terminal-prompt {
       color: red;
     }
-    input {
+    #terminal {
+      height: 100vh; /* or 100% */
+      padding: 20px; /* move body padding here */
+      box-sizing: border-box;
+      overflow-y: auto; /* enable scrolling only here */
       background-color: black;
       color: #00FF00;
-      border: none;
-      border-bottom: 1px solid #00FF00;
       font-family: 'VT323', monospace;
-      font-size: 18px;
-      width: auto;
-      margin-top: 5px;
-      outline: none;
-      display: inline-block;
+      font-size: 22px;
+      line-height: 1.5;
     }
   </style>
 </head>
 <body>
   <div id="terminal">
     <div class="terminal-line">Zero Day Boot Camp Terminal v1.0</div>
-    <div class="terminal-line">--------------------------------------</div>
+    <div class="terminal-line">---------------------------------</div>
     <div class="terminal-line">please enter valid email address:</div>
     <div class="terminal-line" style="display: flex; align-items: center;">
       <span class="terminal-prompt">root@0D@:~$ </span>
       <span id="prompt"></span>
-      <input id="userInput" type="text" autofocus style="border: none; background: transparent; color: inherit; font-family: inherit; outline: none; width: auto;" />
+      <input id="userInput" type="text" autofocus />
     </div>
   </div>
 
   <script>
+    document.addEventListener('click', () => {
+      const input = document.getElementById('userInput');
+      if (input) input.focus();
+    });
     let state = 'email';
     let riddleAnswerPairs;
     if ($${{IS_DEV_MODE}}$$ == true){
@@ -79,6 +108,9 @@
     const userData = { email: '', hacker_id: '', name: '', phone: '', paid_status:false , receipt_index:"", advertise_code:"$${{ADVERTISE_CODE}}$$" , advertise_code_sub_category:"$${{ADVERTISE_CODE_SUB_CATEGORY}}$$"};
   
     const terminal = document.getElementById('terminal');
+    function scrollToBottom() {
+      terminal.scrollTop = terminal.scrollHeight;
+    }
     let userInput = document.getElementById('userInput');
     const promptSpan = document.getElementById('prompt');
   
@@ -91,6 +123,8 @@
       }
       newLine.textContent = text;
       terminal.insertBefore(newLine, terminal.lastElementChild);
+      newLine.focus()
+      scrollToBottom()
     }
   
     function clearTerminal() {
@@ -100,6 +134,7 @@
     function updatePrompt(text = '') {
       promptSpan.textContent = text;
       userInput.focus();
+      scrollToBottom()
     }
   
     function replaceInputField(type = 'text') {
@@ -110,6 +145,7 @@
       userInput.replaceWith(newInput);
       userInput = newInput;
       userInput.focus();
+      scrollToBottom();
       addInputListener();
     }
   
@@ -209,6 +245,8 @@
       if(iterationData.iteration>0){
         document.getElementById('userInput').size=iterationData.textValue.length
         document.getElementById('userInput').value=iterationData.textValue;
+        document.getElementById('userInput').focus()
+        scrollToBottom()
         iterationData.iteration=iterationData.iteration-1
         iterationData.textValue=iterationData.textValue+"."
         setTimeout(printEncryptCommand, 100, iterationData);
@@ -223,6 +261,8 @@
     function printScaryFormat(textValue){
       document.getElementById('userInput').size=textValue.length
       document.getElementById('userInput').value=textValue;
+      document.getElementById('userInput').focus()
+      scrollToBottom()
       setTimeout(printScaryFormat, 80, textValue+".");
     };
     function showNamePrompt() {
