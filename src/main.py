@@ -286,7 +286,7 @@ def serve_payment_redirect_success(background_tasks: BackgroundTasks, request: R
         if k in credit_card_params_of_interest
     }
     print(f"main::payment_redirect_success:: {extracted_credit_card_params=}")
-    enrich_payment_candidate_data(payment_candidate_uuid,additional_payment_data=extracted_credit_card_params)
+    enrich_payment_candidate_data(payment_candidate_uuid,additional_payment_data=extracted_credit_card_params, "payment_redirect_url_data")
     hacker_id=get_hacker_id_from_candidate(payment_candidate_uuid)
     payment_page_html = get_template("payment_redirect_success_page")\
                 .replace("$${{DOMAIN}}$$",domain_name)\
@@ -309,7 +309,7 @@ def serve_payment_redirect_failure(background_tasks: BackgroundTasks, request: R
         if k in credit_card_params_of_interest
     }
     print(f"main::payment_redirect_failure:: {extracted_credit_card_params=}")
-    enrich_payment_candidate_data(payment_candidate_uuid,additional_payment_data=extracted_credit_card_params)
+    enrich_payment_candidate_data(payment_candidate_uuid,additional_payment_data=extracted_credit_card_params, "payment_redirect_url_data")
     hacker_id=get_hacker_id_from_candidate(payment_candidate_uuid)
     payment_page_html = get_template("payment_redirect_failure_page")\
                 .replace("$${{DOMAIN}}$$",domain_name)\
@@ -319,21 +319,14 @@ def serve_payment_redirect_failure(background_tasks: BackgroundTasks, request: R
 @app.post("/payment_notify")
 async def asyncserve_payment_notify(background_tasks: BackgroundTasks, request: Request, payment_candidate_uuid: str ):   
     print(f"main::payment_notify:: {payment_candidate_uuid=}")
-        # Print raw body
     body = await request.body()
-    print("==== RAW BODY ====")
-    print(body)
-    print("==================")
     decoded_body = body.decode("utf-8")
     parsed = parse_qs(decoded_body)
-    # If you want flat key-value pairs (first value only)
     flat_dict = {k: v[0] if len(v) == 1 else v for k, v in parsed.items()}
-
-    print("==== PARSED BODY ====")
     for key, value in flat_dict.items():
         print(f"{key}: {value}")
 
-    payment_notification_flow(payment_candidate_uuid, background_tasks)
+    payment_notification_flow(payment_candidate_uuid, payment_notify_details, background_tasks)
     return PlainTextResponse(content="OK", status_code=200)
 
 @app.post("/payment_candidate")

@@ -95,13 +95,17 @@ def get_receipt_index():
         f.write(str(last_receipt_index+1))
 
     return str(last_receipt_index+1).zfill(7)
-def payment_notification_flow(payment_candidate_uuid:str, background_tasks: BackgroundTasks):
-    file_path = os.path.join(PAYMENT_DATA_CANDIDATE_FILES_DIRECTORY, f"{payment_candidate_uuid}.json")
-    # Read existing JSON
-    with open(file_path, "r", encoding="utf-8") as f:
-        payment_candidate_data = json.load(f)
-    payment=Payment.model_validate(payment_candidate_data)
-    initiate_user_payement_procedure(payment, background_tasks)
+def payment_notification_flow(payment_candidate_uuid:str, payment_notify_details: dict, background_tasks: BackgroundTasks):
+    enrich_payment_candidate_data(payment_candidate_uuid, payment_notify_details, "payment_notify_url_data")
+    if(payment_notify_details["Response"]=="000"):
+        file_path = os.path.join(PAYMENT_DATA_CANDIDATE_FILES_DIRECTORY, f"{payment_candidate_uuid}.json")
+        # Read existing JSON
+        with open(file_path, "r", encoding="utf-8") as f:
+            payment_candidate_data = json.load(f)
+        payment=Payment.model_validate(payment_candidate_data)
+        initiate_user_payement_procedure(payment, background_tasks)
+    else:
+        print(f"{payment_candidate_uuid=} failed payment attempt with {payment_notify_details["Response"]=}")
 
 def initiate_user_payement_procedure(payment:Payment, background_tasks: BackgroundTasks):
     print(f"initiate_user_payement_procedure:: received user payment with following credit api related payment:{payment.model_dump()}")
