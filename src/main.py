@@ -271,7 +271,8 @@ def serve_payment_codes():
 def serve_amount_per_payment_code(payment_code:str = "regular"):
     return get_amount_per_payment_code(payment_code)
     
-@app.get("/payment_redirect_success")
+#@app.get("/payment_redirect_success")
+@app.api_route("/payment_redirect_success", methods=["GET", "POST"])
 def serve_payment_redirect_success(background_tasks: BackgroundTasks, request: Request, payment_candidate_uuid: str):
     rest_of_parameters=payment_candidate_uuid.split("&")[1:]
     payment_candidate_uuid=payment_candidate_uuid.split("&")[0]
@@ -294,7 +295,8 @@ def serve_payment_redirect_success(background_tasks: BackgroundTasks, request: R
                 .replace("$${{HACKER_ID}}$$",hacker_id)
     return HTMLResponse(content=payment_page_html, status_code=200)    
 
-@app.get("/payment_redirect_failure")
+#@app.get("/payment_redirect_failure")
+@app.api_route("/payment_redirect_failure", methods=["GET", "POST"])
 def serve_payment_redirect_failure(background_tasks: BackgroundTasks, request: Request, payment_candidate_uuid: str ):
     rest_of_parameters=payment_candidate_uuid.split("&")[1:]
     payment_candidate_uuid=payment_candidate_uuid.split("&")[0]
