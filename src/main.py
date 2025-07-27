@@ -316,7 +316,7 @@ def serve_payment_redirect_failure(background_tasks: BackgroundTasks, request: R
     return HTMLResponse(content=payment_page_html, status_code=200)    
 
 @app.post("/payment_notify")
-def serve_payment_notify(background_tasks: BackgroundTasks, request: Request, payment_candidate_uuid: str ):   
+async def asyncserve_payment_notify(background_tasks: BackgroundTasks, request: Request, payment_candidate_uuid: str ):   
     print(f"main::payment_notify:: {payment_candidate_uuid=}")
         # Print raw body
     body = await request.body()
@@ -329,7 +329,7 @@ def serve_payment_notify(background_tasks: BackgroundTasks, request: Request, pa
     for key, value in request.headers.items():
         print(f"{key}: {value}")
     print("==================")
-    
+
     payment_notification_flow(payment_candidate_uuid, background_tasks)
     return PlainTextResponse(content="OK", status_code=200)
 
