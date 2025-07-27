@@ -286,7 +286,7 @@ def serve_payment_redirect_success(background_tasks: BackgroundTasks, request: R
         if k in credit_card_params_of_interest
     }
     print(f"main::payment_redirect_success:: {extracted_credit_card_params=}")
-    enrich_payment_candidate_data(payment_candidate_uuid,additional_payment_data=extracted_credit_card_params, "payment_redirect_url_data")
+    enrich_payment_candidate_data(payment_candidate_uuid, extracted_credit_card_params, "payment_redirect_url_data")
     hacker_id=get_hacker_id_from_candidate(payment_candidate_uuid)
     payment_page_html = get_template("payment_redirect_success_page")\
                 .replace("$${{DOMAIN}}$$",domain_name)\
@@ -309,7 +309,7 @@ def serve_payment_redirect_failure(background_tasks: BackgroundTasks, request: R
         if k in credit_card_params_of_interest
     }
     print(f"main::payment_redirect_failure:: {extracted_credit_card_params=}")
-    enrich_payment_candidate_data(payment_candidate_uuid,additional_payment_data=extracted_credit_card_params, "payment_redirect_url_data")
+    enrich_payment_candidate_data(payment_candidate_uuid,extracted_credit_card_params, "payment_redirect_url_data")
     hacker_id=get_hacker_id_from_candidate(payment_candidate_uuid)
     payment_page_html = get_template("payment_redirect_failure_page")\
                 .replace("$${{DOMAIN}}$$",domain_name)\
