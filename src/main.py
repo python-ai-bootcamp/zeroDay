@@ -14,6 +14,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, FileResponse
 from configurationService import domain_name, protocol, isDevMod
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.staticfiles import StaticFiles
+from urllib.parse import parse_qs
 
 israel_tz = zoneinfo.ZoneInfo("Asia/Jerusalem")
 utc_tz = zoneinfo.ZoneInfo("UTC")
@@ -323,12 +324,14 @@ async def asyncserve_payment_notify(background_tasks: BackgroundTasks, request: 
     print("==== RAW BODY ====")
     print(body)
     print("==================")
+    decoded_body = body.decode("utf-8")
+    parsed = parse_qs(decoded_body)
+    # If you want flat key-value pairs (first value only)
+    flat_dict = {k: v[0] if len(v) == 1 else v for k, v in parsed.items()}
 
-    # Also print headers, useful for debugging content type
-    print("==== HEADERS ====")
-    for key, value in request.headers.items():
+    print("==== PARSED BODY ====")
+    for key, value in flat_dict.items():
         print(f"{key}: {value}")
-    print("==================")
 
     payment_notification_flow(payment_candidate_uuid, background_tasks)
     return PlainTextResponse(content="OK", status_code=200)
