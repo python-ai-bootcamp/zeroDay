@@ -125,14 +125,14 @@ def persist_payment_candidate_data(payment:Payment):
     with open(os.path.join(PAYMENT_DATA_CANDIDATE_FILES_DIRECTORY,f"{payment.payment_candidate_uuid}.json"), "w", encoding="utf-8") as f:
         json.dump(payment.model_dump(), f, indent=4, ensure_ascii=False)
 
-def enrich_payment_candidate_data(payment_candidate_uuid:str, additional_payment_data: dict):    
+def enrich_payment_candidate_data(payment_candidate_uuid:str, additional_payment_data: dict, entry_name:str):    
     print(f"paymentService::enrich_payment_candidate_data:: entered entered with {payment_candidate_uuid=} and {additional_payment_data=}")
     file_path = os.path.join(PAYMENT_DATA_CANDIDATE_FILES_DIRECTORY, f"{payment_candidate_uuid}.json")
     # Read existing JSON
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
     # Add or overwrite the 'additional_payment_data' field
-    data["additional_payment_data"] = additional_payment_data
+    data[entry_name] = additional_payment_data
     # Write back to the same file
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
