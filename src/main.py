@@ -326,7 +326,7 @@ async def asyncserve_payment_notify(background_tasks: BackgroundTasks, request: 
     for key, value in flat_dict.items():
         print(f"{key}: {value}")
 
-    payment_notification_flow(payment_candidate_uuid, payment_notify_details, background_tasks)
+    payment_notification_flow(payment_candidate_uuid, flat_dict, background_tasks)
     return PlainTextResponse(content="OK", status_code=200)
 
 @app.post("/payment_candidate")
