@@ -105,10 +105,10 @@ def payment_notification_flow(payment_candidate_uuid:str, payment_notify_details
         payment=Payment.model_validate(payment_candidate_data)
         initiate_user_payement_procedure(payment, background_tasks)
     else:
-        print(f"{payment_candidate_uuid=} failed payment attempt with {payment_notify_details["Response"]=}")
+        print(f"paymentService::payment_notification_flow:: {payment_candidate_uuid=} failed payment attempt with {payment_notify_details["Response"]=}")
 
 def initiate_user_payement_procedure(payment:Payment, background_tasks: BackgroundTasks):
-    print(f"initiate_user_payement_procedure:: received user payment with following credit api related payment:{payment.model_dump()}")
+    print(f"paymentService::initiate_user_payement_procedure:: received user payment with following credit api related payment:{payment.model_dump()}")
     payment.receipt_index=get_receipt_index()
     payment.amount=get_amount_per_payment_code(payment.paymentCode)
     set_user_as_paid(payment)
