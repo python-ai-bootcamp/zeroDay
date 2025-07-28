@@ -81,6 +81,13 @@
             cursor: pointer;
             background-color: #ff8500;
         }
+        .enlistBottonDisabled {
+            background-color: #978173;
+        }
+        .enlistBottonDisabled:hover {
+            cursor: default;
+            background-color: #978173;
+        }
 
         .products {
             display: flex;
@@ -180,9 +187,206 @@
         background-color: #ff8500; /* light green */
         border: 2px solid #ff6600;
 }
+
+
+  ul#results {
+    list-style: none;
+    margin: 2px 0 0 0;
+    padding: 0;
+    width: 215px;
+    max-height: 250px;
+    overflow-y: auto;
+    border: 0px ;
+    border-radius: 6px;
+    background: #222;
+  }
+  ul#results li {
+    display: flex;
+    align-items: center;
+    padding: 6px 6px;
+    cursor: pointer;
+    border-bottom: 1px solid #444;
+    font-size: 13px;
+  }
+  ul#results li:last-child {
+    border-bottom: none;
+  }
+  ul#results li:hover,
+  ul#results li.selected {
+    background-color: #ff6600;
+    color: #121212;
+  }
+  ul#results img.flag {
+    width: 20px;
+    height: 15px;
+    margin-right: 10px;
+    object-fit: contain;
+  }
+  #selectedCountry {
+    margin-top: 20px;
+    font-size: 1.1rem;
+    font-weight: bold;
+  }
+
+  #selectedFlag {
+    width: 36px;
+    height: 16px;
+    object-fit: contain;
+    margin-top: 3px;
+  }
+
+#results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: #222;
+  z-index: 1000;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+
+
+
+
     </style>
     <script>
         window.onload = async function () {
+
+            const API_BASE = 'http://127.0.0.1:8000/static';
+            let countries = [];
+            let filtered = [];
+            let selectedIndex = -1;
+            const enlistButton=document.getElementById("enlistButton")
+            async function loadCountries() {
+                try {
+                // Load countries list
+                const res = await fetch(`${API_BASE}/countries.json`);
+                if (!res.ok) throw new Error('Failed to load countries.json');
+                countries = await res.json();
+                filtered = countries;
+                renderList(filtered);
+
+                // Try to get country from IP
+                let guessedCode = 'US'; // fallback
+                try {
+                    const ipRes = await fetch('https://ipapi.co/json/');
+                    if (ipRes.ok) {
+                    const ipData = await ipRes.json();
+                    if (ipData && ipData.country) {
+                        guessedCode = ipData.country.toUpperCase();
+                    }
+                    }
+                } catch (geoErr) {
+                    console.warn('Geo IP lookup failed, using fallback.');
+                }
+
+                const defaultIndex = countries.findIndex(c => c.code === guessedCode);
+                if (defaultIndex !== -1) {
+                    selectCountry(defaultIndex);
+                }
+
+                } catch (err) {
+                console.error(err);
+                alert('Could not load countries data.');
+                }
+            }
+
+
+            function renderList(list) {
+                const results = document.getElementById('results');
+                results.innerHTML = '';
+                list.forEach((country, i) => {
+                const li = document.createElement('li');
+                li.tabIndex = 0; // make focusable for keyboard
+
+                // Flag image
+                const img = document.createElement('img');
+                img.className = 'flag';
+                img.alt = country.name + ' flag';
+                img.src = `${API_BASE}/images/flags/${country.code.toLowerCase()}.svg`;
+                img.onerror = () => {
+                    // fallback if flag not found
+                    img.style.display = 'none';
+                };
+                li.appendChild(img);
+
+                // Country name + code text
+                li.appendChild(document.createTextNode(`${country.name} (${country.code})`));
+
+                li.addEventListener('click', () => selectCountry(i));
+                li.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') selectCountry(i);
+                });
+
+                if (i === selectedIndex) {
+                    li.classList.add('selected');
+                    li.scrollIntoView({block: "nearest"});
+                }
+
+                results.appendChild(li);
+                });
+
+                if (filtered.length === 0) {
+                const noResult = document.createElement('li');
+                noResult.textContent = 'No countries found.';
+                noResult.style.cursor = 'default';
+                results.appendChild(noResult);
+                selectedIndex = -1;
+                }
+            }
+
+            function selectCountry(index) {
+                if (index < 0 || index >= filtered.length) return;
+                const country = filtered[index];
+                const selectedDiv = document.getElementById('selectedCountry');
+                const flagImg = document.getElementById('selectedFlag');
+                flagImg.src = `${API_BASE}/images/flags/${country.code.toLowerCase()}.svg`;
+                flagImg.alt = `${country.name} flag`;
+                selectedIndex = index;
+                document.getElementById('results').innerHTML = '';
+                // Hide the results list
+                document.getElementById('landInput').value = country.name;
+            }
+
+            document.getElementById('landInput').addEventListener('input', (e) => {
+                const val = e.target.value.trim().toLowerCase();
+                filtered = countries.filter(c => c.name.toLowerCase().includes(val) || c.code.toLowerCase().includes(val));
+                selectedIndex = filtered.length > 0 ? 0 : -1;
+                renderList(filtered);
+            });
+
+            document.getElementById('landInput').addEventListener('keydown', (e) => {
+                if (filtered.length === 0) return;
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedIndex = (selectedIndex + 1) % filtered.length;
+                    renderList(filtered);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedIndex = (selectedIndex - 1 + filtered.length) % filtered.length;
+                    renderList(filtered);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (selectedIndex >= 0) {
+                        selectCountry(selectedIndex);
+                    }
+                }
+            });
+
+            loadCountries();
+
+
+
+
+
             let payment_code_hashes = [];
             optional_payment_methods = ["google_pay", "bit_pay"]
             //let selected_payment_method = "creditCard"
@@ -221,7 +425,7 @@
                 return payment_code === "" || payment_code_hashes.includes(payment_code_hash);
             }
     
-            function is_israeli_id_number(id) {
+            function is_valid_id_number(id) {
                 id = String(id).trim();
                 if (id.length > 9 || isNaN(id)) return false;
                 id = id.length < 9 ? ("00000000" + id).slice(-9) : id;
@@ -234,7 +438,7 @@
             async function validate(e) {
                 let shouldPreventSubmit = false;
     
-                if (is_israeli_id_number(userIdInput.value)) {
+                if (is_valid_id_number(userIdInput.value)) {
                     userIdInput.setCustomValidity("");
                 } else {
                     userIdInput.setCustomValidity("ID field is not valid!");
@@ -324,7 +528,8 @@
     
             paymentCodeInput.addEventListener('input', () => {
                 clearTimeout(debounceTimeout);
-    
+                enlistButton.disabled = true;
+                enlistButton.classList.add("enlistBottonDisabled")
                 debounceTimeout = setTimeout(async () => {
                     const currentCuponValue = paymentCodeInput.value.trim();
                     console.log("currentCuponValue=", currentCuponValue);
@@ -335,6 +540,8 @@
                             const amountText = await response.text();
                             const amount = parseInt(amountText);
                             priceTag.textContent = !isNaN(amount) ? amount : "Invalid amount";
+                            enlistButton.disabled = false;
+                            enlistButton.classList.remove("enlistBottonDisabled")
                         } else {
                             priceTag.textContent = "Invalid response";
                         }
@@ -411,6 +618,15 @@
                     <input type="text" id="ClientName" name="ClientName" required ><br>
                     <label for="ClientLName">Last name:</label><br>
                     <input type="text" id="ClientLName" name="ClientLName" required ><br>
+                    <label for="landInput" style="position: relative; display: inline-block;">
+                        Select Country:
+                        <img id="selectedFlag" src="" alt="Selected flag"/>
+                                           
+                        <div style="position: relative;">
+                            <input type="text" id="landInput" placeholder="Type to filter..." autocomplete="chrome-off" >
+                            <ul id="results"></ul>
+                        </div>
+                    </label><br>
                     <label for="UserId">Id Number:</label><br>
                     <input type="tel" id="UserId" name="UserId"><br>
                     <label for="email">Email Address:</label><br>
@@ -419,7 +635,7 @@
                     <input type="tel" id="phone" name="phone" pattern="05[0-9]{1}-*[0-9]{3}-*[0-9]{4}" oninvalid="this.setCustomValidity('phone number should be of following form 05x-xxx-xxxx');" oninput="this.setCustomValidity('');" required ><br>
                     <label for="paymentCode">Cupon Code:</label><br>
                     <input type="text" id="paymentCode" name="paymentCode"><br><br>
-                    <input type="submit" value="Enlist" class="cta-button"><br><br>
+                    <input type="submit" id="enlistButton" value="Enlist" class="cta-button"><br><br>
                     <input type="hidden" name="sum" id="sumInput" value="100" />
                     <label>Price:<label id="priceTag">100</label>&#8362;</label><br>
                 </form>
