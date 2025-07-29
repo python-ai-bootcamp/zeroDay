@@ -234,6 +234,12 @@
     object-fit: contain;
     margin-top: 3px;
   }
+  #selectedCoin {
+    width: 36px;
+    height: 16px;
+    object-fit: contain;
+    margin-top: 3px;
+  }
 
 #results {
   position: absolute;
@@ -259,19 +265,23 @@
     <script>
         window.onload = async function () {
 
+            const enlistButton=document.getElementById("enlistButton")
+            //----------------country selection 
+            
             const API_BASE = 'http://127.0.0.1:8000/static';
             let countries = [];
-            let filtered = [];
-            let selectedIndex = -1;
-            const enlistButton=document.getElementById("enlistButton")
+            let filteredCountries = [];
+            let selectedCountryIndex = -1;
+
+            const countryInput=document.getElementById('countryInput')
             async function loadCountries() {
                 try {
                 // Load countries list
                 const res = await fetch(`${API_BASE}/countries.json`);
                 if (!res.ok) throw new Error('Failed to load countries.json');
                 countries = await res.json();
-                filtered = countries;
-                renderList(filtered);
+                filteredCountries = countries;
+                renderCountryList(filteredCountries);
 
                 // Try to get country from IP
                 let guessedCode = 'US'; // fallback
@@ -299,7 +309,7 @@
             }
 
 
-            function renderList(list) {
+            function renderCountryList(list) {
                 const results = document.getElementById('results');
                 results.innerHTML = '';
                 list.forEach((country, i) => {
@@ -325,7 +335,7 @@
                     if (e.key === 'Enter') selectCountry(i);
                 });
 
-                if (i === selectedIndex) {
+                if (i === selectedCountryIndex) {
                     li.classList.add('selected');
                     li.scrollIntoView({block: "nearest"});
                 }
@@ -333,59 +343,187 @@
                 results.appendChild(li);
                 });
 
-                if (filtered.length === 0) {
+                if (filteredCountries.length === 0) {
                 const noResult = document.createElement('li');
                 noResult.textContent = 'No countries found.';
                 noResult.style.cursor = 'default';
                 results.appendChild(noResult);
-                selectedIndex = -1;
+                selectedCountryIndex = -1;
                 }
             }
 
             function selectCountry(index) {
-                if (index < 0 || index >= filtered.length) return;
-                const country = filtered[index];
+                if (index < 0 || index >= filteredCountries.length) return;
+                const country = filteredCountries[index];
                 const selectedDiv = document.getElementById('selectedCountry');
                 const flagImg = document.getElementById('selectedFlag');
                 flagImg.src = `${API_BASE}/images/flags/${country.code.toLowerCase()}.svg`;
                 flagImg.alt = `${country.name} flag`;
-                selectedIndex = index;
+                selectedCountryIndex = index;
                 document.getElementById('results').innerHTML = '';
                 // Hide the results list
-                document.getElementById('landInput').value = country.name;
+                countryInput.value = country.name;
+                userIdInput.setCustomValidity("")
             }
 
-            document.getElementById('landInput').addEventListener('input', (e) => {
+            countryInput.addEventListener('input', (e) => {
                 const val = e.target.value.trim().toLowerCase();
-                filtered = countries.filter(c => c.name.toLowerCase().includes(val) || c.code.toLowerCase().includes(val));
-                selectedIndex = filtered.length > 0 ? 0 : -1;
-                renderList(filtered);
+                filteredCountries = countries.filter(c => c.name.toLowerCase().includes(val) || c.code.toLowerCase().includes(val));
+                selectedCountryIndex = filteredCountries.length > 0 ? 0 : -1;
+                renderCountryList(filteredCountries);
             });
-
-            document.getElementById('landInput').addEventListener('keydown', (e) => {
-                if (filtered.length === 0) return;
+            countryInput.addEventListener('keydown', (e) => {
+                if (filteredCountries.length === 0) return;
 
                 if (e.key === 'ArrowDown') {
                     e.preventDefault();
-                    selectedIndex = (selectedIndex + 1) % filtered.length;
-                    renderList(filtered);
+                    selectedCountryIndex = (selectedCountryIndex + 1) % filteredCountries.length;
+                    renderCountryList(filteredCountries);
                 } else if (e.key === 'ArrowUp') {
                     e.preventDefault();
-                    selectedIndex = (selectedIndex - 1 + filtered.length) % filtered.length;
-                    renderList(filtered);
+                    selectedCountryIndex = (selectedCountryIndex - 1 + filteredCountries.length) % filteredCountries.length;
+                    renderCountryList(filteredCountries);
                 } else if (e.key === 'Enter') {
                     e.preventDefault();
-                    if (selectedIndex >= 0) {
-                        selectCountry(selectedIndex);
+                    if (selectedCountryIndex >= 0) {
+                        selectCountry(selectedCountryIndex);
                     }
                 }
             });
 
             loadCountries();
 
+            //----------------end of country selection 
+
+            //----------------currency selection 
+                        
+            const currencies = [
+                {"name":"USD","code":"US","symbol":"$"},
+                {"name":"EUR","code":"EUR","symbol":"€"},
+                {"name":"GBP","code":"GB","symbol":"(£)"},
+                {"name":"NIS","code":"IL","symbol":"₪"}
+            ];
+            let filteredCurrencies = [];
+            let selectedCurrencyIndex = -1;
+
+            const currencyInput=document.getElementById('currencyInput')
+            async function loadCurrencies() {
+                try {
+                // Load currencies list
+                filteredCurrencies = currencies;
+                renderCurrencyList(filteredCurrencies);
+
+                // Try to get currency from IP
+                let guessedCode = 'US'; // fallback
+                try {
+                    const ipRes = await fetch('https://ipapi.co/json/');
+                    if (ipRes.ok) {
+                    const ipData = await ipRes.json();
+                    if (ipData && ipData.country) {
+                        guessedCode = ipData.country.toUpperCase();
+                    }
+                    }
+                } catch (geoErr) {
+                    console.warn('Geo IP lookup failed, using fallback.');
+                }
+
+                const defaultIndex = currencies.findIndex(c => c.code === guessedCode);
+                if (defaultIndex !== -1) {
+                    selectCurrency(defaultIndex);
+                }
+
+                } catch (err) {
+                console.error(err);
+                alert('Could not load currencies data.');
+                }
+            }
 
 
+            function renderCurrencyList(list) {
+                const results = document.getElementById('results');
+                results.innerHTML = '';
+                list.forEach((country, i) => {
+                const li = document.createElement('li');
+                li.tabIndex = 0; // make focusable for keyboard
 
+                // Flag image
+                const img = document.createElement('img');
+                img.className = 'flag';
+                img.alt = country.name + ' flag';
+                img.src = `${API_BASE}/images/coins/${country.code.toLowerCase()}.svg`;
+                img.onerror = () => {
+                    // fallback if flag not found
+                    img.style.display = 'none';
+                };
+                li.appendChild(img);
+
+                // Country name + code text
+                li.appendChild(document.createTextNode(`${country.name} (${country.code})`));
+
+                li.addEventListener('click', () => selectCurrency(i));
+                li.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') selectCurrency(i);
+                });
+
+                if (i === selectedCurrencyIndex) {
+                    li.classList.add('selected');
+                    li.scrollIntoView({block: "nearest"});
+                }
+
+                results.appendChild(li);
+                });
+
+                if (filteredCurrencies.length === 0) {
+                const noResult = document.createElement('li');
+                noResult.textContent = 'No currencies found.';
+                noResult.style.cursor = 'default';
+                results.appendChild(noResult);
+                selectedCurrencyIndex = -1;
+                }
+            }
+
+            function selectCurrency(index) {
+                if (index < 0 || index >= filteredCurrencies.length) return;
+                const currency = filteredCurrencies[index];
+                const selectedDiv = document.getElementById('selectedCurrency');
+                const flagImg = document.getElementById('selectedCoin');
+                flagImg.src = `${API_BASE}/images/coins/${currency.code.toLowerCase()}.svg`;
+                flagImg.alt = `${currency.name} flag`;
+                flagImg.alt=`${currency.symbol}`
+                selectedCurrencyIndex = index;
+                document.getElementById('results').innerHTML = '';
+                // Hide the results list
+                currencyInput.value = currency.name;
+                userIdInput.setCustomValidity("")
+            }
+
+            currencyInput.addEventListener('input', (e) => {
+                const val = e.target.value.trim().toLowerCase();
+                filteredCurrencies = currencies.filter(c => c.name.toLowerCase().includes(val) || c.code.toLowerCase().includes(val));
+                selectedCurrencyIndex = filteredCurrencies.length > 0 ? 0 : -1;
+                renderCurrencyList(filteredCurrencies);
+            });
+            currencyInput.addEventListener('keydown', (e) => {
+                if (filteredCurrencies.length === 0) return;
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedCurrencyIndex = (selectedCurrencyIndex + 1) % filteredCurrencies.length;
+                    renderCurrencyList(filteredCurrencies);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedCurrencyIndex = (selectedCurrencyIndex - 1 + filteredCurrencies.length) % filteredCurrencies.length;
+                    renderCurrencyList(filteredCurrencies);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (selectedCurrencyIndex >= 0) {
+                        selectCurrency(selectedCurrencyIndex);
+                    }
+                }
+            });
+
+            loadCurrencies();
+            //----------------end of currency selection 
 
             let payment_code_hashes = [];
             optional_payment_methods = ["google_pay", "bit_pay"]
@@ -426,13 +564,20 @@
             }
     
             function is_valid_id_number(id) {
-                id = String(id).trim();
-                if (id.length > 9 || isNaN(id)) return false;
-                id = id.length < 9 ? ("00000000" + id).slice(-9) : id;
-                return Array.from(id, Number).reduce((counter, digit, i) => {
-                    const step = digit * ((i % 2) + 1);
-                    return counter + (step > 9 ? step - 9 : step);
-                }) % 10 === 0;
+                console.log(`entered is_valid_id_number with countryInput.value='${countryInput.value}'`)
+                if(countryInput.value=="Israel"){
+                    console.log("entered israel id validation branch")
+                    id = String(id).trim();
+                    if (id.length > 9 || isNaN(id)) return false;
+                    id = id.length < 9 ? ("00000000" + id).slice(-9) : id;
+                    return Array.from(id, Number).reduce((counter, digit, i) => {
+                        const step = digit * ((i % 2) + 1);
+                        return counter + (step > 9 ? step - 9 : step);
+                    }) % 10 === 0;
+                }else{
+                    console.log("entered non israel id validation branch")
+                    return String(id).length>5
+                }
             }
     
             async function validate(e) {
@@ -618,12 +763,21 @@
                     <input type="text" id="ClientName" name="ClientName" required ><br>
                     <label for="ClientLName">Last name:</label><br>
                     <input type="text" id="ClientLName" name="ClientLName" required ><br>
-                    <label for="landInput" style="position: relative; display: inline-block;">
+                    <label for="countryInput" style="position: relative; display: inline-block;">
                         Select Country:
                         <img id="selectedFlag" src="" alt="Selected flag"/>
                                            
                         <div style="position: relative;">
-                            <input type="text" id="landInput" placeholder="Type to filter..." autocomplete="chrome-off" >
+                            <input type="text" id="countryInput" placeholder="Type to select country..." autocomplete="chrome-off" >
+                            <ul id="results"></ul>
+                        </div>
+                    </label><br>
+                    <label for="currencyInput" style="position: relative; display: inline-block;">
+                        Select Currency:
+                        <img id="selectedCoin" src="" alt="Selected currency"/>
+                                           
+                        <div style="position: relative;">
+                            <input type="text" id="currencyInput" placeholder="Type to select currency..." autocomplete="chrome-off" >
                             <ul id="results"></ul>
                         </div>
                     </label><br>
