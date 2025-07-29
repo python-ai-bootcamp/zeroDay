@@ -189,7 +189,7 @@
 }
 
 
-  ul#results {
+  ul#countryResults {
     list-style: none;
     margin: 2px 0 0 0;
     padding: 0;
@@ -200,7 +200,7 @@
     border-radius: 6px;
     background: #222;
   }
-  ul#results li {
+  ul#countryResults li {
     display: flex;
     align-items: center;
     padding: 6px 6px;
@@ -208,20 +208,85 @@
     border-bottom: 1px solid #444;
     font-size: 13px;
   }
-  ul#results li:last-child {
+  ul#countryResults li:last-child {
     border-bottom: none;
   }
-  ul#results li:hover,
-  ul#results li.selected {
+  ul#countryResults li:hover,
+  ul#countryResults li.selected {
     background-color: #ff6600;
     color: #121212;
   }
-  ul#results img.flag {
+  ul#countryResults img.flag {
     width: 20px;
     height: 15px;
     margin-right: 10px;
     object-fit: contain;
   }
+  #countryResults {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: #222;
+  z-index: 1000;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+  ul#currencyResults {
+    list-style: none;
+    margin: 2px 0 0 0;
+    padding: 0;
+    width: 215px;
+    max-height: 250px;
+    overflow-y: auto;
+    border: 0px ;
+    border-radius: 6px;
+    background: #222;
+  }
+  ul#currencyResults li {
+    display: flex;
+    align-items: center;
+    padding: 6px 6px;
+    cursor: pointer;
+    border-bottom: 1px solid #444;
+    font-size: 13px;
+  }
+  ul#currencyResults li:last-child {
+    border-bottom: none;
+  }
+  ul#currencyResults li:hover,
+  ul#currencyResults li.selected {
+    background-color: #ff6600;
+    color: #121212;
+  }
+  ul#currencyResults img.flag {
+    width: 20px;
+    height: 15px;
+    margin-right: 10px;
+    object-fit: contain;
+  }
+
+  #currencyResults {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: #222;
+  z-index: 1000;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
   #selectedCountry {
     margin-top: 20px;
     font-size: 1.1rem;
@@ -241,21 +306,6 @@
     margin-top: 3px;
   }
 
-#results {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  max-height: 200px;
-  overflow-y: auto;
-  border: 1px solid #444;
-  border-radius: 6px;
-  background: #222;
-  z-index: 1000;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
 
 
 
@@ -310,7 +360,7 @@
 
 
             function renderCountryList(list) {
-                const results = document.getElementById('results');
+                const results = document.getElementById('countryResults');
                 results.innerHTML = '';
                 list.forEach((country, i) => {
                 const li = document.createElement('li');
@@ -344,11 +394,11 @@
                 });
 
                 if (filteredCountries.length === 0) {
-                const noResult = document.createElement('li');
-                noResult.textContent = 'No countries found.';
-                noResult.style.cursor = 'default';
-                results.appendChild(noResult);
-                selectedCountryIndex = -1;
+                    const noResult = document.createElement('li');
+                    noResult.textContent = 'No countries found.';
+                    noResult.style.cursor = 'default';
+                    results.appendChild(noResult);
+                    selectedCountryIndex = -1;
                 }
             }
 
@@ -360,7 +410,7 @@
                 flagImg.src = `${API_BASE}/images/flags/${country.code.toLowerCase()}.svg`;
                 flagImg.alt = `${country.name} flag`;
                 selectedCountryIndex = index;
-                document.getElementById('results').innerHTML = '';
+                document.getElementById('countryResults').innerHTML = '';
                 // Hide the results list
                 countryInput.value = country.name;
                 userIdInput.setCustomValidity("")
@@ -398,10 +448,10 @@
             //----------------currency selection 
                         
             const currencies = [
-                {"name":"USD","code":"US","symbol":"$"},
-                {"name":"EUR","code":"EUR","symbol":"€"},
-                {"name":"GBP","code":"GB","symbol":"(£)"},
-                {"name":"NIS","code":"IL","symbol":"₪"}
+                {"name":"USD",  "code":"US",  "symbol":"$",     "currency":"2"      , exchangeRate: 3.4},
+                {"name":"EUR",  "code":"EUR", "symbol":"€",     "currency":"978"    , exchangeRate: 3.9},
+                {"name":"GBP",  "code":"GB",  "symbol":"(£)",   "currency":"826"    , exchangeRate: 4.5},
+                {"name":"NIS",  "code":"IL",  "symbol":"₪",     "currency":"1"      , exchangeRate: 1}
             ];
             let filteredCurrencies = [];
             let selectedCurrencyIndex = -1;
@@ -440,7 +490,7 @@
 
 
             function renderCurrencyList(list) {
-                const results = document.getElementById('results');
+                const results = document.getElementById('currencyResults');
                 results.innerHTML = '';
                 list.forEach((country, i) => {
                 const li = document.createElement('li');
@@ -474,11 +524,11 @@
                 });
 
                 if (filteredCurrencies.length === 0) {
-                const noResult = document.createElement('li');
-                noResult.textContent = 'No currencies found.';
-                noResult.style.cursor = 'default';
-                results.appendChild(noResult);
-                selectedCurrencyIndex = -1;
+                    const noResult = document.createElement('li');
+                    noResult.textContent = 'No currencies found.';
+                    noResult.style.cursor = 'default';
+                    results.appendChild(noResult);
+                    selectedCurrencyIndex = -1;
                 }
             }
 
@@ -491,7 +541,7 @@
                 flagImg.alt = `${currency.name} flag`;
                 flagImg.alt=`${currency.symbol}`
                 selectedCurrencyIndex = index;
-                document.getElementById('results').innerHTML = '';
+                document.getElementById('currencyResults').innerHTML = '';
                 // Hide the results list
                 currencyInput.value = currency.name;
                 userIdInput.setCustomValidity("")
@@ -769,7 +819,7 @@
                                            
                         <div style="position: relative;">
                             <input type="text" id="countryInput" placeholder="Type to select country..." autocomplete="chrome-off" >
-                            <ul id="results"></ul>
+                            <ul id="countryResults"></ul>
                         </div>
                     </label><br>
                     <label for="currencyInput" style="position: relative; display: inline-block;">
@@ -778,7 +828,7 @@
                                            
                         <div style="position: relative;">
                             <input type="text" id="currencyInput" placeholder="Type to select currency..." autocomplete="chrome-off" >
-                            <ul id="results"></ul>
+                            <ul id="currencyResults"></ul>
                         </div>
                     </label><br>
                     <label for="UserId">Id Number:</label><br>
