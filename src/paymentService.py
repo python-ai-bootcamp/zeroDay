@@ -116,7 +116,7 @@ def payment_notification_flow(payment_candidate_uuid:str, payment_notify_details
 def initiate_user_payement_procedure(payment:Payment, background_tasks: BackgroundTasks):
     print(f"paymentService::initiate_user_payement_procedure:: received user payment with following credit api related payment:{payment.model_dump()}")
     payment.receipt_index=get_receipt_index()
-    payment.amount=get_amount_per_payment_code(payment.paymentCode)
+    payment.amount=get_amount_per_payment_code(payment.paymentCode, payment.currencyName)
     set_user_as_paid(payment)
     persist_payment_data(payment)
     produce_reciept_mail(payment)
