@@ -102,8 +102,8 @@ def payment_notification_flow(payment_candidate_uuid:str, payment_notify_details
         # Read existing JSON
         with open(file_path, "r", encoding="utf-8") as f:
             payment_candidate_data = json.load(f)
-        required_amount=get_amount_per_payment_code(payment_code=payment_candidate_data["paymentCode"], currency=payment_candidate_data["currencyName"])
-        paid_amount=str(payment_notify_details["sum"])
+        required_amount=str(get_amount_per_payment_code(payment_code=payment_candidate_data["paymentCode"], currency=payment_candidate_data["currencyName"]))
+        paid_amount=payment_notify_details["sum"]
         if(required_amount==paid_amount):
             payment=Payment.model_validate(payment_candidate_data)
             initiate_user_payement_procedure(payment, background_tasks)
