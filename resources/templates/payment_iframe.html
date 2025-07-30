@@ -446,12 +446,12 @@
             //----------------end of country selection 
 
             //----------------currency selection 
-                        
+            let selectedCurrency; 
             const currencies = [
                 {"name":"USD",  "code":"US",  "symbol":"$",     "currency":"2"      , exchangeRate: 3.4},
-                {"name":"EUR",  "code":"EUR", "symbol":"€",     "currency":"978"    , exchangeRate: 3.9},
-                {"name":"GBP",  "code":"GB",  "symbol":"(£)",   "currency":"826"    , exchangeRate: 4.5},
-                {"name":"NIS",  "code":"IL",  "symbol":"₪",     "currency":"1"      , exchangeRate: 1}
+                {"name":"EUR",  "code":"EUR", "symbol":"&#8364;",     "currency":"978"    , exchangeRate: 3.9},
+                {"name":"GBP",  "code":"GB",  "symbol":"&#163;",   "currency":"826"    , exchangeRate: 4.5},
+                {"name":"NIS",  "code":"IL",  "symbol":"&#8362;",     "currency":"1"      , exchangeRate: 1}
             ];
             let filteredCurrencies = [];
             let selectedCurrencyIndex = -1;
@@ -544,12 +544,17 @@
                 document.getElementById('currencyResults').innerHTML = '';
                 // Hide the results list
                 currencyInput.value = currency.name;
+                selectedCurrency=currency.name;
                 userIdInput.setCustomValidity("")
+                updatePrice()
             }
 
             currencyInput.addEventListener('input', (e) => {
                 const val = e.target.value.trim().toLowerCase();
                 filteredCurrencies = currencies.filter(c => c.name.toLowerCase().includes(val) || c.code.toLowerCase().includes(val));
+                if(filteredCurrencies.length==1){
+                    selectedCurrency=filteredCurrencies[0].name
+                }
                 selectedCurrencyIndex = filteredCurrencies.length > 0 ? 0 : -1;
                 renderCurrencyList(filteredCurrencies);
             });
@@ -675,7 +680,11 @@
                 uuidInput.name = "payment_candidate_uuid";  // This will be the key in your POST
                 uuidInput.value = generateUUIDv4();
                 form.appendChild(uuidInput);
+                let selectedCurrencyObject=currencies.filter(x=>x.name==selectedCurrency)[0]
                 const originalData = new FormData(form);
+                originalData.append("currency",selectedCurrencyObject.currency)
+                originalData.append("currencyName",selectedCurrencyObject.name)
+
                 try {
                     await fetch("/payment_candidate", {
                         method: "POST",
@@ -686,9 +695,10 @@
                     alert("There was an error submitting the form. Please try again.");
                     return;
                 }
+                
                 const tranzilaData = new FormData();
-                tranzilaData.append('sum',priceTag.textContent)
-                tranzilaData.append('currency',"1")
+                tranzilaData.append('sum',priceTag.textContent.split(" ")[0])
+                tranzilaData.append('currency',`${selectedCurrencyObject.currency}`)
                 tranzilaData.append('success_url_address',  `$${{PROTOCOL}}$$://$${{DOMAIN}}$$/payment_redirect_success?payment_candidate_uuid=${uuidInput.value}`)
                 tranzilaData.append('fail_url_address',     `$${{PROTOCOL}}$$://$${{DOMAIN}}$$/payment_redirect_failure?payment_candidate_uuid=${uuidInput.value}`)
                 tranzilaData.append('notify_url_address',   `$${{PROTOCOL}}$$://$${{DOMAIN}}$$/payment_notify?payment_candidate_uuid=${uuidInput.value}`)
@@ -720,8 +730,8 @@
     
             // Debounced price update
             let debounceTimeout = null;
-    
-            paymentCodeInput.addEventListener('input', () => {
+            updatePrice=() => {
+                console.log("entered updatePrice")
                 clearTimeout(debounceTimeout);
                 enlistButton.disabled = true;
                 enlistButton.classList.add("enlistBottonDisabled")
@@ -730,23 +740,34 @@
                     console.log("currentCuponValue=", currentCuponValue);
     
                     try {
-                        const response = await fetch(`/amount_per_payment_code?payment_code=${encodeURIComponent(currentCuponValue)}`);
+                        const response = await fetch(`/amount_per_payment_code?payment_code=${encodeURIComponent(currentCuponValue)}&currency=${encodeURIComponent(selectedCurrency)}`);
                         if (response.ok) {
+                            
+                            let selectedCurrencyObject=currencies.filter(x=>x.name==selectedCurrency)[0]
                             const amountText = await response.text();
                             const amount = parseInt(amountText);
-                            priceTag.textContent = !isNaN(amount) ? amount : "Invalid amount";
+                            
+                            console.log("starting to update price to ");
+                            priceTag.innerHTML = !isNaN(amount) ? `${amount} ${selectedCurrencyObject.symbol}` : "Invalid amount";
                             enlistButton.disabled = false;
                             enlistButton.classList.remove("enlistBottonDisabled")
+                            console.log("finished updating price to ");
+                            
+                            const flagImg = document.getElementById('selectedCoin');
+                            flagImg.src = `${API_BASE}/images/coins/${selectedCurrencyObject.code}.svg`;
+                            
                         } else {
-                            priceTag.textContent = "Invalid response";
+                            priceTag.innerHTML = "Invalid response";
                         }
                     } catch (error) {
                         console.error("Error fetching price:", error);
                         priceTag.textContent = "Server error";
                     }
                 }, 1000);
-            });
-    
+            }
+            paymentCodeInput.addEventListener('input', updatePrice);
+            currencyInput.addEventListener('input', updatePrice);
+
             // Modal close button
             closeBtn.addEventListener("click", () => {
                 modal.style.display = "none";
@@ -841,7 +862,7 @@
                     <input type="text" id="paymentCode" name="paymentCode"><br><br>
                     <input type="submit" id="enlistButton" value="Enlist" class="cta-button"><br><br>
                     <input type="hidden" name="sum" id="sumInput" value="100" />
-                    <label>Price:<label id="priceTag">100</label>&#8362;</label><br>
+                    <label>Price:<label id="priceTag">100</label></label><br>
                 </form>
                 <div id="iframeModal" style="display: none;">
                     <div class="modal-content">

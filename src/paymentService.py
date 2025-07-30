@@ -52,13 +52,13 @@ def get_payment_code_hashes()->list[str]:
         payment_codes:list[str]= list(json.load(f).keys())
     return [hash_key(payment_code) for payment_code in payment_codes]
 
-def get_amount_per_payment_code(payment_code:str):
+def get_amount_per_payment_code(payment_code:str, currency: str):
     with open(PAYMENT_CODES, "r") as f:
         payment_codes= json.load(f)
         if payment_code in payment_codes:
-            return payment_codes[payment_code]
+            return payment_codes[payment_code][currency]
         else:
-            return payment_codes["regular"]
+            return payment_codes["regular"][currency]
 
 _persistency_lock=Lock()
 def load_csv():
@@ -102,10 +102,16 @@ def payment_notification_flow(payment_candidate_uuid:str, payment_notify_details
         # Read existing JSON
         with open(file_path, "r", encoding="utf-8") as f:
             payment_candidate_data = json.load(f)
-        payment=Payment.model_validate(payment_candidate_data)
-        initiate_user_payement_procedure(payment, background_tasks)
+        required_amount=get_amount_per_payment_code(payment_code=payment_candidate_data["paymentCode"], currency=payment_candidate_data["currency"])
+        paid_amount=payment_notify_details["sum"]
+        if(required_amount==paid_amount):
+            payment=Payment.model_validate(payment_candidate_data)
+            initiate_user_payement_procedure(payment, background_tasks)
+            print(f"paymentService::payment_notification_flow:: payment successfull for {payment_candidate_uuid=}")
+        else:
+            print(f"paymentService::payment_notification_flow:: {required_amount=} is not equal to {paid_amount=}")
     else:
-        print(f"paymentService::payment_notification_flow:: {payment_candidate_uuid=} failed payment attempt with {payment_notify_details["Response"]=}")
+        print(f"paymentService::payment_notification_flow:: {payment_candidate_uuid=} failed payment attempt with {payment_notify_details["processor_response_code"]=}")
 
 def initiate_user_payement_procedure(payment:Payment, background_tasks: BackgroundTasks):
     print(f"paymentService::initiate_user_payement_procedure:: received user payment with following credit api related payment:{payment.model_dump()}")

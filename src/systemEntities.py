@@ -62,6 +62,8 @@ class Payment(BaseModel):
     time: str
     utc_date: str
     utc_time: str
+    currency: str
+    currencyName: str
 
 class Models(StrEnum):
     OPENAI_LANGCHAIN_DEFAULT    = ""

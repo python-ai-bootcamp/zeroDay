@@ -268,8 +268,8 @@ def serve_payment_codes():
     return get_payment_code_hashes()
 
 @app.get("/amount_per_payment_code")
-def serve_amount_per_payment_code(payment_code:str = "regular"):
-    return get_amount_per_payment_code(payment_code)
+def serve_amount_per_payment_code(payment_code:str = "regular", currency:str = "NIS"):
+    return get_amount_per_payment_code(payment_code, currency)
     
 #@app.get("/payment_redirect_success")
 @app.api_route("/payment_redirect_success", methods=["GET", "POST"])
@@ -329,13 +329,14 @@ async def asyncserve_payment_notify(background_tasks: BackgroundTasks, request: 
     return PlainTextResponse(content="OK", status_code=200)
 
 @app.post("/payment_candidate")
-def serve_payment_candidate(request: Request, ClientName:str=Form(...), ClientLName:str=Form(...), UserId:str=Form(...), email:str=Form(...), phone:str=Form(...), payment_candidate_uuid:str=Form(...), paymentCode:str = Form("regular")):
+def serve_payment_candidate(request: Request, ClientName:str=Form(...), ClientLName:str=Form(...), UserId:str=Form(...), email:str=Form(...), phone:str=Form(...), payment_candidate_uuid:str=Form(...), paymentCode:str = Form("regular"), currency:str = Form("regular"), currencyName:str = Form("regular")):
     print("main::serve_payment_candidate:: entered")
+    #print(f"main::serve_payment_candidate:: {currency=}, {currencyName=}")
     user=request.state.authenticated_user
     if(user):
         now_israel = datetime.now(israel_tz)
         now_utc = datetime.now(utc_tz)
-        payment=Payment.model_validate({"payment_candidate_uuid":payment_candidate_uuid, "user":user,"ClientName":ClientName, "ClientLName":ClientLName, "UserId":UserId, "email":email, "phone":phone, "date":now_israel.strftime("%d/%m/%Y"), "time":now_israel.strftime("%H:%M:%S"),  "utc_date":now_utc.strftime("%d/%m/%Y"), "utc_time":now_utc.strftime("%H:%M:%S"), "paymentCode":paymentCode})
+        payment=Payment.model_validate({"payment_candidate_uuid":payment_candidate_uuid, "user":user,"ClientName":ClientName, "ClientLName":ClientLName, "UserId":UserId, "email":email, "phone":phone, "date":now_israel.strftime("%d/%m/%Y"), "time":now_israel.strftime("%H:%M:%S"),  "utc_date":now_utc.strftime("%d/%m/%Y"), "utc_time":now_utc.strftime("%H:%M:%S"), "paymentCode":paymentCode, "currency":currency, "currencyName":currencyName })
         persist_payment_candidate_data(payment)
         return PlainTextResponse(content="OK", status_code=200)
 
