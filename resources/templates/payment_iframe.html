@@ -318,7 +318,7 @@
             const enlistButton=document.getElementById("enlistButton")
             //----------------country selection 
             
-            const API_BASE = 'http://127.0.0.1:8000/static';
+            const API_BASE = `$${{PROTOCOL}}$$://$${{DOMAIN}}$$/static`;
             let countries = [];
             let filteredCountries = [];
             let selectedCountryIndex = -1;
