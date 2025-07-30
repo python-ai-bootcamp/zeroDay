@@ -754,7 +754,7 @@
                             console.log("finished updating price to ");
                             
                             const flagImg = document.getElementById('selectedCoin');
-                            flagImg.src = `${API_BASE}/images/coins/${selectedCurrencyObject.code}.svg`;
+                            flagImg.src = `${API_BASE}/images/coins/${selectedCurrencyObject.code.toLowerCase()}.svg`;
                             
                         } else {
                             priceTag.innerHTML = "Invalid response";
