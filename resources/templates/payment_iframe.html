@@ -370,7 +370,7 @@
                 const img = document.createElement('img');
                 img.className = 'flag';
                 img.alt = country.name + ' flag';
-                img.src = `${API_BASE}/images/flags/${country.code.toLowerCase()}.svg`;
+                img.src = `${API_BASE}/images/flags/${country.code.toLowerCase()}.png`;
                 img.onerror = () => {
                     // fallback if flag not found
                     img.style.display = 'none';
@@ -407,7 +407,7 @@
                 const country = filteredCountries[index];
                 const selectedDiv = document.getElementById('selectedCountry');
                 const flagImg = document.getElementById('selectedFlag');
-                flagImg.src = `${API_BASE}/images/flags/${country.code.toLowerCase()}.svg`;
+                flagImg.src = `${API_BASE}/images/flags/${country.code.toLowerCase()}.png`;
                 flagImg.alt = `${country.name} flag`;
                 selectedCountryIndex = index;
                 document.getElementById('countryResults').innerHTML = '';
