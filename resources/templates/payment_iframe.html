@@ -53,7 +53,7 @@
             background-position: center;
             color: #ffffff;
             text-align: center;
-            margin-left: 12%;
+            margin-left: 10%;
             padding: 20px 0;
         }
 
@@ -68,6 +68,7 @@
         }
 
         .cta-button {
+            margin-top: 4px;
             background-color: #ff6600;
             color: white;
             padding: 15px 30px;
@@ -101,7 +102,7 @@
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             overflow: hidden;
-            width: 86%;
+            width: 90%;
             text-align: center;
             transition: transform 0.3s;
         }
@@ -111,9 +112,11 @@
             height: auto;
         }
 
-        .product-info {
-            padding: 20px;
-        }
+.product-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
         .product-info h3 {
             font-size: 1.6rem;
@@ -297,19 +300,46 @@
     width: 36px;
     height: 16px;
     object-fit: contain;
-    margin-top: 3px;
+    margin-top: -1px;
   }
   #selectedCoin {
     width: 36px;
     height: 16px;
     object-fit: contain;
-    margin-top: 3px;
+    margin-top: -1px;
   }
 
 
+.form-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 3px;
+  margin-top: 3px;
+  margin-left: -5px;
+  width: 100%;
+  max-width: 500px;
+}
 
+.form-row label {
+  flex: 0 0 140px;
+  margin-right: -15px;
+  text-align: left; /* this is now explicitly left, or you can omit */
+}
 
+.form-row input {
+  flex: 1;
+  padding: 6px;
+  background-color: #1c1c1c;
+  border: 1px solid #444;
+  color: #e0e0e0;
+  border-radius: 4px;
+}
 
+input.small-input {
+  font-size: 0.75rem;
+  max-width: 135px;
+}
 
     </style>
     <script>
@@ -591,6 +621,7 @@
             }
             const buttons = document.querySelectorAll(".payment-btn");
             const userIdInput = document.querySelector("#UserId");
+            const phoneInput = document.querySelector("#phone");
             const paymentCodeInput = document.querySelector("#paymentCode");
             const form = document.querySelector("form");
             const priceTag = document.getElementById('priceTag');
@@ -630,14 +661,40 @@
                         return counter + (step > 9 ? step - 9 : step);
                     }) % 10 === 0;
                 }else{
-                    console.log("entered non israel id validation branch")
+                    console.log("entered non israeli id validation branch")
                     return String(id).length>5
+                }
+            }
+    
+            function is_valid_phone_number(phoneNumber) {
+                console.log(`entered is_valid_phone_number with countryInput.value='${countryInput.value}'`)
+                if(countryInput.value=="Israel"){
+                    const cleaned = phoneNumber.replace(/\s/g, ''); // remove spaces
+                    const regex = /^05[0-9]-?[0-9]{3}-?[0-9]{4}$/;
+                    return regex.test(cleaned);
+                }else{
+                    const normalized = phoneNumber.replace(/[\s\-()]/g, '');
+                    const validFormat = /^\+?[0-9]{7,15}$/.test(normalized);
+                    return validFormat;
                 }
             }
     
             async function validate(e) {
                 let shouldPreventSubmit = false;
-    
+                console.log("entered validate")
+                
+                if (is_valid_phone_number(phoneInput.value)) {
+                    phoneInput.setCustomValidity("");
+                } else {
+                    if(countryInput.value=="Israel"){   
+                        phoneInput.setCustomValidity("Phone Number should conform to 05X-XXX-XXXX format");
+                    }else{
+                        phoneInput.setCustomValidity("Phone Number should conform to 7-15 digits");
+                    }
+                    shouldPreventSubmit = true;
+                }
+
+                
                 if (is_valid_id_number(userIdInput.value)) {
                     userIdInput.setCustomValidity("");
                 } else {
@@ -659,8 +716,10 @@
             }
     
             userIdInput.addEventListener("input", validate);
+            phoneInput.addEventListener("input", validate);
             paymentCodeInput.addEventListener("input", validate);
             form.addEventListener("submit", async function (e) {
+                console.log("entered form submit")
                 e.preventDefault(); // Always prevent default
     
                 await validate(e); // Run validations
@@ -830,36 +889,59 @@
                         </button>
                     </div>
                     <input type="hidden" id="paymentMethod" name="paymentMethod" value="creditCard" /-->
-                    <label for="ClientName">First name:</label><br>
-                    <input type="text" id="ClientName" name="ClientName" required ><br>
-                    <label for="ClientLName">Last name:</label><br>
-                    <input type="text" id="ClientLName" name="ClientLName" required ><br>
-                    <label for="countryInput" style="position: relative; display: inline-block;">
-                        Select Country:
-                        <img id="selectedFlag" src="" alt="Selected flag"/>
-                                           
-                        <div style="position: relative;">
-                            <input type="text" id="countryInput" placeholder="Type to select country..." autocomplete="chrome-off" >
+                    
+                    <div class="form-row">
+                        <label for="ClientName">First name:</label>
+                        <div style="position: relative; flex: 1;">
+                            <input type="text" id="ClientName"  name="ClientName" class="small-input" required >
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label for="ClientLName">Last name:</label>
+                        <div style="position: relative; flex: 1;">
+                            <input type="text" id="ClientLName"  name="ClientLName" class="small-input" required >
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label for="countryInput">Select Country:</label>
+                        <div style="position: relative; flex: 1;">
+                            <input type="text" id="countryInput" class="small-input" placeholder="Type..." autocomplete="chrome-off">
                             <ul id="countryResults"></ul>
+                            <img id="selectedFlag" src="" alt="Selected flag" style="position: absolute; right: 8px; top: 8px; width: 20px;">
                         </div>
-                    </label><br>
-                    <label for="currencyInput" style="position: relative; display: inline-block;">
-                        Select Currency:
-                        <img id="selectedCoin" src="" alt="Selected currency"/>
-                                           
-                        <div style="position: relative;">
-                            <input type="text" id="currencyInput" placeholder="Type to select currency..." autocomplete="chrome-off" >
+                    </div>
+                    <div class="form-row">
+                        <label for="currencyInput">Select Currency:</label>
+                        <div style="position: relative; flex: 1;">
+                            <input type="text" id="currencyInput" class="small-input" placeholder="Type..." autocomplete="chrome-off">
                             <ul id="currencyResults"></ul>
+                            <img id="selectedCoin" src="" alt="Selected coin" style="position: absolute; right: 8px; top: 8px; width: 20px;">
                         </div>
-                    </label><br>
-                    <label for="UserId">Id Number:</label><br>
-                    <input type="tel" id="UserId" name="UserId"><br>
-                    <label for="email">Email Address:</label><br>
-                    <input type="email" id="email" name="email" required ><br>
-                    <label for="phone">Phone Number:</label><br>
-                    <input type="tel" id="phone" name="phone" pattern="05[0-9]{1}-*[0-9]{3}-*[0-9]{4}" oninvalid="this.setCustomValidity('phone number should be of following form 05x-xxx-xxxx');" oninput="this.setCustomValidity('');" required ><br>
-                    <label for="paymentCode">Cupon Code:</label><br>
-                    <input type="text" id="paymentCode" name="paymentCode"><br><br>
+                    </div>
+                    <div class="form-row">
+                        <label for="UserId">Id Number:</label>
+                        <div style="position: relative; flex: 1;">
+                            <input type="tel" id="UserId"  name="UserId" class="small-input" required >
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label for="email">Email Address:</label>
+                        <div style="position: relative; flex: 1;">
+                            <input type="email" id="email"  name="email" class="small-input" required >
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label for="phone">Phone Number:</label>
+                        <div style="position: relative; flex: 1;">
+                            <input type="tel" id="phone"  name="phone" class="small-input" required >
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label for="paymentCode">Cupon Code:</label>
+                        <div style="position: relative; flex: 1;">
+                            <input type="text" id="paymentCode"  name="paymentCode" class="small-input" required >
+                        </div>
+                    </div>
                     <input type="submit" id="enlistButton" value="Enlist" class="cta-button"><br><br>
                     <input type="hidden" name="sum" id="sumInput" value="100" />
                     <label>Price:<label id="priceTag">100</label></label><br>
