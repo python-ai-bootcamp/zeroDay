@@ -142,13 +142,18 @@ def enrich_payment_candidate_data(payment_candidate_uuid:str, additional_payment
     # Write back to the same file
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+
 def get_hacker_id_from_candidate(payment_candidate_uuid:str):
     file_path = os.path.join(PAYMENT_DATA_CANDIDATE_FILES_DIRECTORY, f"{payment_candidate_uuid}.json") 
     with open(file_path, "r", encoding="utf-8") as f:
         candidate_data = json.load(f)
     return candidate_data["user"]["hacker_id"]
+
 def produce_reciept_mail(payment:Payment):
-    optional_template_fields=[(f"$${{{{{k}}}}}$$",v) for k,v in payment.model_dump().items()]
+    payment_dict=payment.model_dump()
+    currency_name_to_symbol_mapper={"USD":"$", "EUR":"€", "NIS":"₪", "GBP":"£"}
+    payment_dict["currencySymbol"]=currency_name_to_symbol_mapper[payment_dict["currency_name"]] 
+    optional_template_fields=[(f"$${{{{{k}}}}}$$",v) for k,v in payment_dict.items()]
     notification_producer(user=payment.user,notification_type=NotificationType.PAYMENT_ACCEPTED,optional_template_fields=optional_template_fields)
     paying_user_for_mail=payment.user.model_dump()
     paying_user_for_mail["name"]=f"{payment.ClientName} {payment.ClientLName}"

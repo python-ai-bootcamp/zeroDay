@@ -192,10 +192,10 @@
                             <div>תאריך: $${{date}}$$</div>
                             <div>מוצר: הרשמה לחוג פייתון מקוון</div>
                             <div>כמות: 1</div>
-                            <div>מחיר למוצר: $${{amount}}$$ ₪</div>
+                            <div>מחיר למוצר: $${{amount}}$$ $${{currencySymbol}}$$</div>
                         </div>
                         <div class="total">
-                            סה"כ לתשלום: $${{amount}}$$ ₪
+                            סה"כ לתשלום: $${{amount}}$$ $${{currencySymbol}}$$
                         </div>
                         <div>אמצעי תשלום: סליקת אשראי</div>
                         <p> </p>
