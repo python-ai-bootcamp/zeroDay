@@ -152,7 +152,7 @@ def get_hacker_id_from_candidate(payment_candidate_uuid:str):
 def produce_reciept_mail(payment:Payment):
     payment_dict=payment.model_dump()
     currency_name_to_symbol_mapper={"USD":"$", "EUR":"€", "NIS":"₪", "GBP":"£"}
-    payment_dict["currencySymbol"]=currency_name_to_symbol_mapper[payment_dict["currency_name"]] 
+    payment_dict["currencySymbol"]=currency_name_to_symbol_mapper[payment_dict["currencyName"]] 
     optional_template_fields=[(f"$${{{{{k}}}}}$$",v) for k,v in payment_dict.items()]
     notification_producer(user=payment.user,notification_type=NotificationType.PAYMENT_ACCEPTED,optional_template_fields=optional_template_fields)
     paying_user_for_mail=payment.user.model_dump()
