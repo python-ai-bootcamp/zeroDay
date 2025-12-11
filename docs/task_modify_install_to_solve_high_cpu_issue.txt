@@ -1,0 +1,17 @@
+1. create 0.5GB swap partition
+free -h
+sudo fallocate -l 512M /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+swapon --show
+echo "/swapfile none swap sw 0 0">>/etc/fstab
+free -m
+
+2. cancel the dnf-makecache automatic periodic trigger
+systemctl disable --now dnf-makecache.timer
+
+3. enable nginx service 
+systemctl enable nginx
+systemctl start nginx
+
