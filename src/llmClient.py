@@ -16,7 +16,7 @@ def load_validator_model(model_name:Models):
   match model_name:
     case Models.OPENAI_LANGCHAIN_DEFAULT:
       return ChatOpenAI()
-    case Models.OPENAI_gpt_4|Models.OPENAI_gpt_4o|Models.OPENAI_o3_mini|Models.OPENAI_o3:
+    case Models.OPENAI_gpt_4|Models.OPENAI_gpt_4o|Models.OPENAI_o3_mini|Models.OPENAI_o3|Models.OPENAI_gpt_5|Models.OPENAI_gpt_5_mini|Models.OPENAI_gpt_5_nano:
       return ChatOpenAI(model=model_name.value)
     case _:
         exit("unsupported model initialized")

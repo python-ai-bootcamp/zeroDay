@@ -71,5 +71,7 @@ class Models(StrEnum):
     OPENAI_gpt_4o               = "gpt-4o"
     OPENAI_o3_mini              = "o3-mini"
     OPENAI_o3                   = "o3"
-
+    OPENAI_gpt_5                = "gpt-5"
+    OPENAI_gpt_5_mini           = "gpt-5-mini"
+    OPENAI_gpt_5_nano           = "gpt-5-nano"
 

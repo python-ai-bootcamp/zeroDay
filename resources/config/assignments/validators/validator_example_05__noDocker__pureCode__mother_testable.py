@@ -32,7 +32,7 @@ from langchain_core.runnables import chain
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.pydantic_v1 import BaseModel, Field
 
-llm = load_validator_model(Models.OPENAI_gpt_4o)
+llm = load_validator_model(Models.OPENAI_gpt_5_nano)
 
 @dataclass
 class Answer:
