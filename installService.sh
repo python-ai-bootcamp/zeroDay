@@ -80,4 +80,6 @@ WantedBy=multi-user.target
 EOF
 systemctl daemon-reload
 sudo systemctl enable zeroDay
+sudo systemctl enable nginx
+service nginx start
 service zeroDay start
